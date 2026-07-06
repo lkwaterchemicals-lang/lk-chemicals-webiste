@@ -385,15 +385,65 @@
    CSS fallback art direction behind the WebGL scene (paints before the shader
    compiles and wherever WebGL is unavailable). Dark = deep engineered water;
    light = crystal daylight over marble — two independent palettes. */
-.water-core {
+/* Fallback art direction lives on ::before with a masked top so the section
+   always dissolves out of the page's water — no visible seam, with or
+   without WebGL. The canvas above it fades its own alpha the same way. */
+.water-core::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background:
     radial-gradient(90rem 50rem at 70% 40%, oklch(0.24 0.07 235 / 0.35), transparent 60%),
     linear-gradient(180deg, oklch(0.13 0.04 252) 0%, oklch(0.10 0.035 250) 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 14%, black 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, black 14%, black 100%);
 }
-.light .water-core {
+.light .water-core::before {
   background:
     radial-gradient(90rem 50rem at 70% 40%, oklch(0.93 0.03 220 / 0.7), transparent 60%),
     linear-gradient(180deg, oklch(0.955 0.012 235) 0%, oklch(0.925 0.02 230) 100%);
+}
+
+/* ---------- Bento tile (WhyLK & friends) ----------
+   Semantic surface: deep glass in dark mode, crisp white card in light mode.
+   Never a washed gray box on a dark band. */
+.bento-tile {
+  background: color-mix(in oklab, var(--ink-2) 52%, transparent);
+  border: 1px solid color-mix(in oklab, white 11%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  backdrop-filter: blur(12px) saturate(130%);
+}
+.light .bento-tile {
+  background: white;
+  border: 1px solid var(--hairline);
+  box-shadow: 0 14px 34px -22px oklch(0.30 0.10 252 / 0.30);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* ---------- Text over media (image + scrim) ----------
+   Semantic token: copy sitting on a photographic scrim is always light, in
+   BOTH themes — the scrim, not the theme, provides its background. */
+.text-on-media, .light .text-on-media { color: #fff !important; }
+.text-on-media-soft, .light .text-on-media-soft { color: rgba(255, 255, 255, 0.78) !important; }
+
+/* ---------- Touch ergonomics (system rule) ----------
+   On coarse pointers every compact icon button and pill control meets the
+   44px minimum target without changing the visual design elsewhere. */
+@media (pointer: coarse) {
+  button[class*="h-10"][class*="w-10"] {
+    height: 2.75rem;
+    width: 2.75rem;
+  }
+  button[class*="py-2"][class*="rounded-full"],
+  a[class*="py-2"][class*="rounded-full"] {
+    min-height: 2.75rem;
+  }
+  footer a {
+    display: inline-block;
+    padding-block: 0.3rem;
+  }
 }
 
 /* ---------- Back to top ---------- */
@@ -515,8 +565,9 @@
   background: linear-gradient(180deg, oklch(0.17 0.05 253 / 0.55), oklch(0.13 0.045 252 / 0.66));
   color: var(--foreground);
 }
-/* Ink-authored copy inside dark section-light bands becomes light */
-.dark .section-light [class*="text-ink/"] {
+/* Ink-authored copy inside dark section-light bands becomes light — except
+   inside white/light cards, where ink must stay ink. */
+.dark .section-light [class*="text-ink/"]:not([class*="bg-white"] *) {
   color: color-mix(in oklab, white 74%, transparent) !important;
 }
 .dark .section-light [class*="text-royal"] {

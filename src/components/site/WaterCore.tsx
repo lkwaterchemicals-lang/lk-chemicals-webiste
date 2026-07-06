@@ -26,6 +26,10 @@ function fragSource(quality: number) {
 precision highp float;
 #define Q ${quality}
 #define OCT ${quality === 1 ? 4 : 3}
+/* Low-res tiers blur soft fields into fog — pull the volumetrics back so the
+   deep water stays rich navy on phones instead of murky gray. */
+#define SHAFT_GAIN ${quality === 1 ? "1.0" : "0.55"}
+#define CAUSTIC_GAIN ${quality === 1 ? "1.0" : "0.8"}
 
 uniform vec2  u_res;
 uniform float u_time;
@@ -61,9 +65,9 @@ vec3 envDark(vec2 p, float t) {
   vec3 col = mix(vec3(0.012, 0.030, 0.062), vec3(0.035, 0.062, 0.098), g * 0.7);
   vec2 q = vec2(fbm(p * 2.4 + t * 0.06), fbm(p * 2.4 - vec2(t * 0.05, 0.0)));
   float ca = pow(clamp(1.0 - abs(2.0 * fbm(p * 3.0 + 2.0 * q + vec2(0.0, t * 0.08)) - 1.0), 0.0, 1.0), 6.0);
-  col += ca * vec3(0.028, 0.130, 0.180) * (0.45 + 0.55 * (1.0 - g));
+  col += ca * vec3(0.028, 0.130, 0.180) * (0.45 + 0.55 * (1.0 - g)) * CAUSTIC_GAIN;
   float shaft = pow(smoothstep(0.52, 0.95, fbm(vec2(p.x * 1.4 - p.y * 0.5, t * 0.03))), 2.0) * smoothstep(-0.55, 0.55, p.y);
-  col += shaft * vec3(0.018, 0.065, 0.095);
+  col += shaft * vec3(0.018, 0.065, 0.095) * SHAFT_GAIN;
   return col;
 }
 /* Crystal purified water — marble ivory, soft silver, ice blue daylight. */
@@ -191,7 +195,11 @@ void main() {
   col *= 1.0 - mix(0.26, 0.06, u_theme) * vig;
 
   col += (hash(frag * 0.7) - 0.5) * 0.008;
-  gl_FragColor = vec4(col, 1.0);
+
+  // Dissolve the top of the chamber into the page's own living water —
+  // no visible seam where the section begins (premultiplied alpha).
+  float alpha = 1.0 - smoothstep(0.86, 1.0, uv.y);
+  gl_FragColor = vec4(col * alpha, alpha);
 }
 `;
 }
@@ -212,7 +220,7 @@ function WaterCoreCanvas() {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isMobile = matchMedia("(pointer: coarse)").matches || innerWidth < 768;
     const quality = isMobile ? 0 : 1;
-    let resScale = isMobile ? 0.5 : 0.62;
+    let resScale = isMobile ? 0.58 : 0.62;
     const DPR_CAP = isMobile ? 1 : 1.5;
 
     let flowTime = Math.random() * 60;
@@ -250,7 +258,8 @@ function WaterCoreCanvas() {
     let uniforms: Record<string, WebGLUniformLocation | null> = {};
 
     function setupGL() {
-      gl = canvas!.getContext("webgl", { alpha: false, antialias: false, depth: false, stencil: false });
+      // alpha:true so the top of the scene can dissolve into the page's water
+      gl = canvas!.getContext("webgl", { alpha: true, antialias: false, depth: false, stencil: false });
       if (!gl) return false;
       const g = gl;
       const compile = (type: number, src: string) => {
@@ -419,7 +428,8 @@ export function WaterCore() {
   return (
     <section aria-label="The living water core" className="water-core relative overflow-hidden">
       <WaterCoreCanvas />
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 md:px-8 min-h-[92svh] flex items-end lg:items-center pb-24 sm:pb-28 lg:pb-0 pt-[52svh] lg:pt-0">
+      {/* pb clears the floating call/WhatsApp cluster and back-to-top on phones */}
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 md:px-8 min-h-[92svh] flex items-end lg:items-center pb-44 sm:pb-36 lg:pb-0 pt-[48svh] lg:pt-0">
         <div className="max-w-xl lg:max-w-lg">
           <MicroLabel n="11">The living water core</MicroLabel>
           <h2 className="display-xl mt-4 leading-[0.9]" style={{ fontSize: "clamp(2.6rem, 8vw, 6rem)" }}>

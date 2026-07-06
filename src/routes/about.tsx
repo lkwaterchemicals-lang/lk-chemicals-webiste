@@ -123,8 +123,8 @@ function AboutPage() {
               <div key={t} className="group relative hover-lift rounded-3xl overflow-hidden min-h-[220px] flex flex-col justify-end p-6">
                 <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
-                <h3 className="relative display-xl text-2xl" style={{ color: "#fff" }}>{t}</h3>
-                <p className="relative mt-2 text-sm" style={{ color: "rgba(255,255,255,0.8)" }}>{b}</p>
+                <h3 className="relative display-xl text-2xl text-on-media">{t}</h3>
+                <p className="relative mt-2 text-sm text-on-media-soft">{b}</p>
               </div>
             ))}
           </div>
@@ -162,7 +162,7 @@ function InfrastructureCarousel() {
         {row.map((s, i) => (
           <div
             key={s.t + i}
-            className="facility-card shrink-0 w-[78vw] sm:w-[380px] glass-dark rounded-3xl overflow-hidden hover-lift"
+            className="facility-card shrink-0 w-[78vw] sm:w-[min(380px,46vw)] glass-dark rounded-3xl overflow-hidden hover-lift"
             style={{ transform: `rotateY(${i % 2 === 0 ? -14 : 14}deg)` }}
           >
             <img src={s.img} alt={s.t} className="h-52 w-full object-cover" />

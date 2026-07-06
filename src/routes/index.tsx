@@ -255,7 +255,7 @@ function WhoWeAre() {
               <motion.img src={labImg} alt="Laboratory" className="h-48 sm:h-56 w-full rounded-2xl object-cover shadow-xl" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} />
               <motion.img src={dropletImg} alt="Water droplet" className="col-span-2 h-40 sm:h-48 w-full rounded-2xl object-cover shadow-xl" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} />
             </div>
-            <div className="hidden lg:block relative h-[420px]">
+            <div className="hidden lg:block relative h-[clamp(340px,34vw,460px)]">
               <motion.img src={plantImg} alt="Manufacturing plant" className="absolute top-0 left-0 h-72 w-72 rounded-3xl object-cover shadow-2xl hover-lift" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ transform: "rotate(-4deg)" }} />
               <motion.img src={labImg} alt="Laboratory" className="absolute top-20 right-0 h-60 w-48 rounded-3xl object-cover shadow-2xl hover-lift" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }} style={{ transform: "rotate(6deg)" }} />
               <motion.img src={dropletImg} alt="Water droplet" className="absolute bottom-0 left-16 h-40 w-56 rounded-3xl object-cover shadow-2xl hover-lift" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }} />
@@ -530,8 +530,8 @@ function HowWaterGetsTreated() {
                 <img src={s.img} alt="" className="absolute inset-0 h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
                 <div className="relative micro-label">{String(i + 1).padStart(2, "0")}</div>
-                <div className="relative display-xl text-xl mt-2" style={{ color: "#fff" }}>{s.title}</div>
-                <p className="relative text-sm mt-2" style={{ color: "rgba(255,255,255,0.75)" }}>{s.body}</p>
+                <div className="relative display-xl text-xl mt-2 text-on-media">{s.title}</div>
+                <p className="relative text-sm mt-2 text-on-media-soft">{s.body}</p>
               </motion.div>
             ))}
           </div>
@@ -560,15 +560,13 @@ function WhyLK() {
         <h2 className="display-xl mt-3" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>
           Chemistry <span className="grad-leaf-text">with a spine.</span>
         </h2>
-        <div className="mt-14 grid md:grid-cols-3 md:grid-rows-3 gap-4 auto-rows-[180px]">
+        <div className="mt-14 grid md:grid-cols-3 md:grid-rows-3 gap-4 auto-rows-[minmax(160px,auto)]">
           {items.map((it) => (
             <div
               key={it.title}
               className={
                 "group relative overflow-hidden rounded-3xl p-6 md:p-8 hover-lift transition-all " +
-                (it.tone === "leaf"
-                  ? "bg-ink text-white"
-                  : "bg-white/70 border border-ink/10") +
+                (it.tone === "leaf" ? "bg-ink text-white" : "bento-tile") +
                 " " + it.span
               }
             >
@@ -579,13 +577,10 @@ function WhyLK() {
                 </>
               )}
               <div className="absolute inset-0 opacity-30 dot-grid pointer-events-none" />
-              <h3 className={"relative display-xl text-2xl md:text-3xl " + (it.tone === "leaf" ? "grad-leaf-text" : "text-ink")}>
+              <h3 className={"relative display-xl text-2xl md:text-3xl " + (it.tone === "leaf" ? "grad-leaf-text" : "text-foreground")}>
                 {it.title}
               </h3>
-              <p
-                className={"relative mt-3 text-sm " + (it.tone === "leaf" ? "" : "text-ink/70")}
-                style={it.tone === "leaf" ? { color: "rgba(255,255,255,0.75)" } : undefined}
-              >
+              <p className={"relative mt-3 text-sm " + (it.tone === "leaf" ? "text-on-media-soft" : "text-ink/70")}>
                 {it.body}
               </p>
             </div>

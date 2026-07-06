@@ -14,6 +14,7 @@ import { Waterline } from "@/components/site/Waterline";
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
+import { WaterCore } from "@/components/site/WaterCore";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,6 +41,7 @@ function HomePage() {
       <Proof />
       <SeeThePlant />
       <TalkToUs />
+      <WaterCore />
     </>
   );
 }

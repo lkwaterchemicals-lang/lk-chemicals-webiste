@@ -7,7 +7,7 @@ import { useSiteSettings } from "@/lib/content";
 export function Footer() {
   const { data: s } = useSiteSettings();
   return (
-    <footer className="relative section-dark overflow-hidden pt-16 pb-8">
+    <footer className="relative section-dark overflow-hidden pt-16 pb-24 sm:pb-8">
       <Waterline className="absolute top-0 left-0" />
       <div className="pointer-events-none absolute inset-0 caustics opacity-40" />
       {/* Ghost brand mark — desktop only; on phones it cropped behind the

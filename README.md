@@ -113,6 +113,20 @@ each section grows out of the previous one.
 - Keep `SCROLL_K` identical in the JS and GLSL halves of `WaterCanvas.tsx` —
   ripple/cursor world positions are computed in JS and must match the shader.
 
+## The Living Water Core (homepage closer)
+
+`src/components/site/WaterCore.tsx` — the last section before the footer: a
+floating glass sphere rendered with analytic optics in one fragment shader
+(refraction with chromatic dispersion, Beer-Lambert absorption, fresnel
+reflections, a slowly swirling luminous core, rising micro-bubbles) inside a
+layered water environment (caustics, light shafts, two parallax particle
+layers). Cursor steers the sphere and bends the water; presses emit ripples.
+Dark mode = deep engineered water; light mode = crystal daylight over marble —
+two independent palettes, same motion system. Renders only while in view,
+adapts resolution under load, falls back to a static frame, and honours
+`prefers-reduced-motion`. The section's CSS gradient (`.water-core`) is the
+no-WebGL/pre-compile art direction.
+
 ## Hard-won implementation notes
 
 - **Light mode** is a `.light` class on `<html>` (toggle in Nav; persisted as `lk-theme`).

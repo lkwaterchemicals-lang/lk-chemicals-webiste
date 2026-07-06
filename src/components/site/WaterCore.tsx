@@ -11,6 +11,7 @@
 // Renders only while on screen, at a reduced internal resolution, with an
 // adaptive governor (resolution → static frame) so it never janks anywhere.
 import { useEffect, useRef } from "react";
+import { motion } from "motion/react";
 import { LiquidButton } from "./LiquidButton";
 import { MicroLabel } from "./GhostWord";
 
@@ -37,6 +38,7 @@ uniform float u_theme;   // 0 dark · 1 light (lerped)
 uniform vec2  u_mouse;   // scene units, smoothed
 uniform vec2  u_anchor;  // sphere centre, scene units
 uniform float u_radius;
+uniform float u_reveal;  // 0→1 as the section scrolls into view
 uniform vec4  u_ripples[${MAX_RIPPLES}];
 
 float hash(vec2 p) {
@@ -123,12 +125,44 @@ void main() {
 #endif
 
   // ---- the centrepiece ----
+  // Rises and settles as the section scrolls into view.
   vec2 c = u_anchor
     + vec2(0.014 * sin(t * 0.21 + 1.3), 0.020 * sin(t * 0.33))
+    + vec2(0.0, (u_reveal - 1.0) * 0.10)
     + u_mouse * 0.020;
-  float R = u_radius;
+  float R = u_radius * (0.86 + 0.14 * u_reveal);
   vec2 q = p - c;
   float r = length(q);
+
+  // Breathing ripple — a slow pressure ring exhaled by the core.
+  {
+    float ph = fract(t * 0.085);
+    float ringR = R * (1.06 + ph * 1.35);
+    float ring = exp(-abs(r - ringR) * 58.0) * (1.0 - ph) * step(R, r) * u_reveal;
+    col += ring * vec3(0.020, 0.105, 0.145) * (1.0 - u_theme) * 0.9;
+    col = mix(col, vec3(0.56, 0.72, 0.85), ring * u_theme * 0.22);
+  }
+
+  // Orbiting micro-droplets — three glass beads on a tilted ellipse. Beads on
+  // the far side draw before the sphere (occluded by it); near-side beads draw
+  // after it. Same math both passes, selected by orbit phase.
+#define BEAD(i, FRONT) { \
+    float phase = t * (0.14 + 0.028 * float(i)) + float(i) * 2.094; \
+    float behind = step(0.0, sin(phase)); \
+    if (abs(behind - (1.0 - FRONT)) < 0.5) { \
+      vec2 orb = c + rot(0.32) * vec2(cos(phase) * R * 1.42, sin(phase) * R * 0.40); \
+      float oR = R * (0.050 + 0.013 * float(i)) * mix(1.08, 0.86, behind); \
+      float od = length(p - orb); \
+      float mask = smoothstep(oR, oR * 0.45, od) * u_reveal; \
+      vec3 beadCol = env(orb, t) * mix(0.72, 0.90, u_theme); \
+      vec2 hq = p - orb + vec2(oR * 0.35, -oR * 0.35); \
+      beadCol += exp(-dot(hq, hq) * (9.0 / (oR * oR))) * mix(vec3(0.45, 0.75, 0.88), vec3(1.0), u_theme) * 0.8; \
+      float rimB = smoothstep(oR * 0.6, oR * 0.95, od) * (1.0 - smoothstep(oR * 0.95, oR, od)); \
+      beadCol += rimB * mix(vec3(0.10, 0.34, 0.44), vec3(0.55, 0.68, 0.80), u_theme) * 0.5; \
+      col = mix(col, beadCol, mask); \
+    } \
+  }
+  BEAD(0, 0.0) BEAD(1, 0.0) BEAD(2, 0.0)
 
   // Grounding: soft elliptical shadow in daylight, cyan under-glow in the deep.
   vec2 sp = (p - (c - vec2(0.0, R * 1.16))) * vec2(1.35, 5.0);
@@ -189,6 +223,9 @@ void main() {
     col = mix(col, glass, smoothstep(R, R - 0.0045, r));
   }
 
+  // Near-side orbiting beads pass in front of the sphere.
+  BEAD(0, 1.0) BEAD(1, 1.0) BEAD(2, 1.0)
+
   // Cinematic edges (subtle in daylight).
   vec2 uv = frag / u_res;
   float vig = smoothstep(0.55, 1.15, length(uv - 0.5) * 1.35);
@@ -228,6 +265,8 @@ function WaterCoreCanvas() {
     let tmx = 0, tmy = 0, mx = 0, my = 0; // scene units
     let themeTarget = document.documentElement.classList.contains("light") ? 1 : 0;
     let themeS = themeTarget;
+    let revealTarget = 0;
+    let revealS = 0;
     let anchor = { x: 0.4, y: 0.0 };
     let radius = 0.3;
     const ripples: Ripple[] = [];
@@ -288,7 +327,7 @@ function WaterCoreCanvas() {
       g.enableVertexAttribArray(loc);
       g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
       uniforms = {};
-      for (const n of ["u_res", "u_time", "u_theme", "u_mouse", "u_anchor", "u_radius", "u_ripples[0]"]) {
+      for (const n of ["u_res", "u_time", "u_theme", "u_mouse", "u_anchor", "u_radius", "u_reveal", "u_ripples[0]"]) {
         uniforms[n] = g.getUniformLocation(prog, n);
       }
       cleanupGL = () => { g.deleteProgram(prog); g.deleteShader(vs); g.deleteShader(fs); g.deleteBuffer(buf); };
@@ -317,6 +356,7 @@ function WaterCoreCanvas() {
       mx += (tmx - mx) * Math.min(1, dt * 3);
       my += (tmy - my) * Math.min(1, dt * 3);
       themeS += (themeTarget - themeS) * Math.min(1, dt * 3);
+      revealS += (revealTarget - revealS) * Math.min(1, dt * 2.2);
       for (let i = ripples.length - 1; i >= 0; i--) {
         ripples[i].age += dt;
         if (ripples[i].age > 4) ripples.splice(i, 1);
@@ -333,6 +373,7 @@ function WaterCoreCanvas() {
       g.uniform2f(uniforms.u_mouse, mx, my);
       g.uniform2f(uniforms.u_anchor, anchor.x, anchor.y);
       g.uniform1f(uniforms.u_radius, radius);
+      g.uniform1f(uniforms.u_reveal, reduced ? 1 : revealS);
       g.uniform4fv(uniforms["u_ripples[0]"], rippleData);
       g.drawArrays(g.TRIANGLES, 0, 3);
     }
@@ -374,9 +415,12 @@ function WaterCoreCanvas() {
 
     const io = new IntersectionObserver(([e]) => {
       inView = e.isIntersecting;
+      // Scroll-linked reveal: the core rises and settles as more of the
+      // section enters the viewport.
+      revealTarget = e.isIntersecting ? Math.min(1, e.intersectionRatio * 1.6) : 0;
       if (inView && reduced) renderOnce();
       kick();
-    }, { rootMargin: "120px" });
+    }, { rootMargin: "120px", threshold: [0, 0.15, 0.3, 0.45, 0.6, 0.75] });
     io.observe(canvas);
 
     const section = canvas.parentElement!;
@@ -430,7 +474,13 @@ export function WaterCore() {
       <WaterCoreCanvas />
       {/* pb clears the floating call/WhatsApp cluster and back-to-top on phones */}
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 md:px-8 min-h-[92svh] flex items-end lg:items-center pb-44 sm:pb-36 lg:pb-0 pt-[48svh] lg:pt-0">
-        <div className="max-w-xl lg:max-w-lg">
+        <motion.div
+          className="max-w-xl lg:max-w-lg"
+          initial={{ opacity: 0, y: 36 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.9, ease: [0.2, 0.7, 0.2, 1] }}
+        >
           <MicroLabel n="11">The living water core</MicroLabel>
           <h2 className="display-xl mt-4 leading-[0.9]" style={{ fontSize: "clamp(2.6rem, 8vw, 6rem)" }}>
             <span className="grad-text">Purity,</span>
@@ -444,7 +494,7 @@ export function WaterCore() {
           <div className="mt-9">
             <LiquidButton to="/contact" size="lg">Begin your water story</LiquidButton>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

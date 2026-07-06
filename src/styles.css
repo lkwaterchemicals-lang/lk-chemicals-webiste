@@ -622,6 +622,8 @@
 .animate-pulse-soft { animation: pulse-soft 2.2s ease-in-out infinite; }
 .marquee-track { animation: drift-x 40s linear infinite; }
 .marquee-track-rev { animation: drift-x-rev 45s linear infinite; }
+/* Certification strip reads at a glance — slow, unhurried drift */
+.marquee-slow { animation-duration: 70s; }
 
 /* Infrastructure 3D auto-scroll carousel */
 .facility-track {

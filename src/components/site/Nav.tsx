@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import logoUrl from "@/assets/lk-logo.png";
@@ -17,6 +17,11 @@ const links = [
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Clicking the link for the page you're already on = back to the top.
+  const samePageTop = (to: string) => {
+    if (pathname === to) window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     onScroll();
@@ -42,7 +47,7 @@ export function Nav() {
               (scrolled ? "glass-dark" : "bg-transparent")
             }
           >
-            <Link to="/" className="flex items-center gap-3 group">
+            <Link to="/" onClick={() => samePageTop("/")} className="flex items-center gap-3 group">
               <img
                 src={logoUrl}
                 alt="LK Chemicals"
@@ -62,6 +67,7 @@ export function Nav() {
                   key={l.to}
                   to={l.to}
                   activeOptions={{ exact: l.to === "/" }}
+                  onClick={() => samePageTop(l.to)}
                   className="px-4 py-2 text-sm text-white/70 hover:text-white transition-colors relative [&.active]:text-white"
                   activeProps={{ className: "active" }}
                 >
@@ -120,7 +126,7 @@ export function Nav() {
               <Link
                 key={l.to}
                 to={l.to}
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); samePageTop(l.to); }}
                 className="display-xl text-5xl sm:text-6xl grad-text opacity-0 translate-y-3"
                 style={{
                   animation: open ? `fade-in .6s ${i * 0.06}s forwards` : "none",

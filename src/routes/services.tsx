@@ -26,7 +26,7 @@ function ServicesPage() {
     <>
       <section className="section-dark relative pt-40 pb-16 overflow-hidden">
         <div className="absolute inset-0 caustics opacity-40" />
-        <GhostWord className="absolute right-0 -bottom-8 !text-[11vw] opacity-60">SERVICE</GhostWord>
+        <GhostWord className="absolute right-0 bottom-0 !text-[11vw] opacity-60">SERVICE</GhostWord>
         <div className="relative mx-auto max-w-7xl px-6 md:px-8">
           <MicroLabel n="00">Field operations</MicroLabel>
           <h1 className="display-xl mt-4 grad-text" style={{ fontSize: "clamp(2.75rem, 11vw, 8rem)" }}>

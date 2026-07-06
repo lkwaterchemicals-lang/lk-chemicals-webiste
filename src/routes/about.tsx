@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
 import { Waterline } from "@/components/site/Waterline";
+import { Coverflow3D } from "@/components/site/Coverflow3D";
 import plant from "@/assets/plant.jpg";
 import lab from "@/assets/lab.jpg";
 import drum from "@/assets/drum.jpg";
@@ -78,7 +79,7 @@ function AboutPage() {
 
       {/* Mission */}
       <section className="section-light py-32 relative overflow-hidden">
-        <GhostWord className="absolute top-0 left-4 text-[22vw]">MISSION</GhostWord>
+        <GhostWord className="absolute top-0 left-1/2 -translate-x-1/2 text-[22vw]">MISSION</GhostWord>
         <div className="relative mx-auto max-w-6xl px-6 md:px-8">
           <MicroLabel n="01" className="!text-royal">Mission</MicroLabel>
           <p className="display-xl mt-6 leading-[0.95]" style={{ fontSize: "clamp(2rem, 7vw, 5rem)" }}>
@@ -88,7 +89,7 @@ function AboutPage() {
       </section>
 
       <section className="section-dark py-32 relative overflow-hidden">
-        <GhostWord className="absolute top-0 right-4 text-[22vw]">VISION</GhostWord>
+        <GhostWord className="absolute top-0 left-1/2 -translate-x-1/2 text-[22vw]">VISION</GhostWord>
         <div className="relative mx-auto max-w-6xl px-6 md:px-8">
           <MicroLabel n="02">Vision</MicroLabel>
           <p className="display-xl mt-6 leading-[0.95] grad-text" style={{ fontSize: "clamp(2rem, 7vw, 5rem)" }}>
@@ -111,23 +112,17 @@ function AboutPage() {
         <div className="mx-auto max-w-6xl px-6 md:px-8">
           <MicroLabel n="04" className="!text-royal">Values</MicroLabel>
           <h2 className="display-xl mt-3" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>What we won't compromise on.</h2>
-          <div className="mt-16 grid md:grid-cols-3 gap-6">
-            {[
-              { t: "Integrity", b: "A datasheet you can hold us to.", img: lab },
-              { t: "Chemistry", b: "Formulations that work, not slogans.", img: drum },
-              { t: "Response", b: "The phone answers. Every time.", img: plant },
-              { t: "Safety", b: "Handling, storage and transport — no shortcuts.", img: boiler },
-              { t: "Consistency", b: "Batch #4501 is identical to #0001.", img: resin },
-              { t: "Partnership", b: "We show up when the plant is down.", img: ct },
-            ].map(({ t, b, img }) => (
-              <div key={t} className="group relative hover-lift rounded-3xl overflow-hidden min-h-[220px] flex flex-col justify-end p-6">
-                <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
-                <h3 className="relative display-xl text-2xl text-on-media">{t}</h3>
-                <p className="relative mt-2 text-sm text-on-media-soft">{b}</p>
-              </div>
-            ))}
+          {/* Desktop / tablet: grid. Mobile: 3D easel rail (auto + touch). */}
+          <div className="mt-16 hidden md:grid md:grid-cols-3 gap-6">
+            {values.map((v) => <ValueCard key={v.t} {...v} />)}
           </div>
+          <Coverflow3D
+            className="mt-10 md:hidden -mx-6"
+            variant="x"
+            autoMs={3400}
+            cardClass="w-[76vw]"
+            items={values.map((v) => <ValueCard key={v.t} {...v} />)}
+          />
         </div>
       </section>
 
@@ -144,6 +139,28 @@ function AboutPage() {
   );
 }
 
+/* =============== VALUES =============== */
+
+const values = [
+  { t: "Integrity", b: "A datasheet you can hold us to.", img: lab },
+  { t: "Chemistry", b: "Formulations that work, not slogans.", img: drum },
+  { t: "Response", b: "The phone answers. Every time.", img: plant },
+  { t: "Safety", b: "Handling, storage and transport — no shortcuts.", img: boiler },
+  { t: "Consistency", b: "Batch #4501 is identical to #0001.", img: resin },
+  { t: "Partnership", b: "We show up when the plant is down.", img: ct },
+];
+
+function ValueCard({ t, b, img }: { t: string; b: string; img: string }) {
+  return (
+    <div className="group relative hover-lift rounded-3xl overflow-hidden min-h-[220px] h-full flex flex-col justify-end p-6">
+      <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+      <h3 className="relative display-xl text-2xl text-on-media">{t}</h3>
+      <p className="relative mt-2 text-sm text-on-media-soft">{b}</p>
+    </div>
+  );
+}
+
 /* =============== INFRASTRUCTURE 3D AUTO-SCROLL =============== */
 
 const facilities = [
@@ -154,26 +171,45 @@ const facilities = [
   { t: "Technical Support", img: lab, body: "A chemist on the phone, a service crew on the road." },
 ];
 
+function FacilityCard({ s }: { s: (typeof facilities)[number] }) {
+  return (
+    <div className="glass-dark rounded-3xl overflow-hidden hover-lift h-full">
+      <img src={s.img} alt={s.t} className="h-52 w-full object-cover" />
+      <div className="p-6">
+        <div className="micro-label">Facility</div>
+        <h3 className="display-xl text-2xl text-white mt-2">{s.t}</h3>
+        <p className="text-sm text-white/60 mt-2">{s.body}</p>
+      </div>
+    </div>
+  );
+}
+
 function InfrastructureCarousel() {
   const row = [...facilities, ...facilities];
   return (
-    <div className="mt-12 [perspective:1600px]">
-      <div className="facility-track flex gap-6 w-max px-6 md:px-8 [transform-style:preserve-3d]">
-        {row.map((s, i) => (
-          <div
-            key={s.t + i}
-            className="facility-card shrink-0 w-[78vw] sm:w-[min(380px,46vw)] glass-dark rounded-3xl overflow-hidden hover-lift"
-            style={{ transform: `rotateY(${i % 2 === 0 ? -14 : 14}deg)` }}
-          >
-            <img src={s.img} alt={s.t} className="h-52 w-full object-cover" />
-            <div className="p-6">
-              <div className="micro-label">Facility</div>
-              <h3 className="display-xl text-2xl text-white mt-2">{s.t}</h3>
-              <p className="text-sm text-white/60 mt-2">{s.body}</p>
+    <>
+      {/* Desktop: the endless 3D drift (hover to pause) */}
+      <div className="mt-12 hidden lg:block [perspective:1600px]">
+        <div className="facility-track flex gap-6 w-max px-6 md:px-8 [transform-style:preserve-3d]">
+          {row.map((s, i) => (
+            <div
+              key={s.t + i}
+              className="facility-card shrink-0 w-[min(380px,46vw)]"
+              style={{ transform: `rotateY(${i % 2 === 0 ? -14 : 14}deg)` }}
+            >
+              <FacilityCard s={s} />
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+      {/* Mobile / tablet: 3D coverflow rail — auto-drifts, thumb takes over */}
+      <Coverflow3D
+        className="mt-10 lg:hidden"
+        variant="y"
+        autoMs={3600}
+        cardClass="w-[76vw] sm:w-[52vw]"
+        items={facilities.map((s) => <FacilityCard key={s.t} s={s} />)}
+      />
+    </>
   );
 }

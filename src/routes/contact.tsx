@@ -136,7 +136,7 @@ function SignatureMap() {
               17.4948° N · 78.5719° E
             </h2>
           </div>
-          <div className="hidden md:block ghost-word text-[8vw]">MAP</div>
+          <div className="hidden md:block ghost-word text-[clamp(2rem,8vw,7rem)]">MAP</div>
         </div>
 
         {/* Mobile: card stacks below the map (never covers it). Desktop: glass

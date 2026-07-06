@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import logoUrl from "@/assets/lk-logo.png";
 import { Waterline } from "./Waterline";
 import { MapPin, Phone, Mail } from "lucide-react";
@@ -6,13 +6,13 @@ import { useSiteSettings } from "@/lib/content";
 
 export function Footer() {
   const { data: s } = useSiteSettings();
+  const pathname = useRouterState({ select: (st) => st.location.pathname });
   return (
     <footer className="relative section-dark overflow-hidden pt-16 pb-24 sm:pb-8">
       <Waterline className="absolute top-0 left-0" />
       <div className="pointer-events-none absolute inset-0 caustics opacity-40" />
-      {/* Ghost brand mark — desktop only; on phones it cropped behind the
-          copyright row */}
-      <div className="ghost-word hidden md:block absolute -bottom-10 left-1/2 -translate-x-1/2 text-[26vw] leading-none opacity-40">
+      {/* Ghost brand mark — fully inside the footer at every width */}
+      <div className="ghost-word absolute bottom-0 left-1/2 -translate-x-1/2 text-[clamp(5rem,22vw,18rem)] leading-none opacity-40">
         LK
       </div>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
@@ -47,7 +47,11 @@ export function Footer() {
                 ["/contact", "Contact"],
               ].map(([to, label]) => (
                 <li key={to}>
-                  <Link to={to} className="text-white/70 hover:text-cyan-hi transition-colors">
+                  <Link
+                    to={to}
+                    onClick={() => { if (pathname === to) window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className="text-white/70 hover:text-cyan-hi transition-colors"
+                  >
                     {label}
                   </Link>
                 </li>

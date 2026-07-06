@@ -12,6 +12,7 @@ import { useCategories, useTestimonials } from "@/lib/content";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { Waterline } from "@/components/site/Waterline";
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
+import { Coverflow3D } from "@/components/site/Coverflow3D";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
 import { WaterCore } from "@/components/site/WaterCore";
@@ -153,20 +154,10 @@ function Hero() {
           </Link>
         </motion.div>
 
-        {/* Mobile / tablet chip row — swipeable, below CTAs */}
-        <div className="2xl:hidden mt-6 -mx-5 sm:-mx-6 md:-mx-8 px-5 sm:px-6 md:px-8">
-          <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {categories.map((c) => (
-              <span
-                key={c.slug}
-                className="snap-start shrink-0 hero-chip rounded-full px-3.5 py-2 text-[10px] tracking-widest uppercase whitespace-nowrap"
-              >
-                <span className="hero-chip-n">{c.number}</span>
-                <span className="mx-1.5 opacity-40">·</span>
-                {c.name}
-              </span>
-            ))}
-          </div>
+        {/* Mobile / tablet chip rail — a living marquee: drifts on its own,
+            obeys the thumb instantly, resumes when released */}
+        <div className="2xl:hidden mt-6 -mx-5 sm:-mx-6 md:-mx-8">
+          <ChipMarquee categories={categories} />
         </div>
       </div>
 
@@ -182,6 +173,67 @@ function Hero() {
         </motion.span>
       </div>
     </section>
+  );
+}
+
+/* Hero category chips: a seamless self-drifting marquee the user can grab.
+   Duplicated track + scroll wrap = infinite loop with native touch control. */
+function ChipMarquee({ categories }: { categories: import("@/data/products").Category[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const rail = ref.current;
+    if (!rail) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    let lastUser = 0;
+    let engaged = false;
+    const markUser = () => { lastUser = Date.now(); };
+    const down = () => { engaged = true; markUser(); };
+    const up = () => { engaged = false; markUser(); };
+    rail.addEventListener("pointerdown", down, { passive: true });
+    rail.addEventListener("touchstart", down, { passive: true });
+    addEventListener("pointerup", up, { passive: true });
+    rail.addEventListener("touchend", up, { passive: true });
+    rail.addEventListener("wheel", markUser, { passive: true });
+    const tick = () => {
+      const half = rail.scrollWidth / 2;
+      if (half > rail.clientWidth) {
+        if (!engaged && Date.now() - lastUser > 2200 && !document.hidden) {
+          rail.scrollLeft += 0.5;
+        }
+        // seamless wrap in both directions
+        if (rail.scrollLeft >= half) rail.scrollLeft -= half;
+        else if (rail.scrollLeft <= 0) rail.scrollLeft += half;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      rail.removeEventListener("pointerdown", down);
+      rail.removeEventListener("touchstart", down);
+      removeEventListener("pointerup", up);
+      rail.removeEventListener("touchend", up);
+      rail.removeEventListener("wheel", markUser);
+    };
+  }, []);
+  const row = [...categories, ...categories];
+  return (
+    <div
+      ref={ref}
+      className="flex gap-2 overflow-x-auto px-5 sm:px-6 md:px-8 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {row.map((c, i) => (
+        <span
+          key={c.slug + i}
+          className="shrink-0 hero-chip rounded-full px-3.5 py-2 text-[10px] tracking-widest uppercase whitespace-nowrap"
+        >
+          <span className="hero-chip-n">{c.number}</span>
+          <span className="mx-1.5 opacity-40">·</span>
+          {c.name}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -220,7 +272,7 @@ function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
 function WhoWeAre() {
   return (
     <section className="relative section-light overflow-hidden py-32">
-      <GhostWord className="absolute -top-4 left-1/2 -translate-x-1/2 text-[22vw] opacity-100 whitespace-nowrap">SINCE 2009</GhostWord>
+      <GhostWord className="absolute top-2 left-1/2 -translate-x-1/2 text-[22vw] opacity-100">SINCE 2009</GhostWord>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
         <MicroLabel n="02" className="!text-royal">Who we are</MicroLabel>
         <div className="mt-8 grid gap-16 lg:grid-cols-12 items-start">
@@ -346,78 +398,19 @@ function WhatWeMakePinned() {
   );
 }
 
-// Mobile / tablet: native horizontal swipe rail with gentle auto-advance —
-// the cards drift to the next snap point every few seconds while the section
-// is on screen, and any touch pauses the tour so the user stays in control.
+// Mobile / tablet: 3D coverflow rail — the centred card sits flat, neighbours
+// fold away in perspective. Auto-advances politely, fully touch-controllable.
 function WhatWeMakeSwipe() {
   const { data: categories } = useCategories();
-  const railRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const [dot, setDot] = useState(0);
-
-  useEffect(() => {
-    const rail = railRef.current;
-    const section = sectionRef.current;
-    if (!rail || !section) return;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    let inView = false;
-    let lastUser = 0;
-    const io = new IntersectionObserver(([e]) => { inView = e.isIntersecting; }, { threshold: 0.4 });
-    io.observe(section);
-    const markUser = () => { lastUser = Date.now(); };
-    rail.addEventListener("pointerdown", markUser, { passive: true });
-    rail.addEventListener("wheel", markUser, { passive: true });
-    rail.addEventListener("touchstart", markUser, { passive: true });
-
-    const timer = setInterval(() => {
-      if (!inView || Date.now() - lastUser < 5000) return;
-      const step = rail.clientWidth * 0.85;
-      const atEnd = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 24;
-      rail.scrollTo({ left: atEnd ? 0 : rail.scrollLeft + step, behavior: "smooth" });
-    }, 3800);
-
-    const onScroll = () => {
-      const step = rail.scrollWidth / Math.max(1, rail.childElementCount);
-      setDot(Math.min(Math.round(rail.scrollLeft / step), rail.childElementCount - 1));
-    };
-    rail.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      clearInterval(timer);
-      io.disconnect();
-      rail.removeEventListener("pointerdown", markUser);
-      rail.removeEventListener("wheel", markUser);
-      rail.removeEventListener("touchstart", markUser);
-      rail.removeEventListener("scroll", onScroll);
-    };
-  }, []);
-
   return (
-    <section ref={sectionRef} className="lg:hidden section-dark relative py-24 overflow-hidden">
+    <section className="lg:hidden section-dark relative py-24 overflow-hidden">
       <WhatWeMakeHeading />
-      <div
-        ref={railRef}
-        className="mt-10 flex gap-5 overflow-x-auto snap-x snap-mandatory px-6 md:px-8 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {categories.map((c) => (
-          <div key={c.slug} className="snap-start shrink-0 w-[85vw] sm:w-[70vw] md:w-[52vw]">
-            <CategoryCard c={c} />
-          </div>
-        ))}
-      </div>
-      {/* Progress dots */}
-      <div className="flex justify-center gap-2 mt-1">
-        {categories.map((c, i) => (
-          <span
-            key={c.slug}
-            className={
-              "h-1.5 rounded-full transition-all duration-300 " +
-              (i === dot ? "w-6 bg-cyan-hi" : "w-1.5 bg-white/25")
-            }
-          />
-        ))}
-      </div>
+      <Coverflow3D
+        className="mt-8"
+        variant="y"
+        cardClass="w-[80vw] sm:w-[62vw] md:w-[48vw]"
+        items={categories.map((c) => <CategoryCard key={c.slug} c={c} />)}
+      />
     </section>
   );
 }
@@ -452,7 +445,8 @@ function WhereWeWork() {
         <MicroLabel n="04">Where we work</MicroLabel>
         <h2 className="display-xl mt-3 grad-text" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>Eight industries. One chemistry.</h2>
       </div>
-      <div className="mt-14 space-y-4">
+      {/* Desktop / tablet: the flowing marquee rows */}
+      <div className="hidden md:block mt-14 space-y-4">
         {[0, 1].map((r) => (
           <div key={r} className="relative flex overflow-hidden">
             <div className={"flex gap-6 shrink-0 " + (r === 0 ? "marquee-track" : "marquee-track-rev")}>
@@ -467,6 +461,26 @@ function WhereWeWork() {
               ))}
             </div>
           </div>
+        ))}
+      </div>
+
+      {/* Mobile: a calm, tappable tile grid — each industry gets its own
+          iconed card that rises into view */}
+      <div className="md:hidden mt-10 mx-auto max-w-7xl px-6 grid grid-cols-2 gap-3">
+        {industries.map((ind, k) => (
+          <motion.div
+            key={ind.name}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-8%" }}
+            transition={{ delay: (k % 4) * 0.06, duration: 0.5 }}
+            className="bento-tile rounded-2xl p-4 flex flex-col gap-3"
+          >
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-hi/15 text-cyan-hi">
+              <ind.icon className="h-5 w-5" />
+            </span>
+            <span className="display-xl text-base leading-tight text-foreground">{ind.name}</span>
+          </motion.div>
         ))}
       </div>
     </section>
@@ -554,7 +568,7 @@ function WhyLK() {
   ];
   return (
     <section className="section-light py-28 relative overflow-hidden">
-      <GhostWord className="absolute -bottom-4 -right-4 text-[22vw]">PURITY</GhostWord>
+      <GhostWord className="absolute bottom-2 right-0 text-[22vw]">PURITY</GhostWord>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
         <MicroLabel n="06" className="!text-royal">Why LK</MicroLabel>
         <h2 className="display-xl mt-3" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>
@@ -631,11 +645,11 @@ function Proof() {
         </div>
       </div>
       <div className="mt-16 overflow-hidden opacity-70">
-        <div className="flex gap-10 marquee-track">
+        <div className="flex gap-12 sm:gap-16 marquee-track marquee-slow">
           {row.map((c, k) => (
             <div key={c + k} className="shrink-0 flex items-center gap-3 text-white/60">
               <Droplets className="h-4 w-4 text-cyan-hi" />
-              <span className="micro-label">{c}</span>
+              <span className="micro-label whitespace-nowrap">{c}</span>
             </div>
           ))}
         </div>

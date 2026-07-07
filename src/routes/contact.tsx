@@ -11,7 +11,7 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact — LK Chemicals, Hyderabad" },
-      { name: "description", content: "Reach LK Chemicals Pvt. Ltd. — Plot No. 58, Phase-2, EC Nagar, Cherlapally, Hyderabad. Phone +91 98666 00699." },
+      { name: "description", content: "Reach LK Chemicals Pvt. Ltd. — Plot No. 157, Officers Colony, Cherlapally, Hyderabad. Phone +91 98666 00699." },
       { property: "og:title", content: "Contact LK Chemicals" },
       { property: "og:description", content: "Phone, WhatsApp, email and our Cherlapally address." },
     ],
@@ -40,16 +40,32 @@ function ContactPage() {
           <div className="grid gap-4 content-start">
             <Card icon={<MapPin className="h-4 w-4"/>} label="Address">
               {s.address}
+              {s.address2 && (
+                <>
+                  <br />
+                  <span className="text-white/50">Unit: {s.address2}</span>
+                </>
+              )}
             </Card>
             <Card icon={<User className="h-4 w-4"/>} label="Contact person">
               {s.contactPerson}<br />
               <span className="text-white/50">{s.contactRole}</span>
             </Card>
             <Card icon={<Phone className="h-4 w-4"/>} label="Phone">
-              <a className="hover:text-cyan-hi" href={`tel:${s.phone.replace(/\s+/g, "")}`}>{s.phone}</a>
+              {[s.phone, s.phone2, s.phone3].filter(Boolean).map((p, i) => (
+                <span key={p}>
+                  {i > 0 && <br />}
+                  <a className="hover:text-cyan-hi" href={`tel:${p!.replace(/\s+/g, "")}`}>{p}</a>
+                </span>
+              ))}
             </Card>
             <Card icon={<Mail className="h-4 w-4"/>} label="Email">
-              <a className="hover:text-cyan-hi" href={`mailto:${s.email}`}>{s.email}</a>
+              {[s.email, s.email2].filter(Boolean).map((e, i) => (
+                <span key={e}>
+                  {i > 0 && <br />}
+                  <a className="hover:text-cyan-hi" href={`mailto:${e}`}>{e}</a>
+                </span>
+              ))}
             </Card>
             <Card icon={<Clock className="h-4 w-4"/>} label="Hours">
               {s.hours}<br />

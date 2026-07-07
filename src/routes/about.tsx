@@ -15,21 +15,21 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — LK Chemicals Pvt. Ltd." },
-      { name: "description", content: "The story of LK Chemicals — Hyderabad-based manufacturer of industrial water treatment chemistry since 2009." },
+      { name: "description", content: "The story of LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of water treatment chemicals and plants since 2013, serving Telangana, AP, Karnataka, Tamil Nadu and Maharashtra." },
       { property: "og:title", content: "About LK Chemicals" },
-      { property: "og:description", content: "Manufacturing water chemistry in Hyderabad since 2009." },
+      { property: "og:description", content: "Manufacturing water treatment chemistry in Hyderabad since 2013." },
     ],
   }),
   component: AboutPage,
 });
 
 const milestones = [
-  { year: "2009", title: "Founded in Hyderabad", body: "Shiva Krishna Kangadekar starts LK Chemicals with a single dosing programme for a local pharma plant." },
-  { year: "2012", title: "First RO antiscalant", body: "Scale Master RO Antiscalant enters series manufacturing." },
-  { year: "2015", title: "Cherlapally facility", body: "Phase-2, EC Nagar plant commissioned; monthly capacity crosses 5 T." },
-  { year: "2018", title: "Service arm launched", body: "In-house descaling, CIP and plant maintenance crews for existing customers." },
-  { year: "2021", title: "OEM programme", body: "Custom-labelled formulations for downstream distributors across South India." },
-  { year: "2024", title: "10 tons / month", body: "Full formulary — RO, boiler, cooling tower, descaling and resins — 30+ SKUs." },
+  { year: "2013", title: "Founded in Hyderabad", body: "Shiva Krishna Kangadekar starts LK Chemicals, supplying water treatment chemicals to local industry." },
+  { year: "2015", title: "Scale Master RO range", body: "Food-grade Scale Master RO antiscalants — LK 1001, LK 1010, LK 5001 — enter series manufacturing." },
+  { year: "2017", title: "Cherlapally facility", body: "EC Nagar plant commissioned; the boiler (LK 2000) and cooling tower (LK 3000) formularies are added." },
+  { year: "2019", title: "Service arm launched", body: "In-house descaling, CIP and plant maintenance crews for RO, boiler, cooling tower, softener and DM plants." },
+  { year: "2022", title: "Plants & projects", body: "RO, DM, softener, ETP and STP plant installations grow across Telangana, AP, Karnataka, Tamil Nadu and Maharashtra." },
+  { year: "2024", title: "LK Chemicals Pvt. Ltd.", body: "Incorporated as LK Chemicals Pvt. Ltd. (formerly LK Chemicals) — ISO 9001:2015, 70+ products, 10 tons a month." },
 ];
 
 function AboutPage() {
@@ -41,10 +41,10 @@ function AboutPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/40 to-ink hero-lighten-overlay" />
         <div className="absolute inset-0 caustics opacity-30" />
         <div className="relative mx-auto max-w-7xl px-6 md:px-8">
-          <MicroLabel n="00">About · Est. 2009</MicroLabel>
+          <MicroLabel n="00">About · Est. 2013 · An ISO 9001:2015 Company</MicroLabel>
           <h1 className="display-xl mt-6 grad-text" style={{ fontSize: "clamp(2.75rem, 11vw, 8rem)" }}>The story of a formula.</h1>
           <p className="mt-8 max-w-2xl text-lg text-white/70">
-            LK Chemicals began with one plant, one bore well and one problem to solve. Fifteen years on, we're still solving problems — just for a hundred more plants.
+            LK Chemicals began with one plant, one bore well and one problem to solve. More than a decade on, we're still solving problems — just for a hundred more plants across five states.
           </p>
         </div>
       </section>
@@ -53,7 +53,7 @@ function AboutPage() {
       <section className="section-dark relative py-24">
         <div className="mx-auto max-w-6xl px-6 md:px-8 grid gap-16 lg:grid-cols-[220px_1fr] items-start">
           <div className="sticky top-32 self-start hidden lg:block">
-            <div className="display-xl text-8xl grad-text">2009<br/>→<br/><span className="grad-leaf-text">TODAY</span></div>
+            <div className="display-xl text-8xl grad-text">2013<br/>→<br/><span className="grad-leaf-text">TODAY</span></div>
           </div>
           <ol className="relative border-l border-white/10 pl-6 md:pl-10 space-y-10">
             {milestones.map((m, i) => (

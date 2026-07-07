@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useInView } from "motion/react";
-import { ArrowDown, Beaker, Building2, Droplets, Factory, FlaskConical, Hotel, Leaf, Utensils, Zap } from "lucide-react";
+import { ArrowDown, Building2, Droplets, Factory, FlaskConical, Hotel, Laptop, Layers, Scroll, Shirt, Stethoscope, Utensils, Wheat, Zap } from "lucide-react";
 import heroImg from "@/assets/hero-depth.jpg";
 import dropletImg from "@/assets/droplet.jpg";
 import plantImg from "@/assets/plant.jpg";
@@ -21,9 +21,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "LK Chemicals — We Engineer Water" },
-      { name: "description", content: "Industrial water treatment chemicals and services manufactured in Hyderabad since 2009. RO, boiler, cooling tower, descaling chemicals and resins." },
+      { name: "description", content: "Industrial water treatment chemicals, plants and services from Hyderabad since 2013. RO, boiler, cooling tower, chiller, descaling, ETP & STP chemicals, plus RO/DM/softener/STP/ETP plants." },
       { property: "og:title", content: "LK Chemicals — We Engineer Water" },
-      { property: "og:description", content: "Industrial water treatment chemicals and services manufactured in Hyderabad since 2009." },
+      { property: "og:description", content: "Industrial water treatment chemicals, plants and services from Hyderabad since 2013." },
     ],
   }),
   component: HomePage,
@@ -120,7 +120,7 @@ function Hero() {
 
       {/* Content — flex column that always fits viewport */}
       <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-6 md:px-8 flex-1 flex flex-col justify-center pt-24 sm:pt-28 pb-24 sm:pb-20 min-h-0">
-        <MicroLabel n="00">The depth · Hyderabad · Since 2009</MicroLabel>
+        <MicroLabel n="00">The depth · Hyderabad · Since 2013</MicroLabel>
         <motion.h1
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -139,7 +139,7 @@ function Hero() {
           className="mt-4 sm:mt-6 max-w-xl text-white/70"
           style={{ fontSize: "clamp(0.95rem, 1.6vw, 1.125rem)" }}
         >
-          Industrial water treatment chemicals and solutions — manufactured in Hyderabad since 2009 for pharma, power, food, textile and beyond.
+          Industrial water treatment chemicals, plants and services — manufactured in Hyderabad since 2013 for power, pharma, steel, paper, sugar mills and beyond.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -272,7 +272,7 @@ function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
 function WhoWeAre() {
   return (
     <section className="relative section-light overflow-hidden py-32">
-      <GhostWord className="absolute top-2 left-1/2 -translate-x-1/2 text-[22vw] opacity-100">SINCE 2009</GhostWord>
+      <GhostWord className="absolute top-2 left-1/2 -translate-x-1/2 text-[22vw] opacity-100">SINCE 2013</GhostWord>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
         <MicroLabel n="02" className="!text-royal">Who we are</MicroLabel>
         <div className="mt-8 grid gap-16 lg:grid-cols-12 items-start">
@@ -286,10 +286,10 @@ function WhoWeAre() {
             </p>
             <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
               {[
-                { n: 15, s: "+ yrs", l: "Manufacturing" },
+                { n: 13, s: "+ yrs", l: "In water treatment" },
                 { n: 10, s: " T", l: "per month capacity" },
-                { n: 8, s: "", l: "Industries served" },
-                { n: 30, s: "+", l: "Formulations" },
+                { n: 12, s: "", l: "Industries served" },
+                { n: 70, s: "+", l: "Products & formulations" },
               ].map((s) => (
                 <div key={s.l}>
                   <div className="display-xl text-4xl sm:text-5xl md:text-6xl">
@@ -348,7 +348,7 @@ function WhatWeMakeHeading() {
     <div className="mx-auto max-w-7xl px-6 md:px-8 w-full shrink-0">
       <MicroLabel n="03">What we make</MicroLabel>
       <h2 className="display-xl mt-3 grad-text max-w-4xl" style={{ fontSize: "clamp(2rem, 6vw, 4.5rem)" }}>
-        Five categories. One formulary.
+        Nine categories. One formulary.
       </h2>
     </div>
   );
@@ -427,14 +427,18 @@ function WhatWeMake() {
 /* =============== 04 WHERE WE WORK =============== */
 
 const industries = [
-  { name: "Manufacturing", icon: Factory },
-  { name: "Pharmaceutical", icon: FlaskConical },
-  { name: "Food & Beverage", icon: Utensils },
   { name: "Power Plants", icon: Zap },
-  { name: "Textile", icon: Leaf },
-  { name: "Commercial Buildings", icon: Building2 },
-  { name: "Hospitality", icon: Hotel },
-  { name: "Automotive", icon: Beaker },
+  { name: "Pharmaceutical", icon: FlaskConical },
+  { name: "Steel", icon: Factory },
+  { name: "Aluminium", icon: Layers },
+  { name: "Paper Mills", icon: Scroll },
+  { name: "Sugar Mills", icon: Wheat },
+  { name: "IT Parks & Offices", icon: Laptop },
+  { name: "Hotels & Hospitality", icon: Hotel },
+  { name: "Hospitals", icon: Stethoscope },
+  { name: "Food & Beverage", icon: Utensils },
+  { name: "Textile", icon: Shirt },
+  { name: "Apartments & Communities", icon: Building2 },
 ];
 
 function WhereWeWork() {
@@ -443,7 +447,10 @@ function WhereWeWork() {
     <section className="section-dark py-28 overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 md:px-8">
         <MicroLabel n="04">Where we work</MicroLabel>
-        <h2 className="display-xl mt-3 grad-text" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>Eight industries. One chemistry.</h2>
+        <h2 className="display-xl mt-3 grad-text" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>Twelve industries. One chemistry.</h2>
+        <p className="mt-4 max-w-xl text-white/60">
+          Supplying and servicing across Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra.
+        </p>
       </div>
       {/* Desktop / tablet: the flowing marquee rows */}
       <div className="hidden md:block mt-14 space-y-4">
@@ -559,12 +566,12 @@ function HowWaterGetsTreated() {
 
 function WhyLK() {
   const items = [
-    { title: "Quality-first manufacturing", body: "Every batch tested against a technical datasheet before it ships.", span: "md:col-span-2 md:row-span-2", tone: "leaf", img: labImg },
-    { title: "Custom formulations", body: "OEM and site-specific blends for unusual feed water conditions.", span: "", tone: "cyan" },
-    { title: "Application expertise", body: "Fifteen years of field data — we know what actually works.", span: "", tone: "cyan" },
-    { title: "Technical support", body: "Direct line to a chemist, not a call centre.", span: "md:col-span-2", tone: "cyan" },
-    { title: "Fast response", body: "Emergency dispatch and same-day site visits in Telangana.", span: "", tone: "leaf", img: plantImg },
-    { title: "Reliability", body: "Long-term contracts with pharma and power customers since 2011.", span: "", tone: "cyan" },
+    { title: "Innovative solutions", body: "Our focus is on providing innovative solutions to the changing needs and requirements of our customers — every batch tested against a technical datasheet before it ships.", span: "md:col-span-2 md:row-span-2", tone: "leaf", img: labImg },
+    { title: "Quality services", body: "Quality services up to the expectations and satisfaction of our customers.", span: "", tone: "cyan" },
+    { title: "Technical service manpower", body: "Trained crews dedicated to the R.O., D.M., softener and descaling departments.", span: "", tone: "cyan" },
+    { title: "Broad customer network", body: "Power, pharma, steel, aluminium, paper & sugar mills, IT and hotels — across Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra.", span: "md:col-span-2", tone: "cyan" },
+    { title: "Competitive on all fronts", body: "We always endeavour to be competitive on all fronts — chemistry, service and price.", span: "", tone: "leaf", img: plantImg },
+    { title: "Reliability", body: "Long-term contracts with pharma and power customers since 2014.", span: "", tone: "cyan" },
   ];
   return (
     <section className="section-light py-28 relative overflow-hidden">
@@ -614,7 +621,7 @@ function Proof() {
     const id = setInterval(() => setI((x) => (x + 1) % quotes.length), 6000);
     return () => clearInterval(id);
   }, [quotes.length]);
-  const certs = ["ISO 9001", "MSME Registered", "GST Compliant", "REACH Aware", "NSF-grade RM", "Batch Certified"];
+  const certs = ["ISO 9001:2015", "GMP Certified", "Food-Grade Antiscalants", "Scale Master RO Antiscalants", "Minara", "Master Clean", "MSME Registered", "GST Compliant", "REACH Aware", "Batch Certified"];
   const row = [...certs, ...certs];
   return (
     <section className="section-dark py-28 relative overflow-hidden">

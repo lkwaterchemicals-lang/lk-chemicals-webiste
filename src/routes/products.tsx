@@ -15,7 +15,7 @@ export const Route = createFileRoute("/products")({
   head: () => ({
     meta: [
       { title: "Products — LK Chemicals Formulary" },
-      { name: "description", content: "Full catalog of RO, boiler, cooling tower, descaling chemicals, ion exchange resins and process aids from LK Chemicals." },
+      { name: "description", content: "Full catalog of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, resin & AHU cleaners, plus RO, DM, softener, STP and ETP plants from LK Chemicals." },
       { property: "og:title", content: "The Formulary — LK Chemicals" },
       { property: "og:description", content: "Every product in the LK water treatment catalog." },
     ],
@@ -191,7 +191,7 @@ function ProductsPage() {
                           className="group block rounded-3xl overflow-hidden bg-white/[0.04] border border-white/10 hover-lift h-full"
                         >
                           <div className="relative h-44 sm:h-48 overflow-hidden">
-                            <img src={c.image} alt="" className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-all duration-700" />
+                            <img src={p.image ?? c.image} alt="" className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-all duration-700" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
                             <div className="absolute bottom-3 left-4 micro-label">{c.number} · {c.name}</div>
                           </div>

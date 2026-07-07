@@ -11,7 +11,7 @@ export const Route = createFileRoute("/services")({
   head: () => ({
     meta: [
       { title: "Services — LK Chemicals" },
-      { name: "description", content: "Industrial water treatment services — RO plant repair, membrane maintenance, boiler and chiller descaling, cooling tower treatment, water softening and consultation." },
+      { name: "description", content: "Industrial water treatment services — RO plant servicing, boiler, chiller, condenser, heat exchanger, moulds, AHU and pipeline descaling, softener and DM plant service, resin cleaning, ETP & STP services, HVAC AMCs and consultation." },
       { property: "og:title", content: "Field Operations — LK Chemicals" },
       { property: "og:description", content: "We don't just supply. We service." },
     ],
@@ -33,7 +33,7 @@ function ServicesPage() {
             We don't just supply.<br/><span className="grad-leaf-text">We service.</span>
           </h1>
           <p className="mt-8 max-w-xl text-lg text-white/70">
-            Eleven service lines run out of Hyderabad, backed by our own chemistry, our own crew and our own vehicles.
+            {services.length} service lines run out of Hyderabad, backed by our own chemistry, our own crew and our own vehicles.
           </p>
         </div>
       </section>

@@ -29,11 +29,12 @@ export function Footer() {
               />
               <div>
                 <div className="font-display text-lg text-white font-bold">LK Chemicals Pvt. Ltd.</div>
-                <div className="micro-label mt-1">Since 2009 · Hyderabad</div>
+                <div className="micro-label mt-1">Since 2013 · Hyderabad · An ISO 9001:2015 Company</div>
               </div>
             </div>
             <p className="mt-6 max-w-md text-sm text-white/60">
-              Industrial water treatment chemicals and services. Engineered in Hyderabad, trusted across India.
+              We provide the best water treatment solution — chemicals, plants and services engineered in
+              Hyderabad, trusted across Telangana, AP, Karnataka, Tamil Nadu and Maharashtra.
             </p>
           </div>
           <div>
@@ -62,14 +63,23 @@ export function Footer() {
             <div className="micro-label mb-4">Reach us</div>
             <ul className="space-y-3 text-sm text-white/70">
               <li className="flex gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> {s.address}</li>
+              {s.address2 && (
+                <li className="flex gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> {s.address2}</li>
+              )}
               <li className="flex gap-2"><Phone className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> <a href={`tel:${s.phone.replace(/\s+/g, "")}`} className="hover:text-white">{s.phone}</a></li>
+              {s.phone2 && (
+                <li className="flex gap-2"><Phone className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> <a href={`tel:${s.phone2.replace(/\s+/g, "")}`} className="hover:text-white">{s.phone2}</a></li>
+              )}
               <li className="flex gap-2"><Mail className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> <a href={`mailto:${s.email}`} className="hover:text-white">{s.email}</a></li>
+              {s.email2 && (
+                <li className="flex gap-2"><Mail className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> <a href={`mailto:${s.email2}`} className="hover:text-white">{s.email2}</a></li>
+              )}
             </ul>
           </div>
         </div>
         <div className="mt-16 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
           <p>© {new Date().getFullYear()} LK Chemicals Pvt. Ltd. All rights reserved.</p>
-          <p>Engineered for water. Built in Hyderabad.</p>
+          <p>We provide the best water treatment solution.</p>
         </div>
       </div>
     </footer>

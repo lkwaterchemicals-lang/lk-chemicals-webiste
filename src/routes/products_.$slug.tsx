@@ -81,8 +81,14 @@ function ProductDetail() {
                 style={{ transformStyle: "preserve-3d" }}
                 className="relative rounded-3xl overflow-hidden glass-dark"
               >
-                <img src={cat.image} alt="" className="h-72 w-full object-cover" />
-                <img src={drumImg} alt={product.name} className="absolute inset-0 h-full w-full object-contain p-8 mix-blend-screen" />
+                {product.image ? (
+                  <img src={product.image} alt={product.name} className="h-72 w-full object-cover" />
+                ) : (
+                  <>
+                    <img src={cat.image} alt="" className="h-72 w-full object-cover" />
+                    <img src={drumImg} alt={product.name} className="absolute inset-0 h-full w-full object-contain p-8 mix-blend-screen" />
+                  </>
+                )}
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent" />
               </motion.div>
             </div>

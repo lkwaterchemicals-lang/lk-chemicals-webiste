@@ -26,28 +26,73 @@ npx tsc --noEmit # typecheck
 
 Every public page reads content through hooks in `src/lib/content.ts`
 (`useCategories`, `useProducts`, `useServices`, `useGalleryItems`,
-`useTestimonials`, `useSiteSettings`). Each hook:
+`useTestimonials`, `useSiteSettings`).
 
-1. renders instantly with **built-in fallback content** (`src/data/products.ts`, `src/data/content.ts`),
-2. then fetches the matching **Firestore collection** and swaps it in **only if it has documents**.
+**The catalog (`categories`, `products`, `services`) is fully admin-managed with
+no built-in content.** These hooks render only what the dashboard has published:
+an empty Firestore yields an empty (not fabricated) catalog, `draft`/`archived`
+records are hidden from the public site, and results are ordered by an `order`
+field (falling back to `number`). The public listing pages show a clean
+"being set up" empty state until the admin creates content.
 
-So: an empty/unreachable Firestore never blanks the site, and anything the admin
-saves overrides the built-ins. Media URLs seeded into Firestore use stable
-`/content/*.jpg` paths (`public/content/`), never Vite's hashed asset URLs.
+**Media, testimonials and site settings keep built-in fallbacks**
+(`src/data/content.ts`) so those surfaces never blank while the client fills them
+in; they fetch the Firestore collection and swap it in only if it has documents.
 
 Firestore collections: `categories`, `products`, `services`, `gallery`,
-`testimonials`, `enquiries`, and `settings/site` (single doc).
+`testimonials`, `enquiries`, `settings/site` (single doc), and `pages/*` (one
+doc per public page — see below).
+
+### Catalog data model (rich, scalable, hierarchical)
+
+`Category` and `Product` (`src/data/products.ts`) carry a small set of required
+identity fields plus a large set of **optional, admin-managed** fields, so the
+catalog scales without code changes:
+
+- **Categories** — `parent` (unlimited nesting), `status`, `featured`, `iconName`,
+  `banner`, and a full SEO block (`metaTitle` / `metaDescription` / `keywords` / `ogImage`).
+- **Products** — `subcategory`, `status`, `featured`, `order`, a repeatable
+  **specifications** engine (`{name, value, unit}[]`), **gallery** (ordered images),
+  **documents** (labelled file uploads — TDS/SDS/certs/brochures), **related**
+  products (cross-sell), and the same SEO block.
+
+The admin editor renders these via new field types in `src/admin/fields.tsx`
+(`GroupInput`, `GalleryInput`, `DocumentsInput`, `MultiRefInput`) wired through
+the registry's `FieldDef`. Product detail pages render specs, gallery, downloads
+and related items, and emit `Product` + `BreadcrumbList` JSON-LD.
+
+### Per-page content (`pages/*`)
+
+The rest of each page — hero copy and imagery, stats, the industries list,
+the "how water gets treated" steps, "why LK" tiles, the About timeline /
+mission / vision / facilities / values, the services process, footer brand
+text, etc. — is **not** hard-coded in the route files. It reads through
+`src/lib/pages.ts` (`useHomeContent`, `useAboutContent`, `useServicesContent`,
+`useProductsContent`, `useGalleryContent`, `useContactContent`,
+`useGlobalContent`), each of which merges a `pages/<id>` Firestore document over
+the built-in defaults in **`src/data/site.ts`** (same instant-fallback pattern
+as above — a shallow merge, so any field the admin hasn't touched keeps its
+default). Industry icons are stored by name and resolved via `src/lib/icons.ts`.
 
 ## Admin dashboard — `/admin`
 
 - Sign in with the Firebase Auth user (created in the Firebase console).
-- Tabs: Categories, Products, Services, Gallery, Testimonials, Enquiries, Site settings.
+- Tabs: Website pages, Categories, Products, Services, Gallery, Testimonials, Enquiries, Site settings.
 - Each collection: add / edit / delete, plus **“Seed from built-in data”** when empty —
   copies the built-in content into Firestore so it becomes editable.
+- **Website pages** (`/admin/content`) — a schema-driven editor (one card per public
+  page) for all the per-page copy and imagery described above. Repeatable sections
+  (stats, industries, steps, milestones, values, facilities…) can be added, reordered
+  and removed; text/image fields save straight to the `pages/<id>` doc. The schema
+  lives in `src/admin/content-schema.tsx`; the editor in `src/admin/page-editor.tsx`.
 - Image fields upload straight to Cloudinary (progress bar) or accept a pasted URL.
 - Site settings (phone, WhatsApp, email, address, hours, map query) drive the footer,
   contact page, call/WhatsApp buttons and the embedded Google Map.
 - Enquiry-form submissions land in the `enquiries` collection and are listed newest-first.
+
+> The `pages/*` docs are covered by the existing catch-all Firestore rule
+> (`match /{collection}/{doc}` → public read, authenticated write), so no rules
+> change is needed.
 
 ### One-time Firebase setup (required before the admin can save)
 

@@ -3,7 +3,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Copy, Database, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
-import { categories as staticCategories } from "@/data/products";
 import { deleteRows, duplicateRow, saveRow, seedModule, useCol, useInvalidate } from "./api";
 import { EditorDrawer } from "./editor";
 import { DataTable, type Col } from "./table";
@@ -32,37 +31,53 @@ export function ModulePage({
   const { data: allRows = [], isLoading, error } = useCol(def.id, def.order);
   const rows = filterRows ? filterRows(allRows) : allRows;
   const { data: cats = [] } = useCol("categories", "number");
+  const { data: prods = [] } = useCol("products");
   const invalidate = useInvalidate();
   const [editing, setEditing] = useState<Record<string, unknown> | null>(urlNew ? {} : null);
   const [confirmDelete, setConfirmDelete] = useState<Row[] | null>(null);
   const [seeding, setSeeding] = useState(false);
+  const editingId = editing?.__id as string | undefined;
 
-  // Product category options come from Firestore (or the static fallback).
-  const fields = useMemo(
-    () =>
-      def.fields.map((f) => {
-        if (def.id === "products" && f.key === "category") {
-          const opts = (cats.length ? cats : staticCategories).map((c) => String((c as Record<string, unknown>).slug));
-          return { ...f, options: opts };
-        }
-        return f;
-      }),
-    [def, cats],
-  );
+  // Reference options (category / parent / related products) are resolved live
+  // from Firestore so selects always reflect what actually exists.
+  const fields = useMemo(() => {
+    const catItems = cats.map((c) => ({
+      value: String(c.slug ?? c.__id),
+      label: String(c.name ?? c.__id),
+    }));
+    const prodItems = prods.map((p) => ({
+      value: String(p.slug ?? p.__id),
+      label: String(p.name ?? p.__id),
+    }));
+    return def.fields.map((f) => {
+      if (f.type === "select" && (f.key === "category" || f.key === "parent")) {
+        // A category can't be its own parent.
+        const items = f.key === "parent" ? catItems.filter((c) => c.value !== editingId) : catItems;
+        return { ...f, optionItems: items };
+      }
+      if (f.type === "multiref" && f.refCollection === "products") {
+        return { ...f, optionItems: prodItems.filter((p) => p.value !== editingId) };
+      }
+      return f;
+    });
+  }, [def, cats, prods, editingId]);
 
   const doDelete = async (targets: Row[]) => {
     const undo = await deleteRows(def, targets);
     invalidate(def.id);
-    toast(`Deleted ${targets.length === 1 ? rowTitle(def, targets[0]) : `${targets.length} ${def.label.toLowerCase()}`}`, {
-      action: {
-        label: "Undo",
-        onClick: async () => {
-          await undo();
-          invalidate(def.id);
-          toast.success("Restored");
+    toast(
+      `Deleted ${targets.length === 1 ? rowTitle(def, targets[0]) : `${targets.length} ${def.label.toLowerCase()}`}`,
+      {
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            await undo();
+            invalidate(def.id);
+            toast.success("Restored");
+          },
         },
       },
-    });
+    );
   };
 
   const doDuplicate = async (row: Row) => {
@@ -156,7 +171,13 @@ export function ModulePage({
         )}
         mobileCard={(r) => (
           <div className="flex items-center gap-3">
-            {rowImage(def, r) && <img src={rowImage(def, r)!} alt="" className="h-10 w-14 rounded-lg object-cover shrink-0" />}
+            {rowImage(def, r) && (
+              <img
+                src={rowImage(def, r)!}
+                alt=""
+                className="h-10 w-14 rounded-lg object-cover shrink-0"
+              />
+            )}
             <div className="min-w-0">
               <div className="text-[13px] font-semibold truncate">{rowTitle(def, r)}</div>
               {def.subtitleField && (
@@ -177,7 +198,11 @@ export function ModulePage({
         onSave={async (values) => {
           await saveRow(def, values, (editing?.__id as string) || undefined);
           invalidate(def.id);
-          toast.success(editing?.__id ? "Saved" : `${def.singular[0].toUpperCase() + def.singular.slice(1)} created`);
+          toast.success(
+            editing?.__id
+              ? "Saved"
+              : `${def.singular[0].toUpperCase() + def.singular.slice(1)} created`,
+          );
         }}
       />
 

@@ -2,23 +2,43 @@
 // admin manages: its Firestore shape, edit fields, seeds and public preview.
 import type { LucideIcon } from "lucide-react";
 import { Image as ImageIcon, LayoutGrid, Package, Quote, Wrench } from "lucide-react";
-import { categories as staticCategories, products as staticProducts } from "@/data/products";
-import { staticServices, staticGallery, staticTestimonials } from "@/data/content";
+import { staticGallery, staticTestimonials } from "@/data/content";
+import { ICON_NAMES } from "@/lib/icons";
 
 export type Row = Record<string, unknown> & { __id: string };
 
-export type FieldType = "text" | "textarea" | "list" | "image" | "boolean" | "select";
+export type FieldType =
+  | "text"
+  | "textarea"
+  | "list"
+  | "image"
+  | "boolean"
+  | "select"
+  | "group" // repeatable rows of sub-fields (specs, etc.)
+  | "gallery" // ordered list of image URLs
+  | "documents" // labelled file uploads
+  | "multiref"; // multi-select of other records
 
 export type FieldDef = {
   key: string;
   label: string;
   type: FieldType;
   options?: string[];
+  /** select / multiref options carrying a display label (injected at runtime) */
+  optionItems?: { value: string; label: string }[];
   required?: boolean;
   hint?: string;
   placeholder?: string;
   /** products/categories: auto-fill from this field via slugify while untouched */
   slugOf?: string;
+  /** group: sub-fields rendered per row */
+  itemFields?: FieldDef[];
+  /** group: singular noun for the add button */
+  itemNoun?: string;
+  /** group: which sub-field to surface as a row title */
+  itemTitleKey?: string;
+  /** multiref: the collection whose records this field references */
+  refCollection?: string;
 };
 
 export type ModuleDef = {
@@ -37,7 +57,11 @@ export type ModuleDef = {
 };
 
 export const slugify = (s: string) =>
-  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 
 // Seeded docs must not store Vite's hashed asset URLs (they change every
 // build). The same images live at stable paths under /public/content, so
@@ -57,6 +81,36 @@ export function stabilizeAssets(item: Record<string, unknown>): Record<string, u
   return out;
 }
 
+// Reused across products, categories and services so every entity gets the
+// same SEO surface. `status` gates public visibility (draft/archived are hidden).
+const STATUS_FIELD: FieldDef = {
+  key: "status",
+  label: "Status",
+  type: "select",
+  options: ["published", "draft", "archived"],
+  hint: "Draft & archived are hidden from the public site",
+};
+
+const SEO_FIELDS: FieldDef[] = [
+  { key: "metaTitle", label: "SEO title", type: "text", hint: "Defaults to the name" },
+  { key: "metaDescription", label: "SEO description", type: "textarea", hint: "~155 characters" },
+  { key: "keywords", label: "Keywords", type: "text", hint: "Comma separated" },
+  { key: "ogImage", label: "Social share image", type: "image", hint: "Open Graph / Twitter card" },
+];
+
+const SPEC_FIELD: FieldDef = {
+  key: "specifications",
+  label: "Specifications",
+  type: "group",
+  itemNoun: "spec",
+  itemTitleKey: "name",
+  itemFields: [
+    { key: "name", label: "Name", type: "text" },
+    { key: "value", label: "Value", type: "text" },
+    { key: "unit", label: "Unit", type: "text" },
+  ],
+};
+
 export const MODULES: ModuleDef[] = [
   {
     id: "products",
@@ -68,16 +122,62 @@ export const MODULES: ModuleDef[] = [
     subtitleField: "category",
     imageKey: "image",
     fields: [
-      { key: "name", label: "Name", type: "text", required: true, placeholder: "LK 1001 High Silica RO Antiscalant" },
-      { key: "slug", label: "Slug", type: "text", hint: "URL id — auto-generated from the name", slugOf: "name" },
+      {
+        key: "name",
+        label: "Name",
+        type: "text",
+        required: true,
+        placeholder: "e.g. High Silica RO Antiscalant",
+      },
+      {
+        key: "slug",
+        label: "Slug",
+        type: "text",
+        hint: "URL id — auto-generated from the name",
+        slugOf: "name",
+      },
       { key: "category", label: "Category", type: "select", options: [], required: true },
+      {
+        key: "subcategory",
+        label: "Subcategory",
+        type: "text",
+        hint: "Optional grouping within the category",
+      },
+      { ...STATUS_FIELD },
+      { key: "featured", label: "Featured", type: "boolean", hint: "Highlight on listings" },
+      { key: "order", label: "Display order", type: "text", hint: "Lower shows first (e.g. 10)" },
       { key: "description", label: "Description", type: "textarea", required: true },
       { key: "features", label: "Features", type: "list", hint: "One per line" },
       { key: "applications", label: "Applications", type: "list", hint: "One per line" },
       { key: "packing", label: "Packing options", type: "list", hint: "One per line" },
-      { key: "image", label: "Product photo", type: "image", hint: "Optional — falls back to the category image" },
+      { ...SPEC_FIELD },
+      {
+        key: "image",
+        label: "Primary photo",
+        type: "image",
+        hint: "Optional — falls back to the category image",
+      },
+      {
+        key: "gallery",
+        label: "Gallery",
+        type: "gallery",
+        hint: "Additional images, drag-orderable",
+      },
+      {
+        key: "documents",
+        label: "Documents",
+        type: "documents",
+        hint: "TDS, SDS, certificates, brochures…",
+      },
+      {
+        key: "related",
+        label: "Related products",
+        type: "multiref",
+        refCollection: "products",
+        hint: "Cross-sell on the product page",
+      },
+      ...SEO_FIELDS,
     ],
-    seed: () => staticProducts.map((p) => ({ ...p })),
     publicPath: (r) => (r.slug ? `/products/${String(r.slug)}` : null),
   },
   {
@@ -92,13 +192,41 @@ export const MODULES: ModuleDef[] = [
     order: "number",
     fields: [
       { key: "name", label: "Name", type: "text", required: true },
-      { key: "slug", label: "Slug", type: "text", hint: "URL id — auto-generated from the name", slugOf: "name" },
-      { key: "number", label: "Number", type: "text", required: true, hint: "01–99, controls display order" },
+      {
+        key: "slug",
+        label: "Slug",
+        type: "text",
+        hint: "URL id — auto-generated from the name",
+        slugOf: "name",
+      },
+      {
+        key: "parent",
+        label: "Parent category",
+        type: "select",
+        options: [],
+        hint: "Optional — leave blank for a top-level category",
+      },
+      {
+        key: "number",
+        label: "Number",
+        type: "text",
+        required: true,
+        hint: "01–99, controls display order",
+      },
+      { ...STATUS_FIELD },
+      { key: "featured", label: "Featured", type: "boolean" },
+      { key: "iconName", label: "Icon", type: "select", options: ICON_NAMES },
       { key: "tagline", label: "Tagline", type: "text" },
       { key: "description", label: "Description", type: "textarea" },
       { key: "image", label: "Cover image", type: "image" },
+      {
+        key: "banner",
+        label: "Banner image",
+        type: "image",
+        hint: "Wide hero for the category page",
+      },
+      ...SEO_FIELDS,
     ],
-    seed: () => staticCategories.map((c) => ({ ...c })),
     publicPath: (r) => (r.slug ? `/products?cat=${String(r.slug)}` : null),
   },
   {
@@ -111,13 +239,19 @@ export const MODULES: ModuleDef[] = [
     imageKey: "img",
     order: "n",
     fields: [
-      { key: "n", label: "Number", type: "text", required: true, hint: "01–99, controls display order" },
+      {
+        key: "n",
+        label: "Number",
+        type: "text",
+        required: true,
+        hint: "01–99, controls display order",
+      },
       { key: "t", label: "Title", type: "text", required: true },
+      { ...STATUS_FIELD },
       { key: "body", label: "Description", type: "textarea" },
       { key: "img", label: "Image", type: "image" },
       { key: "inc", label: "What's included", type: "list", hint: "One per line" },
     ],
-    seed: () => staticServices.map((s) => ({ ...s })),
     publicPath: () => "/services",
   },
   {
@@ -132,7 +266,13 @@ export const MODULES: ModuleDef[] = [
     fields: [
       { key: "src", label: "Image", type: "image", required: true },
       { key: "alt", label: "Caption / alt text", type: "text", required: true },
-      { key: "cat", label: "Category", type: "select", options: ["Factory", "Laboratory", "Products", "Services", "Team"], required: true },
+      {
+        key: "cat",
+        label: "Category",
+        type: "select",
+        options: ["Factory", "Laboratory", "Products", "Services", "Team"],
+        required: true,
+      },
       { key: "wide", label: "Wide tile (2 columns)", type: "boolean" },
       { key: "tall", label: "Tall tile (2 rows)", type: "boolean" },
     ],
@@ -148,7 +288,13 @@ export const MODULES: ModuleDef[] = [
     titleField: "who",
     fields: [
       { key: "q", label: "Quote", type: "textarea", required: true },
-      { key: "who", label: "Attribution", type: "text", required: true, placeholder: "Plant Head, API pharma manufacturer" },
+      {
+        key: "who",
+        label: "Attribution",
+        type: "text",
+        required: true,
+        placeholder: "Plant Head, API pharma manufacturer",
+      },
     ],
     seed: () => staticTestimonials.map((t) => ({ ...t })),
     publicPath: () => "/",

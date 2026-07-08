@@ -2,7 +2,15 @@
 // content-health intelligence, all from real Firestore data.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   Activity as ActivityIcon,
   ArrowRight,
@@ -79,11 +87,19 @@ function DashboardPage() {
       const noImage = prods.filter((p) => !p.image).length;
       out.push({
         ok: noImage === 0,
-        label: noImage === 0 ? "Every product has content" : `${noImage} products use the category image`,
+        label:
+          noImage === 0
+            ? "Every product has content"
+            : `${noImage} products use the category image`,
         to: "/admin/products",
       });
       const noDesc = prods.filter((p) => !String(p.description ?? "").trim()).length;
-      if (noDesc > 0) out.push({ ok: false, label: `${noDesc} products missing a description`, to: "/admin/products" });
+      if (noDesc > 0)
+        out.push({
+          ok: false,
+          label: `${noDesc} products missing a description`,
+          to: "/admin/products",
+        });
     }
     if (cats.length > 0 && prods.length > 0) {
       const emptyCats = cats.filter((c) => !prods.some((p) => p.category === c.slug)).length;
@@ -99,18 +115,38 @@ function DashboardPage() {
       to: "/admin/enquiries",
     });
     if (prods.length === 0 && !products.isLoading) {
-      out.push({ ok: false, label: "Catalog not seeded — site uses built-in data", to: "/admin/products" });
+      out.push({
+        ok: false,
+        label: "No products yet — add your first product",
+        to: "/admin/products",
+      });
     }
     return out;
   }, [products.data, products.isLoading, categories.data, awaiting]);
 
   const stats = [
     { label: "Products", value: products.data?.length, icon: Package, to: "/admin/products" },
-    { label: "Categories", value: categories.data?.length, icon: LayoutGrid, to: "/admin/categories" },
+    {
+      label: "Categories",
+      value: categories.data?.length,
+      icon: LayoutGrid,
+      to: "/admin/categories",
+    },
     { label: "Services", value: services.data?.length, icon: Wrench, to: "/admin/services" },
     { label: "Media items", value: gallery.data?.length, icon: ImageIcon, to: "/admin/gallery" },
-    { label: "Testimonials", value: testimonials.data?.length, icon: Quote, to: "/admin/testimonials" },
-    { label: "Enquiries", value: enqRows.length, icon: Inbox, to: "/admin/enquiries", delta: newThisWeek ? `+${newThisWeek} this week` : undefined },
+    {
+      label: "Testimonials",
+      value: testimonials.data?.length,
+      icon: Quote,
+      to: "/admin/testimonials",
+    },
+    {
+      label: "Enquiries",
+      value: enqRows.length,
+      icon: Inbox,
+      to: "/admin/enquiries",
+      delta: newThisWeek ? `+${newThisWeek} this week` : undefined,
+    },
   ];
 
   return (
@@ -120,11 +156,20 @@ function DashboardPage() {
         <div>
           <h1 className="text-xl sm:text-2xl">{greeting()}.</h1>
           <p className="mt-1 text-[13px]" style={{ color: "var(--a-text2)" }}>
-            {new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            {new Date().toLocaleDateString(undefined, {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
             {awaiting > 0 && (
               <>
                 {" · "}
-                <Link to="/admin/enquiries" className="font-medium underline-offset-2 hover:underline" style={{ color: "var(--a-accent)" }}>
+                <Link
+                  to="/admin/enquiries"
+                  className="font-medium underline-offset-2 hover:underline"
+                  style={{ color: "var(--a-accent)" }}
+                >
                   {awaiting} enquir{awaiting === 1 ? "y" : "ies"} awaiting reply
                 </Link>
               </>
@@ -132,8 +177,14 @@ function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Btn icon={ExternalLink} onClick={() => window.open("/", "_blank")}>View site</Btn>
-          <Btn variant="primary" icon={Plus} onClick={() => navigate({ to: "/admin/products", search: { new: "1" } as never })}>
+          <Btn icon={ExternalLink} onClick={() => window.open("/", "_blank")}>
+            View site
+          </Btn>
+          <Btn
+            variant="primary"
+            icon={Plus}
+            onClick={() => navigate({ to: "/admin/products", search: { new: "1" } as never })}
+          >
             New product
           </Btn>
         </div>
@@ -149,17 +200,33 @@ function DashboardPage() {
             style={{ animationDelay: `${i * 40}ms` }}
           >
             <div className="flex items-center justify-between">
-              <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: "var(--a-accent-soft)", color: "var(--a-accent)" }}>
+              <span
+                className="grid h-8 w-8 place-items-center rounded-lg"
+                style={{ background: "var(--a-accent-soft)", color: "var(--a-accent)" }}
+              >
                 <s.icon className="h-4 w-4" />
               </span>
-              <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" style={{ color: "var(--a-text3)" }} />
+              <ArrowUpRight
+                className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100"
+                style={{ color: "var(--a-text3)" }}
+              />
             </div>
-            <div className="mt-3 text-2xl font-bold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>
+            <div
+              className="mt-3 text-2xl font-bold tabular-nums"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
               {s.value ?? <span className="a-skel inline-block h-6 w-8 align-middle" />}
             </div>
-            <div className="mt-0.5 flex items-center gap-2 text-[11px]" style={{ color: "var(--a-text3)" }}>
+            <div
+              className="mt-0.5 flex items-center gap-2 text-[11px]"
+              style={{ color: "var(--a-text3)" }}
+            >
               {s.label}
-              {s.delta && <Badge tone="ok" className="!text-[10px]">{s.delta}</Badge>}
+              {s.delta && (
+                <Badge tone="ok" className="!text-[10px]">
+                  {s.delta}
+                </Badge>
+              )}
             </div>
           </Link>
         ))}
@@ -170,7 +237,11 @@ function DashboardPage() {
         <Card
           title="Lead flow — last 30 days"
           action={
-            <Link to="/admin/enquiries" className="text-xs font-medium inline-flex items-center gap-1" style={{ color: "var(--a-accent)" }}>
+            <Link
+              to="/admin/enquiries"
+              className="text-xs font-medium inline-flex items-center gap-1"
+              style={{ color: "var(--a-accent)" }}
+            >
               Open inbox <ArrowRight className="h-3 w-3" />
             </Link>
           }
@@ -192,7 +263,12 @@ function DashboardPage() {
                   axisLine={false}
                   interval={6}
                 />
-                <YAxis tick={{ fontSize: 10, fill: "var(--a-text3)" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "var(--a-text3)" }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
                 <Tooltip
                   cursor={{ stroke: "var(--a-border2)" }}
                   contentStyle={{
@@ -206,7 +282,14 @@ function DashboardPage() {
                   formatter={(v: number) => [`${v} enquir${v === 1 ? "y" : "ies"}`, ""]}
                   labelStyle={{ color: "var(--a-text3)" }}
                 />
-                <Area type="monotone" dataKey="n" stroke="var(--a-accent)" strokeWidth={2} fill="url(#admLead)" animationDuration={700} />
+                <Area
+                  type="monotone"
+                  dataKey="n"
+                  stroke="var(--a-accent)"
+                  strokeWidth={2}
+                  fill="url(#admLead)"
+                  animationDuration={700}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -216,22 +299,43 @@ function DashboardPage() {
           <ul className="space-y-2.5">
             {health.map((h) => (
               <li key={h.label}>
-                <Link to={h.to} className="flex items-start gap-2.5 rounded-lg p-1.5 -m-1.5 hover:bg-[var(--a-hover)] transition-colors">
+                <Link
+                  to={h.to}
+                  className="flex items-start gap-2.5 rounded-lg p-1.5 -m-1.5 hover:bg-[var(--a-hover)] transition-colors"
+                >
                   <CheckCircle2
                     className="mt-0.5 h-4 w-4 shrink-0"
                     style={{ color: h.ok ? "var(--a-ok)" : "var(--a-warn)" }}
                   />
-                  <span className="text-[13px]" style={{ color: "var(--a-text2)" }}>{h.label}</span>
+                  <span className="text-[13px]" style={{ color: "var(--a-text2)" }}>
+                    {h.label}
+                  </span>
                 </Link>
               </li>
             ))}
           </ul>
           <hr className="a-divider my-4" />
           <div className="grid grid-cols-2 gap-2">
-            <Btn size="sm" icon={Plus} onClick={() => navigate({ to: "/admin/services", search: { new: "1" } as never })}>New service</Btn>
-            <Btn size="sm" icon={ImageIcon} onClick={() => navigate({ to: "/admin/gallery" })}>Upload media</Btn>
-            <Btn size="sm" icon={Settings} onClick={() => navigate({ to: "/admin/settings" })}>Site settings</Btn>
-            <Btn size="sm" icon={Quote} onClick={() => navigate({ to: "/admin/testimonials", search: { new: "1" } as never })}>New quote</Btn>
+            <Btn
+              size="sm"
+              icon={Plus}
+              onClick={() => navigate({ to: "/admin/services", search: { new: "1" } as never })}
+            >
+              New service
+            </Btn>
+            <Btn size="sm" icon={ImageIcon} onClick={() => navigate({ to: "/admin/gallery" })}>
+              Upload media
+            </Btn>
+            <Btn size="sm" icon={Settings} onClick={() => navigate({ to: "/admin/settings" })}>
+              Site settings
+            </Btn>
+            <Btn
+              size="sm"
+              icon={Quote}
+              onClick={() => navigate({ to: "/admin/testimonials", search: { new: "1" } as never })}
+            >
+              New quote
+            </Btn>
           </div>
         </Card>
       </div>
@@ -242,7 +346,11 @@ function DashboardPage() {
           title="Recent enquiries"
           pad={false}
           action={
-            <Link to="/admin/enquiries" className="text-xs font-medium inline-flex items-center gap-1" style={{ color: "var(--a-accent)" }}>
+            <Link
+              to="/admin/enquiries"
+              className="text-xs font-medium inline-flex items-center gap-1"
+              style={{ color: "var(--a-accent)" }}
+            >
               View all <ArrowRight className="h-3 w-3" />
             </Link>
           }
@@ -262,18 +370,37 @@ function DashboardPage() {
                       className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-bold"
                       style={{ background: "var(--a-accent-soft)", color: "var(--a-accent)" }}
                     >
-                      {String(e.name ?? "?").trim().charAt(0).toUpperCase()}
+                      {String(e.name ?? "?")
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase()}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-semibold">{String(e.name ?? "Unknown")}</span>
-                      <span className="block truncate text-[11px]" style={{ color: "var(--a-text3)" }}>
+                      <span className="block truncate text-[13px] font-semibold">
+                        {String(e.name ?? "Unknown")}
+                      </span>
+                      <span
+                        className="block truncate text-[11px]"
+                        style={{ color: "var(--a-text3)" }}
+                      >
                         {String(e.requirement ?? "")}
                       </span>
                     </span>
-                    <Badge tone={!e.status || e.status === "new" ? "accent" : e.status === "contacted" ? "warn" : "ok"}>
+                    <Badge
+                      tone={
+                        !e.status || e.status === "new"
+                          ? "accent"
+                          : e.status === "contacted"
+                            ? "warn"
+                            : "ok"
+                      }
+                    >
                       {String(e.status ?? "new")}
                     </Badge>
-                    <span className="hidden sm:block w-16 text-right text-[11px] shrink-0" style={{ color: "var(--a-text3)" }}>
+                    <span
+                      className="hidden sm:block w-16 text-right text-[11px] shrink-0"
+                      style={{ color: "var(--a-text3)" }}
+                    >
                       {timeAgo(toDate(e.createdAt))}
                     </span>
                   </Link>
@@ -287,7 +414,11 @@ function DashboardPage() {
           title="Recent activity"
           pad={false}
           action={
-            <Link to="/admin/activity" className="text-xs font-medium inline-flex items-center gap-1" style={{ color: "var(--a-accent)" }}>
+            <Link
+              to="/admin/activity"
+              className="text-xs font-medium inline-flex items-center gap-1"
+              style={{ color: "var(--a-accent)" }}
+            >
               Full log <ArrowRight className="h-3 w-3" />
             </Link>
           }
@@ -302,11 +433,22 @@ function DashboardPage() {
             <ul className="px-5 pb-4 pt-1 space-y-3">
               {(activity.data ?? []).map((a) => (
                 <li key={a.__id} className="flex items-start gap-2.5">
-                  <ActivityIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "var(--a-text3)" }} />
-                  <p className="min-w-0 flex-1 text-[12px] leading-snug" style={{ color: "var(--a-text2)" }}>
-                    <span className="font-semibold" style={{ color: "var(--a-text)" }}>{String(a.action)}</span>{" "}
-                    <span style={{ color: "var(--a-text3)" }}>in {String(a.module)}</span> — <span className="break-words">{String(a.label)}</span>
-                    <span className="ml-1 whitespace-nowrap" style={{ color: "var(--a-text3)" }}>· {timeAgo(toDate(a.at))}</span>
+                  <ActivityIcon
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    style={{ color: "var(--a-text3)" }}
+                  />
+                  <p
+                    className="min-w-0 flex-1 text-[12px] leading-snug"
+                    style={{ color: "var(--a-text2)" }}
+                  >
+                    <span className="font-semibold" style={{ color: "var(--a-text)" }}>
+                      {String(a.action)}
+                    </span>{" "}
+                    <span style={{ color: "var(--a-text3)" }}>in {String(a.module)}</span> —{" "}
+                    <span className="break-words">{String(a.label)}</span>
+                    <span className="ml-1 whitespace-nowrap" style={{ color: "var(--a-text3)" }}>
+                      · {timeAgo(toDate(a.at))}
+                    </span>
                   </p>
                 </li>
               ))}

@@ -6,14 +6,22 @@ import { LiquidButton } from "@/components/site/LiquidButton";
 import { waLink } from "@/components/site/WaCluster";
 import { Waterline } from "@/components/site/Waterline";
 import { useSiteSettings } from "@/lib/content";
+import { useContactContent } from "@/lib/pages";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact — LK Chemicals, Hyderabad" },
-      { name: "description", content: "Reach LK Chemicals Pvt. Ltd. — Plot No. 157, Officers Colony, Cherlapally, Hyderabad. Phone +91 98666 00699." },
+      {
+        name: "description",
+        content:
+          "Reach LK Chemicals Pvt. Ltd. — Plot No. 157, Officers Colony, Cherlapally, Hyderabad. Phone +91 98666 00699.",
+      },
       { property: "og:title", content: "Contact LK Chemicals" },
-      { property: "og:description", content: "Phone, WhatsApp, email and our Cherlapally address." },
+      {
+        property: "og:description",
+        content: "Phone, WhatsApp, email and our Cherlapally address.",
+      },
     ],
   }),
   component: ContactPage,
@@ -21,6 +29,7 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const { data: s } = useSiteSettings();
+  const { data: c } = useContactContent();
   return (
     <>
       <section className="section-dark relative pt-32 sm:pt-40 pb-16 overflow-hidden">
@@ -28,8 +37,10 @@ function ContactPage() {
         <GhostWord className="absolute top-28 right-0 !text-[11vw] opacity-60">CONTACT</GhostWord>
         <div className="relative mx-auto max-w-7xl px-6 md:px-8">
           <MicroLabel n="00">Open a channel</MicroLabel>
-          <h1 className="display-xl mt-4 grad-text" style={{ fontSize: "clamp(3rem, 12vw, 9rem)" }}>Let's talk.</h1>
-          <p className="mt-6 max-w-xl text-white/70">Shiva Krishna picks up the phone himself. Or send a note — we reply within a business day.</p>
+          <h1 className="display-xl mt-4 grad-text" style={{ fontSize: "clamp(3rem, 12vw, 9rem)" }}>
+            {c.heroHeading}
+          </h1>
+          <p className="mt-6 max-w-xl text-white/70">{c.heroBody}</p>
         </div>
       </section>
 
@@ -38,7 +49,7 @@ function ContactPage() {
       <section className="section-dark py-24">
         <div className="mx-auto max-w-7xl px-6 md:px-8 grid lg:grid-cols-2 gap-14">
           <div className="grid gap-4 content-start">
-            <Card icon={<MapPin className="h-4 w-4"/>} label="Address">
+            <Card icon={<MapPin className="h-4 w-4" />} label="Address">
               {s.address}
               {s.address2 && (
                 <>
@@ -47,36 +58,47 @@ function ContactPage() {
                 </>
               )}
             </Card>
-            <Card icon={<User className="h-4 w-4"/>} label="Contact person">
-              {s.contactPerson}<br />
+            <Card icon={<User className="h-4 w-4" />} label="Contact person">
+              {s.contactPerson}
+              <br />
               <span className="text-white/50">{s.contactRole}</span>
             </Card>
-            <Card icon={<Phone className="h-4 w-4"/>} label="Phone">
+            <Card icon={<Phone className="h-4 w-4" />} label="Phone">
               {[s.phone, s.phone2, s.phone3].filter(Boolean).map((p, i) => (
                 <span key={p}>
                   {i > 0 && <br />}
-                  <a className="hover:text-cyan-hi" href={`tel:${p!.replace(/\s+/g, "")}`}>{p}</a>
+                  <a className="hover:text-cyan-hi" href={`tel:${p!.replace(/\s+/g, "")}`}>
+                    {p}
+                  </a>
                 </span>
               ))}
             </Card>
-            <Card icon={<Mail className="h-4 w-4"/>} label="Email">
+            <Card icon={<Mail className="h-4 w-4" />} label="Email">
               {[s.email, s.email2].filter(Boolean).map((e, i) => (
                 <span key={e}>
                   {i > 0 && <br />}
-                  <a className="hover:text-cyan-hi" href={`mailto:${e}`}>{e}</a>
+                  <a className="hover:text-cyan-hi" href={`mailto:${e}`}>
+                    {e}
+                  </a>
                 </span>
               ))}
             </Card>
-            <Card icon={<Clock className="h-4 w-4"/>} label="Hours">
-              {s.hours}<br />
+            <Card icon={<Clock className="h-4 w-4" />} label="Hours">
+              {s.hours}
+              <br />
               <span className="text-white/50">Emergency: 24/7 WhatsApp</span>
             </Card>
             <div className="glass-dark rounded-2xl p-5 flex items-center justify-between gap-4 hover-lift">
               <div>
                 <div className="micro-label">WhatsApp direct</div>
-                <div className="text-white mt-1">Typically replies within minutes <span className="inline-block h-2 w-2 rounded-full bg-leaf animate-pulse-soft ml-1 align-middle" /></div>
+                <div className="text-white mt-1">
+                  Typically replies within minutes{" "}
+                  <span className="inline-block h-2 w-2 rounded-full bg-leaf animate-pulse-soft ml-1 align-middle" />
+                </div>
               </div>
-              <LiquidButton href={waLink()} external variant="leaf">Chat now</LiquidButton>
+              <LiquidButton href={waLink()} external variant="leaf">
+                Chat now
+              </LiquidButton>
             </div>
           </div>
           <div>
@@ -91,10 +113,21 @@ function ContactPage() {
   );
 }
 
-function Card({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
+function Card({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="glass-dark rounded-2xl p-5 hover-lift">
-      <div className="micro-label flex items-center gap-2 text-cyan-hi">{icon}{label}</div>
+      <div className="micro-label flex items-center gap-2 text-cyan-hi">
+        {icon}
+        {label}
+      </div>
       <div className="mt-2 text-white/90 leading-relaxed">{children}</div>
     </div>
   );
@@ -104,7 +137,15 @@ function Card({ icon, label, children }: { icon: React.ReactNode; label: string;
    Custom-styled cartographic canvas — deep-water aesthetic,
    pulsing droplet pin, glass info card, hard-linked to Google Maps.
 */
-function MapInfoCard({ address, directionsUrl, viewUrl }: { address: string; directionsUrl: string; viewUrl: string }) {
+function MapInfoCard({
+  address,
+  directionsUrl,
+  viewUrl,
+}: {
+  address: string;
+  directionsUrl: string;
+  viewUrl: string;
+}) {
   return (
     <div className="flex items-start gap-3">
       <span className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-hi/15 text-cyan-hi shrink-0">
@@ -138,6 +179,7 @@ function MapInfoCard({ address, directionsUrl, viewUrl }: { address: string; dir
 
 function SignatureMap() {
   const { data: s } = useSiteSettings();
+  const { data: c } = useContactContent();
   const q = encodeURIComponent(s.mapQuery);
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${q}`;
   const viewUrl = `https://www.google.com/maps/search/?api=1&query=${q}`;
@@ -148,8 +190,11 @@ function SignatureMap() {
         <div className="flex items-end justify-between gap-4 mb-6">
           <div>
             <MicroLabel n="10">Reach us</MicroLabel>
-            <h2 className="display-xl mt-2 grad-text" style={{ fontSize: "clamp(1.75rem, 5vw, 3.5rem)" }}>
-              17.4948° N · 78.5719° E
+            <h2
+              className="display-xl mt-2 grad-text"
+              style={{ fontSize: "clamp(1.75rem, 5vw, 3.5rem)" }}
+            >
+              {c.coordinates}
             </h2>
           </div>
           <div className="hidden md:block ghost-word text-[clamp(2rem,8vw,7rem)]">MAP</div>

@@ -3,9 +3,11 @@ import logoUrl from "@/assets/lk-logo.png";
 import { Waterline } from "./Waterline";
 import { MapPin, Phone, Mail } from "lucide-react";
 import { useSiteSettings } from "@/lib/content";
+import { useGlobalContent } from "@/lib/pages";
 
 export function Footer() {
   const { data: s } = useSiteSettings();
+  const { data: g } = useGlobalContent();
   const pathname = useRouterState({ select: (st) => st.location.pathname });
   return (
     <footer className="relative section-dark overflow-hidden pt-16 pb-24 sm:pb-8">
@@ -25,17 +27,17 @@ export function Footer() {
                 width={44}
                 height={44}
                 className="h-11 w-11 object-contain"
-                style={{ filter: "drop-shadow(0 0 16px color-mix(in oklab, var(--cyan-hi) 45%, transparent))" }}
+                style={{
+                  filter:
+                    "drop-shadow(0 0 16px color-mix(in oklab, var(--cyan-hi) 45%, transparent))",
+                }}
               />
               <div>
-                <div className="font-display text-lg text-white font-bold">LK Chemicals Pvt. Ltd.</div>
-                <div className="micro-label mt-1">Since 2013 · Hyderabad · An ISO 9001:2015 Company</div>
+                <div className="font-display text-lg text-white font-bold">{g.brandName}</div>
+                <div className="micro-label mt-1">{g.brandLine}</div>
               </div>
             </div>
-            <p className="mt-6 max-w-md text-sm text-white/60">
-              We provide the best water treatment solution — chemicals, plants and services engineered in
-              Hyderabad, trusted across Telangana, AP, Karnataka, Tamil Nadu and Maharashtra.
-            </p>
+            <p className="mt-6 max-w-md text-sm text-white/60">{g.footerBlurb}</p>
           </div>
           <div>
             <div className="micro-label mb-4">Explore</div>
@@ -50,7 +52,9 @@ export function Footer() {
                 <li key={to}>
                   <Link
                     to={to}
-                    onClick={() => { if (pathname === to) window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onClick={() => {
+                      if (pathname === to) window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
                     className="text-white/70 hover:text-cyan-hi transition-colors"
                   >
                     {label}
@@ -62,24 +66,50 @@ export function Footer() {
           <div>
             <div className="micro-label mb-4">Reach us</div>
             <ul className="space-y-3 text-sm text-white/70">
-              <li className="flex gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> {s.address}</li>
+              <li className="flex gap-2">
+                <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" /> {s.address}
+              </li>
               {s.address2 && (
-                <li className="flex gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> {s.address2}</li>
+                <li className="flex gap-2">
+                  <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" /> {s.address2}
+                </li>
               )}
-              <li className="flex gap-2"><Phone className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> <a href={`tel:${s.phone.replace(/\s+/g, "")}`} className="hover:text-white">{s.phone}</a></li>
+              <li className="flex gap-2">
+                <Phone className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />{" "}
+                <a href={`tel:${s.phone.replace(/\s+/g, "")}`} className="hover:text-white">
+                  {s.phone}
+                </a>
+              </li>
               {s.phone2 && (
-                <li className="flex gap-2"><Phone className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> <a href={`tel:${s.phone2.replace(/\s+/g, "")}`} className="hover:text-white">{s.phone2}</a></li>
+                <li className="flex gap-2">
+                  <Phone className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />{" "}
+                  <a href={`tel:${s.phone2.replace(/\s+/g, "")}`} className="hover:text-white">
+                    {s.phone2}
+                  </a>
+                </li>
               )}
-              <li className="flex gap-2"><Mail className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> <a href={`mailto:${s.email}`} className="hover:text-white">{s.email}</a></li>
+              <li className="flex gap-2">
+                <Mail className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />{" "}
+                <a href={`mailto:${s.email}`} className="hover:text-white">
+                  {s.email}
+                </a>
+              </li>
               {s.email2 && (
-                <li className="flex gap-2"><Mail className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi"/> <a href={`mailto:${s.email2}`} className="hover:text-white">{s.email2}</a></li>
+                <li className="flex gap-2">
+                  <Mail className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />{" "}
+                  <a href={`mailto:${s.email2}`} className="hover:text-white">
+                    {s.email2}
+                  </a>
+                </li>
               )}
             </ul>
           </div>
         </div>
         <div className="mt-16 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
-          <p>© {new Date().getFullYear()} LK Chemicals Pvt. Ltd. All rights reserved.</p>
-          <p>We provide the best water treatment solution.</p>
+          <p>
+            © {new Date().getFullYear()} {g.brandName} All rights reserved.
+          </p>
+          <p>{g.footerNote}</p>
         </div>
       </div>
     </footer>

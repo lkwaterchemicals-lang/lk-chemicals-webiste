@@ -1,15 +1,18 @@
-// Firestore-backed site content with built-in fallbacks.
+// Firestore-backed site content.
 //
-// Every hook resolves instantly with the static content (so SSR and first
-// paint never wait on Firestore), then swaps in Firestore data when the
-// collection has documents. Empty or unreachable collections keep the
-// built-in content — the public site can never go blank.
+// The CATALOG (categories, products, services) is fully admin-managed: these
+// hooks render only what the dashboard has published — there is no built-in
+// catalog fallback, so an empty Firestore yields an empty (not fabricated)
+// catalog. Draft/archived records are hidden from the public site.
+//
+// Media (gallery), testimonials and site settings keep their built-in
+// fallbacks (src/data/content.ts) so those surfaces never blank while the
+// client fills them in.
 import { useQuery } from "@tanstack/react-query";
 import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
-import { categories as staticCategories, products as staticProducts, type Category, type Product } from "@/data/products";
+import { type Category, type Product } from "@/data/products";
 import {
-  staticServices,
   staticGallery,
   staticTestimonials,
   staticSettings,
@@ -28,27 +31,34 @@ async function fetchCollection<T>(name: string, fallback: T[], order?: string): 
     if (snap.empty) return fallback;
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as T);
   } catch (err) {
-    console.warn(`[content] falling back to built-in ${name}:`, err);
+    console.warn(`[content] falling back for ${name}:`, err);
     return fallback;
   }
 }
+
+/** Hide draft/archived records from the public site (missing status = live). */
+const isLive = (r: { status?: string }) => r.status !== "draft" && r.status !== "archived";
+
+const orderNum = (r: { order?: string; number?: string }) => Number(r.order ?? r.number ?? 0) || 0;
 
 const common = {
   staleTime: 60_000,
   enabled: isBrowser,
   refetchOnWindowFocus: false,
-  // Without this, React Query treats `initialData` (the built-in content) as
-  // fresh for `staleTime` and never fetches Firestore on mount. Marking it as
-  // updated at epoch 0 forces an immediate background fetch, so admin edits
-  // show up while the built-ins still render instantly.
+  // Force an immediate background fetch even though initialData is present.
   initialDataUpdatedAt: 0,
 } as const;
 
 export function useCategories() {
   return useQuery({
     queryKey: ["content", "categories"],
-    queryFn: () => fetchCollection<Category>("categories", staticCategories, "number"),
-    initialData: staticCategories,
+    queryFn: async () => {
+      const rows = await fetchCollection<Category>("categories", []);
+      return rows
+        .filter(isLive)
+        .sort((a, b) => orderNum(a) - orderNum(b) || Number(a.number ?? 0) - Number(b.number ?? 0));
+    },
+    initialData: [] as Category[],
     ...common,
   });
 }
@@ -56,8 +66,13 @@ export function useCategories() {
 export function useProducts() {
   return useQuery({
     queryKey: ["content", "products"],
-    queryFn: () => fetchCollection<Product>("products", staticProducts),
-    initialData: staticProducts,
+    queryFn: async () => {
+      const rows = await fetchCollection<Product>("products", []);
+      return rows
+        .filter(isLive)
+        .sort((a, b) => orderNum(a) - orderNum(b) || String(a.name).localeCompare(String(b.name)));
+    },
+    initialData: [] as Product[],
     ...common,
   });
 }
@@ -65,8 +80,11 @@ export function useProducts() {
 export function useServices() {
   return useQuery({
     queryKey: ["content", "services"],
-    queryFn: () => fetchCollection<Service>("services", staticServices, "n"),
-    initialData: staticServices,
+    queryFn: async () => {
+      const rows = await fetchCollection<Service>("services", [], "n");
+      return rows.filter(isLive);
+    },
+    initialData: [] as Service[],
     ...common,
   });
 }

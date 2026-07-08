@@ -25,8 +25,10 @@ import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminGalleryRouteImport } from './routes/admin.gallery'
 import { Route as AdminEnquiriesRouteImport } from './routes/admin.enquiries'
+import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
+import { Route as AdminContentPageRouteImport } from './routes/admin.content_.$page'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -108,6 +110,11 @@ const AdminEnquiriesRoute = AdminEnquiriesRouteImport.update({
   path: '/enquiries',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminContentRoute = AdminContentRouteImport.update({
+  id: '/content',
+  path: '/content',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
@@ -116,6 +123,11 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
 const AdminActivityRoute = AdminActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminContentPageRoute = AdminContentPageRouteImport.update({
+  id: '/content_/$page',
+  path: '/content/$page',
   getParentRoute: () => AdminRoute,
 } as any)
 
@@ -130,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/enquiries': typeof AdminEnquiriesRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/products': typeof AdminProductsRoute
@@ -138,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/content/$page': typeof AdminContentPageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -149,6 +163,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/enquiries': typeof AdminEnquiriesRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/products': typeof AdminProductsRoute
@@ -157,6 +172,7 @@ export interface FileRoutesByTo {
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/content/$page': typeof AdminContentPageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -170,6 +186,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/enquiries': typeof AdminEnquiriesRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/products': typeof AdminProductsRoute
@@ -178,6 +195,7 @@ export interface FileRoutesById {
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/products_/$slug': typeof ProductsSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/content_/$page': typeof AdminContentPageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -192,6 +210,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/activity'
     | '/admin/categories'
+    | '/admin/content'
     | '/admin/enquiries'
     | '/admin/gallery'
     | '/admin/products'
@@ -200,6 +219,7 @@ export interface FileRouteTypes {
     | '/admin/testimonials'
     | '/products/$slug'
     | '/admin/'
+    | '/admin/content/$page'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -211,6 +231,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/activity'
     | '/admin/categories'
+    | '/admin/content'
     | '/admin/enquiries'
     | '/admin/gallery'
     | '/admin/products'
@@ -219,6 +240,7 @@ export interface FileRouteTypes {
     | '/admin/testimonials'
     | '/products/$slug'
     | '/admin'
+    | '/admin/content/$page'
   id:
     | '__root__'
     | '/'
@@ -231,6 +253,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/activity'
     | '/admin/categories'
+    | '/admin/content'
     | '/admin/enquiries'
     | '/admin/gallery'
     | '/admin/products'
@@ -239,6 +262,7 @@ export interface FileRouteTypes {
     | '/admin/testimonials'
     | '/products_/$slug'
     | '/admin/'
+    | '/admin/content_/$page'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -367,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEnquiriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/content': {
+      id: '/admin/content'
+      path: '/content'
+      fullPath: '/admin/content'
+      preLoaderRoute: typeof AdminContentRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/categories': {
       id: '/admin/categories'
       path: '/categories'
@@ -381,12 +412,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminActivityRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/content_/$page': {
+      id: '/admin/content_/$page'
+      path: '/content/$page'
+      fullPath: '/admin/content/$page'
+      preLoaderRoute: typeof AdminContentPageRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminActivityRoute: typeof AdminActivityRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminContentRoute: typeof AdminContentRoute
   AdminEnquiriesRoute: typeof AdminEnquiriesRoute
   AdminGalleryRoute: typeof AdminGalleryRoute
   AdminProductsRoute: typeof AdminProductsRoute
@@ -394,11 +433,13 @@ interface AdminRouteChildren {
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminContentPageRoute: typeof AdminContentPageRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminActivityRoute: AdminActivityRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminContentRoute: AdminContentRoute,
   AdminEnquiriesRoute: AdminEnquiriesRoute,
   AdminGalleryRoute: AdminGalleryRoute,
   AdminProductsRoute: AdminProductsRoute,
@@ -406,6 +447,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsRoute: AdminSettingsRoute,
   AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminContentPageRoute: AdminContentPageRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

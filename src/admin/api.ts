@@ -34,7 +34,9 @@ export function useActivity(n = 60) {
   return useQuery({
     queryKey: ["admin", "activity", n],
     queryFn: async (): Promise<Row[]> => {
-      const snap = await getDocs(query(collection(db, "activity"), orderBy("at", "desc"), limit(n)));
+      const snap = await getDocs(
+        query(collection(db, "activity"), orderBy("at", "desc"), limit(n)),
+      );
       return snap.docs.map((d) => ({ __id: d.id, ...d.data() }) as Row);
     },
     retry: 1,
@@ -65,7 +67,8 @@ export function useInvalidate() {
 
 /* ------------------------------------------------------------------ audit */
 
-export type ActivityAction = "created" | "updated" | "deleted" | "restored" | "duplicated" | "seeded" | "status";
+export type ActivityAction =
+  "created" | "updated" | "deleted" | "restored" | "duplicated" | "seeded" | "status";
 
 export async function logActivity(action: ActivityAction, module: string, label: string) {
   try {
@@ -99,8 +102,16 @@ export async function saveRow(
     id = fromIdField || slugify(String(values[def.titleField] ?? "")) || crypto.randomUUID();
   }
   if (def.idField === "slug" && !values.slug) values.slug = id;
-  await setDoc(doc(db, def.id, id), { ...stripMeta(values), _updatedAt: serverTimestamp() }, { merge: true });
-  void logActivity(existingId ? "updated" : "created", def.id, String(values[def.titleField] ?? id));
+  await setDoc(
+    doc(db, def.id, id),
+    { ...stripMeta(values), _updatedAt: serverTimestamp() },
+    { merge: true },
+  );
+  void logActivity(
+    existingId ? "updated" : "created",
+    def.id,
+    String(values[def.titleField] ?? id),
+  );
   return id;
 }
 
@@ -108,10 +119,24 @@ export async function saveRow(
 export async function deleteRows(def: ModuleDef, rows: Row[]): Promise<() => Promise<void>> {
   const copies = rows.map((r) => ({ id: r.__id, data: stripMeta(r) }));
   await Promise.all(rows.map((r) => deleteDoc(doc(db, def.id, r.__id))));
-  void logActivity("deleted", def.id, rows.map((r) => String(r[def.titleField] ?? r.__id)).join(", ").slice(0, 120));
+  void logActivity(
+    "deleted",
+    def.id,
+    rows
+      .map((r) => String(r[def.titleField] ?? r.__id))
+      .join(", ")
+      .slice(0, 120),
+  );
   return async () => {
     await Promise.all(copies.map((c) => setDoc(doc(db, def.id, c.id), c.data)));
-    void logActivity("restored", def.id, copies.map((c) => c.id).join(", ").slice(0, 120));
+    void logActivity(
+      "restored",
+      def.id,
+      copies
+        .map((c) => c.id)
+        .join(", ")
+        .slice(0, 120),
+    );
   };
 }
 
@@ -125,6 +150,22 @@ export async function duplicateRow(def: ModuleDef, row: Row): Promise<string> {
   await setDoc(doc(db, def.id, newId), { ...data, _updatedAt: serverTimestamp() });
   void logActivity("duplicated", def.id, String(data[def.titleField] ?? newId));
   return newId;
+}
+
+/** Persists a new order for `orderedIds` by writing sequential values (1..n)
+ * to each row's ordering field (`def.order`, defaulting to `order`). */
+export async function reorderRows(def: ModuleDef, orderedIds: string[]): Promise<void> {
+  const field = def.order || "order";
+  await Promise.all(
+    orderedIds.map((id, i) =>
+      setDoc(
+        doc(db, def.id, id),
+        { [field]: String(i + 1).padStart(2, "0"), _updatedAt: serverTimestamp() },
+        { merge: true },
+      ),
+    ),
+  );
+  void logActivity("updated", def.id, `reordered ${orderedIds.length} ${def.label.toLowerCase()}`);
 }
 
 export async function seedModule(def: ModuleDef): Promise<number> {
@@ -153,7 +194,14 @@ export async function setEnquiryStatus(id: string, status: EnquiryStatus, name: 
 export async function deleteEnquiries(rows: Row[]): Promise<() => Promise<void>> {
   const copies = rows.map((r) => ({ id: r.__id, data: stripMeta(r) }));
   await Promise.all(rows.map((r) => deleteDoc(doc(db, "enquiries", r.__id))));
-  void logActivity("deleted", "enquiries", rows.map((r) => String(r.name ?? r.__id)).join(", ").slice(0, 120));
+  void logActivity(
+    "deleted",
+    "enquiries",
+    rows
+      .map((r) => String(r.name ?? r.__id))
+      .join(", ")
+      .slice(0, 120),
+  );
   return async () => {
     await Promise.all(copies.map((c) => setDoc(doc(db, "enquiries", c.id), c.data)));
   };

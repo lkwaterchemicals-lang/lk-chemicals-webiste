@@ -1,11 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { Plus, Minus } from "lucide-react";
+import { ArrowUpRight, Wrench } from "lucide-react";
 import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
-import { LiquidButton } from "@/components/site/LiquidButton";
-import { waLink } from "@/components/site/WaCluster";
-import { useServices } from "@/lib/content";
+import { useServiceCategories, useServices } from "@/lib/content";
 import { useServicesContent } from "@/lib/pages";
 
 export const Route = createFileRoute("/services")({
@@ -25,11 +22,16 @@ export const Route = createFileRoute("/services")({
 });
 
 function ServicesPage() {
+  const { data: categories } = useServiceCategories();
   const { data: services } = useServices();
   const { data: c } = useServicesContent();
-  const [open, setOpen] = useState<string | null>("01");
+
+  const countFor = (slug: string) => services.filter((s) => s.serviceCategory === slug).length;
+  const hasCatalog = categories.length > 0;
+
   return (
     <>
+      {/* Hero */}
       <section className="section-dark relative pt-40 pb-16 overflow-hidden">
         <div className="absolute inset-0 caustics opacity-40" />
         <GhostWord className="absolute right-0 bottom-0 !text-[11vw] opacity-60">SERVICE</GhostWord>
@@ -45,86 +47,78 @@ function ServicesPage() {
           </h1>
           <p className="mt-8 max-w-xl text-lg text-white/70">
             {services.length > 0
-              ? `${services.length} service lines run out of Hyderabad, backed by our own chemistry, our own crew and our own vehicles.`
+              ? `${services.length} service lines across ${categories.length} ${
+                  categories.length === 1 ? "category" : "categories"
+                }, backed by our own chemistry, our own crew and our own vehicles.`
               : "Our field operations, backed by our own chemistry, crew and vehicles."}
           </p>
         </div>
       </section>
 
+      {/* Service categories */}
       <section className="section-dark py-16">
-        <div className="mx-auto max-w-6xl px-6 md:px-8">
-          {services.length === 0 && (
-            <div className="rounded-3xl glass-dark p-10 text-center">
+        <div className="mx-auto max-w-7xl px-6 md:px-8">
+          <MicroLabel n="01">Browse by category</MicroLabel>
+
+          {!hasCatalog && (
+            <div className="mt-10 rounded-3xl glass-dark p-10 text-center">
               <h2 className="display-xl text-2xl text-white">Services are being set up.</h2>
               <p className="mt-2 text-white/60">
-                Service lines appear here as soon as they're published from the dashboard.
+                Service categories appear here as soon as they're published from the dashboard.
               </p>
             </div>
           )}
-          {services.map((s) => {
-            const isOpen = open === s.n;
-            return (
-              <motion.div
-                key={s.n}
-                layout
-                onClick={() => setOpen(isOpen ? null : s.n)}
-                className={
-                  "cursor-pointer border-b border-white/10 py-8 md:py-10 group " +
-                  (isOpen ? "" : "")
-                }
-              >
-                <motion.div layout className="flex items-center gap-3 sm:gap-4 md:gap-8">
-                  <span className="display-xl text-2xl sm:text-3xl md:text-5xl text-white/40 group-hover:text-cyan-hi transition-colors shrink-0">
-                    {s.n}
-                  </span>
-                  <h2
-                    className="display-xl flex-1 min-w-0 text-white group-hover:grad-text transition-colors"
-                    style={{ fontSize: "clamp(1.35rem, 4.5vw, 3.5rem)" }}
+
+          {hasCatalog && (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {categories.map((cat, i) => (
+                <motion.div
+                  key={cat.slug}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-8%" }}
+                  transition={{ delay: (i % 3) * 0.07, duration: 0.55 }}
+                >
+                  <Link
+                    to="/services/$category"
+                    params={{ category: cat.slug }}
+                    className="group relative block text-left rounded-3xl overflow-hidden hover-lift min-h-[230px] flex flex-col justify-end p-6"
                   >
-                    {s.t}
-                  </h2>
-                  <span className="grid h-11 w-11 place-items-center rounded-full glass shrink-0">
-                    {isOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                  </span>
-                </motion.div>
-                {isOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="mt-8 grid md:grid-cols-2 gap-8 overflow-hidden"
-                  >
-                    <img
-                      src={s.img}
-                      alt=""
-                      className="w-full h-64 md:h-80 object-cover rounded-3xl"
-                    />
-                    <div>
-                      <p className="text-white/80 text-lg">{s.body}</p>
-                      <div className="mt-4 micro-label">What's included</div>
-                      <ul className="mt-3 space-y-2 text-white/70">
-                        {s.inc.map((i) => (
-                          <li key={i}>— {i}</li>
-                        ))}
-                      </ul>
-                      <div className="mt-8 flex gap-3">
-                        <LiquidButton
-                          href={waLink(`Hi LK Chemicals, I'd like a service quote for ${s.t}.`)}
-                          external
-                          variant="leaf"
-                        >
-                          WhatsApp
-                        </LiquidButton>
-                        <LiquidButton to="/contact">Send enquiry</LiquidButton>
-                      </div>
+                    {cat.image ? (
+                      <img
+                        src={cat.image}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-royal/40 via-ink to-ink" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/15" />
+                    <div className="absolute top-5 left-6 display-xl text-4xl text-on-media opacity-60">
+                      {cat.number}
                     </div>
-                  </motion.div>
-                )}
-              </motion.div>
-            );
-          })}
+                    <div className="absolute top-5 right-5 grid h-9 w-9 place-items-center rounded-full bg-white/10 backdrop-blur text-on-media transition-transform group-hover:rotate-45">
+                      <ArrowUpRight className="h-4 w-4" />
+                    </div>
+                    <h2 className="relative display-xl text-2xl sm:text-3xl text-on-media">
+                      {cat.name}
+                    </h2>
+                    <p className="relative mt-1.5 text-sm text-on-media-soft line-clamp-2">
+                      {cat.tagline}
+                    </p>
+                    <span className="relative mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-cyan-hi/20 border border-cyan-hi/30 px-3 py-1 text-[11px] tracking-widest uppercase text-on-media">
+                      <Wrench className="h-3 w-3" />
+                      {countFor(cat.slug)} services
+                    </span>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
+      {/* Service process */}
       <section className="section-light py-28 relative overflow-hidden">
         <GhostWord className="absolute top-0 right-0 !text-[12vw] opacity-50">PROCESS</GhostWord>
         <div className="relative mx-auto max-w-7xl px-6 md:px-8">

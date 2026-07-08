@@ -11,12 +11,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
-import { type Category, type Product } from "@/data/products";
+import { type Category, type Product, type ServiceCategory, type Service } from "@/data/products";
 import {
   staticGallery,
   staticTestimonials,
   staticSettings,
-  type Service,
   type GalleryItem,
   type Testimonial,
   type SiteSettings,
@@ -77,12 +76,28 @@ export function useProducts() {
   });
 }
 
+export function useServiceCategories() {
+  return useQuery({
+    queryKey: ["content", "serviceCategories"],
+    queryFn: async () => {
+      const rows = await fetchCollection<ServiceCategory>("serviceCategories", []);
+      return rows
+        .filter(isLive)
+        .sort((a, b) => orderNum(a) - orderNum(b) || Number(a.number ?? 0) - Number(b.number ?? 0));
+    },
+    initialData: [] as ServiceCategory[],
+    ...common,
+  });
+}
+
 export function useServices() {
   return useQuery({
     queryKey: ["content", "services"],
     queryFn: async () => {
-      const rows = await fetchCollection<Service>("services", [], "n");
-      return rows.filter(isLive);
+      const rows = await fetchCollection<Service>("services", []);
+      return rows
+        .filter(isLive)
+        .sort((a, b) => orderNum(a) - orderNum(b) || String(a.name).localeCompare(String(b.name)));
     },
     initialData: [] as Service[],
     ...common,

@@ -12,28 +12,19 @@ import desc from "@/assets/descaling.jpg";
 import hero from "@/assets/hero-depth.jpg";
 // Photos taken from the client's printed brochures
 import bScaleMaster from "@/assets/b-scale-master.jpg";
-import bMembrane from "@/assets/b-membrane.jpg";
 import bLk1001 from "@/assets/b-lk1001.jpg";
 import bLk1044 from "@/assets/b-lk1044.jpg";
 import bLk1055 from "@/assets/b-lk1055.jpg";
 import bLk5010 from "@/assets/b-lk5010.jpg";
-import bBoiler from "@/assets/b-boiler.jpg";
-import bCoolingTowers from "@/assets/b-cooling-towers.jpg";
 import bTubeScale from "@/assets/b-tube-scale.jpg";
 import bEtpBeakers from "@/assets/b-etp-beakers.jpg";
 import bRoPlantSkid from "@/assets/b-ro-plant-skid.jpg";
 import bDmPlant from "@/assets/b-dm-plant.jpg";
 import bSoftener from "@/assets/b-softener.jpg";
-import bVessels from "@/assets/b-vessels.jpg";
 
-export type Service = {
-  n: string;
-  t: string;
-  img: string;
-  body: string;
-  inc: string[];
-  status?: string; // published | draft | archived (admin-managed)
-};
+// Services are now a hierarchical, fully admin-managed module (Service
+// Categories → Services). Their types live alongside the catalog in
+// src/data/products.ts; there is intentionally no built-in service seed here.
 
 export type GalleryItem = {
   src: string;
@@ -62,139 +53,6 @@ export type SiteSettings = {
   hours: string;
   mapQuery: string;
 };
-
-export const staticServices: Service[] = [
-  {
-    n: "01",
-    t: "RO Plant Servicing & Repair",
-    img: bRoPlantSkid,
-    body: "On-site diagnosis, mechanical repair and annual maintenance of RO plants of any make — membranes, cartridges, dosing skid and all.",
-    inc: [
-      "Pump and motor repair",
-      "Membrane & cartridge replacement",
-      "High-pressure line fabrication",
-      "AMC with defined SLA and spares stocking",
-    ],
-  },
-  {
-    n: "02",
-    t: "RO Descaling & Membrane CIP",
-    img: bMembrane,
-    body: "Off-line acid/alkaline CIP with LK 1055 + LK 1066 that restores membrane flux to design.",
-    inc: ["Two-step CIP", "Flux measurement pre/post", "Waste chemical neutralisation"],
-  },
-  {
-    n: "03",
-    t: "Boiler Descaling",
-    img: bBoiler,
-    body: "Inhibited-acid descaling for fire tube and water tube boilers across all pressure classes.",
-    inc: ["Boiler inspection", "Scale removal", "Passivation"],
-  },
-  {
-    n: "04",
-    t: "Chiller Descaling",
-    img: ct,
-    body: "Water-cooled chiller descaling with copper-safe chemistry.",
-    inc: ["Condenser tube cleaning", "Endpoint indicator", "COP verification"],
-  },
-  {
-    n: "05",
-    t: "Condenser Descaling",
-    img: ct,
-    body: "Mechanical + chemical cleaning of shell-and-tube condensers.",
-    inc: ["Tube brushing", "Chemical soak", "Flow testing"],
-  },
-  {
-    n: "06",
-    t: "Heat Exchanger Descaling",
-    img: bTubeScale,
-    body: "Plate and shell-and-tube heat exchanger descaling that brings approach temperatures back to design.",
-    inc: ["Plate pack / tube bundle cleaning", "Gasket inspection", "Performance verification"],
-  },
-  {
-    n: "07",
-    t: "Cooling Tower Descaling & Treatment",
-    img: bCoolingTowers,
-    body: "Tower descaling plus cycles of concentration optimisation, biocide programme and dosing.",
-    inc: [
-      "Fill & basin descaling",
-      "CoC study and biocide rotation",
-      "Corrosion coupon monitoring",
-    ],
-  },
-  {
-    n: "08",
-    t: "Moulds Descaling",
-    img: desc,
-    body: "Descaling of mould cooling channels in injection moulding and die casting — cycle times back to spec.",
-    inc: ["Channel-by-channel flushing", "Copper-safe chemistry", "Flow verification"],
-  },
-  {
-    n: "09",
-    t: "AHU Descaling & Coil Cleaning",
-    img: plant,
-    body: "AHU and FCU coil cleaning and cooling-coil descaling for HVAC systems — done without damaging aluminium fins.",
-    inc: ["Coil foam cleaning", "Drain pan sanitisation", "Fin-safe chemistry"],
-  },
-  {
-    n: "10",
-    t: "Pipe Line Descaling",
-    img: desc,
-    body: "Descaling of process and utility pipelines — flow rates and pressure drops restored without cutting pipe.",
-    inc: ["Circulation descaling", "Before/after flow measurement", "Neutralisation & disposal"],
-  },
-  {
-    n: "11",
-    t: "Softener Plant Servicing",
-    img: bSoftener,
-    body: "Softener design, resin change-out and regeneration troubleshooting.",
-    inc: ["Hardness monitoring", "Resin change-out", "Brine tank service"],
-  },
-  {
-    n: "12",
-    t: "DM Plant Servicing",
-    img: bDmPlant,
-    body: "DM plant service — resin replacement, regeneration chemistry and output quality troubleshooting.",
-    inc: [
-      "Resin replacement (all types)",
-      "Regeneration optimisation",
-      "Conductivity & silica monitoring",
-    ],
-  },
-  {
-    n: "13",
-    t: "Resin Cleaning Service",
-    img: resin,
-    body: "On-site chemical cleaning of fouled softener and DM resin beds — capacity recharged without a full change-out.",
-    inc: ["Iron & organic fouling removal", "Capacity test pre/post", "Bed inspection report"],
-  },
-  {
-    n: "14",
-    t: "ETP & STP Plant Services",
-    img: bVessels,
-    body: "Operation, maintenance and revival of effluent and sewage treatment plants — aerobic, anaerobic, MBBR and SBR.",
-    inc: ["Operator support & O&M contracts", "Bio culture re-seeding", "Compliance reporting"],
-  },
-  {
-    n: "15",
-    t: "HVAC & AMC Services",
-    img: hero,
-    body: "Annual maintenance contracts and allied works around your utilities — HVAC servicing, plumbing, insulation and fire-fighting systems.",
-    inc: [
-      "Comprehensive & non-comprehensive AMCs",
-      "HVAC servicing",
-      "Plumbing & insulation works",
-      "Fire-fighting system support",
-    ],
-  },
-  {
-    n: "16",
-    t: "Industrial Water Treatment Consultation",
-    img: lab,
-    body: "Advisory for greenfield plants and retrofit projects.",
-    inc: ["Feed water analysis", "Scheme selection", "OPEX modelling"],
-  },
-];
 
 export const staticGallery: GalleryItem[] = [
   { src: plant, alt: "Manufacturing plant floor", cat: "Factory", wide: true },

@@ -24,7 +24,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { auth } from "@/integrations/firebase/client";
 import logoUrl from "@/assets/lk-logo.png";
-import { MODULES } from "./registry";
+import { MODULES, moduleById } from "./registry";
 import { useCol, useEnquiries } from "./api";
 import type { AdminTheme } from "./theme";
 import { IconBtn } from "./ui";
@@ -42,6 +42,7 @@ type NavSection = { label: string; items: NavItem[] };
 function useNav(): NavSection[] {
   const products = useCol("products").data?.length;
   const categories = useCol("categories").data?.length;
+  const serviceCategories = useCol("serviceCategories").data?.length;
   const services = useCol("services").data?.length;
   const gallery = useCol("gallery").data?.length;
   const testimonials = useCol("testimonials").data?.length;
@@ -69,16 +70,35 @@ function useNav(): NavSection[] {
         {
           to: "/admin/products",
           label: "Products",
-          icon: MODULES[0].icon,
+          icon: moduleById("products").icon,
           key: "p",
           count: products,
         },
         {
           to: "/admin/categories",
           label: "Categories",
-          icon: MODULES[1].icon,
+          icon: moduleById("categories").icon,
           key: "c",
           count: categories,
+        },
+      ],
+    },
+    {
+      label: "Services",
+      items: [
+        {
+          to: "/admin/serviceCategories",
+          label: "Service categories",
+          icon: moduleById("serviceCategories").icon,
+          key: "v",
+          count: serviceCategories,
+        },
+        {
+          to: "/admin/services",
+          label: "Services",
+          icon: moduleById("services").icon,
+          key: "s",
+          count: services,
         },
       ],
     },
@@ -87,17 +107,16 @@ function useNav(): NavSection[] {
       items: [
         { to: "/admin/content", label: "Website pages", icon: FileText, key: "w" },
         {
-          to: "/admin/services",
-          label: "Services",
-          icon: MODULES[2].icon,
-          key: "s",
-          count: services,
+          to: "/admin/gallery",
+          label: "Media",
+          icon: moduleById("gallery").icon,
+          key: "m",
+          count: gallery,
         },
-        { to: "/admin/gallery", label: "Media", icon: MODULES[3].icon, key: "m", count: gallery },
         {
           to: "/admin/testimonials",
           label: "Testimonials",
-          icon: MODULES[4].icon,
+          icon: moduleById("testimonials").icon,
           key: "t",
           count: testimonials,
         },
@@ -210,8 +229,8 @@ function CommandPalette({
   const sections = useNav();
   const products = useCol("products").data ?? [];
   const services = useCol("services").data ?? [];
-  const ProductIcon = MODULES[0].icon;
-  const ServiceIcon = MODULES[2].icon;
+  const ProductIcon = moduleById("products").icon;
+  const ServiceIcon = moduleById("services").icon;
 
   if (!open) return null;
 
@@ -300,18 +319,18 @@ function CommandPalette({
                 {services.slice(0, 20).map((s) => (
                   <Command.Item
                     key={s.__id}
-                    value={`service ${String(s.t ?? s.__id)}`}
+                    value={`service ${String(s.name ?? s.__id)}`}
                     onSelect={() =>
                       go(() =>
                         navigate({
                           to: "/admin/services",
-                          search: { q: String(s.t ?? "") } as never,
+                          search: { q: String(s.name ?? "") } as never,
                         }),
                       )
                     }
                   >
                     <ServiceIcon className="h-4 w-4" />
-                    <span className="truncate">{String(s.t ?? s.__id)}</span>
+                    <span className="truncate">{String(s.name ?? s.__id)}</span>
                   </Command.Item>
                 ))}
               </Command.Group>

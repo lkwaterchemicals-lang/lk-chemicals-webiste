@@ -1,7 +1,7 @@
 // Module registry — one place that describes every content collection the
 // admin manages: its Firestore shape, edit fields, seeds and public preview.
 import type { LucideIcon } from "lucide-react";
-import { Image as ImageIcon, LayoutGrid, Package, Quote, Wrench } from "lucide-react";
+import { FolderTree, Image as ImageIcon, LayoutGrid, Package, Quote, Wrench } from "lucide-react";
 import { staticGallery, staticTestimonials } from "@/data/content";
 import { ICON_NAMES } from "@/lib/icons";
 
@@ -37,7 +37,10 @@ export type FieldDef = {
   itemNoun?: string;
   /** group: which sub-field to surface as a row title */
   itemTitleKey?: string;
-  /** multiref: the collection whose records this field references */
+  /** select / multiref: the collection whose records this field references.
+   * Options are resolved live from that collection (value = slug, label = name).
+   * When it equals the module's own id the field self-references (e.g. parent),
+   * so the record being edited is excluded from the options. */
   refCollection?: string;
 };
 
@@ -51,6 +54,8 @@ export type ModuleDef = {
   subtitleField?: string;
   imageKey?: "image" | "img" | "src";
   order?: string;
+  /** enable drag-and-drop reordering; persists sequential values to `order`. */
+  reorderable?: boolean;
   fields: FieldDef[];
   seed?: () => Record<string, unknown>[];
   publicPath?: (row: Row) => string | null;
@@ -111,6 +116,31 @@ const SPEC_FIELD: FieldDef = {
   ],
 };
 
+// Reused by services: an ordered set of process steps and a FAQ list.
+const PROCESS_FIELD: FieldDef = {
+  key: "process",
+  label: "Process steps",
+  type: "group",
+  itemNoun: "step",
+  itemTitleKey: "title",
+  itemFields: [
+    { key: "title", label: "Title", type: "text" },
+    { key: "body", label: "Description", type: "textarea" },
+  ],
+};
+
+const FAQ_FIELD: FieldDef = {
+  key: "faqs",
+  label: "FAQs",
+  type: "group",
+  itemNoun: "FAQ",
+  itemTitleKey: "q",
+  itemFields: [
+    { key: "q", label: "Question", type: "text" },
+    { key: "a", label: "Answer", type: "textarea" },
+  ],
+};
+
 export const MODULES: ModuleDef[] = [
   {
     id: "products",
@@ -136,7 +166,13 @@ export const MODULES: ModuleDef[] = [
         hint: "URL id — auto-generated from the name",
         slugOf: "name",
       },
-      { key: "category", label: "Category", type: "select", options: [], required: true },
+      {
+        key: "category",
+        label: "Category",
+        type: "select",
+        refCollection: "categories",
+        required: true,
+      },
       {
         key: "subcategory",
         label: "Subcategory",
@@ -190,6 +226,7 @@ export const MODULES: ModuleDef[] = [
     subtitleField: "tagline",
     imageKey: "image",
     order: "number",
+    reorderable: true,
     fields: [
       { key: "name", label: "Name", type: "text", required: true },
       {
@@ -203,7 +240,7 @@ export const MODULES: ModuleDef[] = [
         key: "parent",
         label: "Parent category",
         type: "select",
-        options: [],
+        refCollection: "categories",
         hint: "Optional — leave blank for a top-level category",
       },
       {
@@ -230,29 +267,126 @@ export const MODULES: ModuleDef[] = [
     publicPath: (r) => (r.slug ? `/products?cat=${String(r.slug)}` : null),
   },
   {
-    id: "services",
-    label: "Services",
-    singular: "service",
-    icon: Wrench,
-    idField: "n",
-    titleField: "t",
-    imageKey: "img",
-    order: "n",
+    id: "serviceCategories",
+    label: "Service categories",
+    singular: "service category",
+    icon: FolderTree,
+    idField: "slug",
+    titleField: "name",
+    subtitleField: "tagline",
+    imageKey: "image",
+    order: "number",
+    reorderable: true,
     fields: [
+      { key: "name", label: "Name", type: "text", required: true },
       {
-        key: "n",
+        key: "slug",
+        label: "Slug",
+        type: "text",
+        hint: "URL id — auto-generated from the name",
+        slugOf: "name",
+      },
+      {
+        key: "parent",
+        label: "Parent category",
+        type: "select",
+        refCollection: "serviceCategories",
+        hint: "Optional — leave blank for a top-level category",
+      },
+      {
+        key: "number",
         label: "Number",
         type: "text",
         required: true,
         hint: "01–99, controls display order",
       },
-      { key: "t", label: "Title", type: "text", required: true },
       { ...STATUS_FIELD },
-      { key: "body", label: "Description", type: "textarea" },
-      { key: "img", label: "Image", type: "image" },
-      { key: "inc", label: "What's included", type: "list", hint: "One per line" },
+      { key: "featured", label: "Featured", type: "boolean" },
+      { key: "iconName", label: "Icon", type: "select", options: ICON_NAMES },
+      { key: "tagline", label: "Tagline", type: "text" },
+      { key: "description", label: "Description", type: "textarea" },
+      { key: "image", label: "Cover image", type: "image" },
+      {
+        key: "banner",
+        label: "Banner image",
+        type: "image",
+        hint: "Wide hero for the category page",
+      },
+      ...SEO_FIELDS,
     ],
-    publicPath: () => "/services",
+    publicPath: (r) => (r.slug ? `/services/${String(r.slug)}` : null),
+  },
+  {
+    id: "services",
+    label: "Services",
+    singular: "service",
+    icon: Wrench,
+    idField: "slug",
+    titleField: "name",
+    subtitleField: "serviceCategory",
+    imageKey: "image",
+    order: "order",
+    reorderable: true,
+    fields: [
+      {
+        key: "name",
+        label: "Name",
+        type: "text",
+        required: true,
+        placeholder: "e.g. RO Plant Servicing & Repair",
+      },
+      {
+        key: "slug",
+        label: "Slug",
+        type: "text",
+        hint: "URL id — auto-generated from the name",
+        slugOf: "name",
+      },
+      {
+        key: "serviceCategory",
+        label: "Service category",
+        type: "select",
+        refCollection: "serviceCategories",
+        required: true,
+      },
+      { ...STATUS_FIELD },
+      { key: "featured", label: "Featured", type: "boolean", hint: "Highlight on listings" },
+      { key: "order", label: "Display order", type: "text", hint: "Lower shows first (e.g. 10)" },
+      { key: "description", label: "Description", type: "textarea", required: true },
+      { key: "highlights", label: "What's included", type: "list", hint: "One per line" },
+      {
+        key: "image",
+        label: "Cover image",
+        type: "image",
+        hint: "Optional — falls back to the category image",
+      },
+      {
+        key: "gallery",
+        label: "Gallery",
+        type: "gallery",
+        hint: "Additional images, drag-orderable",
+      },
+      {
+        key: "documents",
+        label: "Documents",
+        type: "documents",
+        hint: "Brochures, datasheets, certificates…",
+      },
+      { ...PROCESS_FIELD },
+      { ...FAQ_FIELD },
+      {
+        key: "related",
+        label: "Related services",
+        type: "multiref",
+        refCollection: "services",
+        hint: "Cross-link on the service page",
+      },
+      ...SEO_FIELDS,
+    ],
+    publicPath: (r) =>
+      r.slug && r.serviceCategory
+        ? `/services/${String(r.serviceCategory)}/${String(r.slug)}`
+        : null,
   },
   {
     id: "gallery",

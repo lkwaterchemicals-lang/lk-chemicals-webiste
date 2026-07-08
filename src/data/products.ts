@@ -57,6 +57,55 @@ export type Product = {
   ogImage?: string;
 };
 
+/* --------------------------------------------------------------- services */
+// Services mirror the catalog: top-level ServiceCategory records that each own
+// unlimited Service records. Like the catalog, everything is admin-managed and
+// stored in Firestore — there is no built-in seed here.
+
+export type FaqItem = { q: string; a: string };
+export type ProcessStep = { title: string; body: string };
+
+export type ServiceCategory = {
+  slug: string;
+  number: string; // controls display order
+  name: string;
+  tagline: string;
+  description: string;
+  image: string; // cover image
+  parent?: string; // slug of a parent service category (optional nesting)
+  status?: Status;
+  featured?: boolean;
+  order?: string;
+  banner?: string; // wide hero image for the category page
+  iconName?: string; // Lucide icon name (see src/lib/icons.ts)
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string;
+  ogImage?: string;
+};
+
+export type Service = {
+  slug: string;
+  name: string;
+  serviceCategory: string; // slug of the owning service category
+  description: string;
+  /** Optional service photo — falls back to the category image when absent. */
+  image?: string;
+  status?: Status;
+  featured?: boolean;
+  order?: string;
+  highlights?: string[]; // "what's included" bullet points
+  gallery?: string[];
+  documents?: ProductDocument[];
+  faqs?: FaqItem[];
+  process?: ProcessStep[];
+  related?: string[]; // slugs of related services
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string;
+  ogImage?: string;
+};
+
 // No built-in catalog. Everything is created in the admin dashboard.
 export const categories: Category[] = [];
 export const products: Product[] = [];

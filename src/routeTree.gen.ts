@@ -18,16 +18,19 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as ServicesCategoryRouteImport } from './routes/services_.$category'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
+import { Route as AdminServiceCategoriesRouteImport } from './routes/admin.serviceCategories'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminGalleryRouteImport } from './routes/admin.gallery'
 import { Route as AdminEnquiriesRouteImport } from './routes/admin.enquiries'
 import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
+import { Route as ServicesCategoryServiceRouteImport } from './routes/services_.$category_.$service'
 import { Route as AdminContentPageRouteImport } from './routes/admin.content_.$page'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -75,6 +78,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const ServicesCategoryRoute = ServicesCategoryRouteImport.update({
+  id: '/services_/$category',
+  path: '/services/$category',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
   id: '/products_/$slug',
   path: '/products/$slug',
@@ -93,6 +101,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminServicesRoute = AdminServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminServiceCategoriesRoute = AdminServiceCategoriesRouteImport.update({
+  id: '/serviceCategories',
+  path: '/serviceCategories',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminProductsRoute = AdminProductsRouteImport.update({
@@ -125,6 +138,11 @@ const AdminActivityRoute = AdminActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => AdminRoute,
 } as any)
+const ServicesCategoryServiceRoute = ServicesCategoryServiceRouteImport.update({
+  id: '/services_/$category_/$service',
+  path: '/services/$category/$service',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminContentPageRoute = AdminContentPageRouteImport.update({
   id: '/content_/$page',
   path: '/content/$page',
@@ -146,12 +164,15 @@ export interface FileRoutesByFullPath {
   '/admin/enquiries': typeof AdminEnquiriesRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/products': typeof AdminProductsRoute
+  '/admin/serviceCategories': typeof AdminServiceCategoriesRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/services/$category': typeof ServicesCategoryRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/content/$page': typeof AdminContentPageRoute
+  '/services/$category/$service': typeof ServicesCategoryServiceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -167,12 +188,15 @@ export interface FileRoutesByTo {
   '/admin/enquiries': typeof AdminEnquiriesRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/products': typeof AdminProductsRoute
+  '/admin/serviceCategories': typeof AdminServiceCategoriesRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/services/$category': typeof ServicesCategoryRoute
   '/admin': typeof AdminIndexRoute
   '/admin/content/$page': typeof AdminContentPageRoute
+  '/services/$category/$service': typeof ServicesCategoryServiceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -190,12 +214,15 @@ export interface FileRoutesById {
   '/admin/enquiries': typeof AdminEnquiriesRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/products': typeof AdminProductsRoute
+  '/admin/serviceCategories': typeof AdminServiceCategoriesRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/products_/$slug': typeof ProductsSlugRoute
+  '/services_/$category': typeof ServicesCategoryRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/content_/$page': typeof AdminContentPageRoute
+  '/services_/$category_/$service': typeof ServicesCategoryServiceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -214,12 +241,15 @@ export interface FileRouteTypes {
     | '/admin/enquiries'
     | '/admin/gallery'
     | '/admin/products'
+    | '/admin/serviceCategories'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/testimonials'
     | '/products/$slug'
+    | '/services/$category'
     | '/admin/'
     | '/admin/content/$page'
+    | '/services/$category/$service'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -235,12 +265,15 @@ export interface FileRouteTypes {
     | '/admin/enquiries'
     | '/admin/gallery'
     | '/admin/products'
+    | '/admin/serviceCategories'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/testimonials'
     | '/products/$slug'
+    | '/services/$category'
     | '/admin'
     | '/admin/content/$page'
+    | '/services/$category/$service'
   id:
     | '__root__'
     | '/'
@@ -257,12 +290,15 @@ export interface FileRouteTypes {
     | '/admin/enquiries'
     | '/admin/gallery'
     | '/admin/products'
+    | '/admin/serviceCategories'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/testimonials'
     | '/products_/$slug'
+    | '/services_/$category'
     | '/admin/'
     | '/admin/content_/$page'
+    | '/services_/$category_/$service'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -275,6 +311,8 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
+  ServicesCategoryRoute: typeof ServicesCategoryRoute
+  ServicesCategoryServiceRoute: typeof ServicesCategoryServiceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -342,6 +380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/services_/$category': {
+      id: '/services_/$category'
+      path: '/services/$category'
+      fullPath: '/services/$category'
+      preLoaderRoute: typeof ServicesCategoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/products_/$slug': {
       id: '/products_/$slug'
       path: '/products/$slug'
@@ -368,6 +413,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/admin/services'
       preLoaderRoute: typeof AdminServicesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/serviceCategories': {
+      id: '/admin/serviceCategories'
+      path: '/serviceCategories'
+      fullPath: '/admin/serviceCategories'
+      preLoaderRoute: typeof AdminServiceCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/products': {
@@ -412,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminActivityRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/services_/$category_/$service': {
+      id: '/services_/$category_/$service'
+      path: '/services/$category/$service'
+      fullPath: '/services/$category/$service'
+      preLoaderRoute: typeof ServicesCategoryServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/content_/$page': {
       id: '/admin/content_/$page'
       path: '/content/$page'
@@ -429,6 +488,7 @@ interface AdminRouteChildren {
   AdminEnquiriesRoute: typeof AdminEnquiriesRoute
   AdminGalleryRoute: typeof AdminGalleryRoute
   AdminProductsRoute: typeof AdminProductsRoute
+  AdminServiceCategoriesRoute: typeof AdminServiceCategoriesRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
@@ -443,6 +503,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEnquiriesRoute: AdminEnquiriesRoute,
   AdminGalleryRoute: AdminGalleryRoute,
   AdminProductsRoute: AdminProductsRoute,
+  AdminServiceCategoriesRoute: AdminServiceCategoriesRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminTestimonialsRoute: AdminTestimonialsRoute,
@@ -462,6 +523,8 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ProductsSlugRoute: ProductsSlugRoute,
+  ServicesCategoryRoute: ServicesCategoryRoute,
+  ServicesCategoryServiceRoute: ServicesCategoryServiceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

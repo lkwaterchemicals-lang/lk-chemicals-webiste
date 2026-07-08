@@ -44,8 +44,21 @@ export function ImageField({
         role="button"
         tabIndex={0}
         aria-label="Upload image"
-        onClick={() => fileRef.current?.click()}
-        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileRef.current?.click()}
+        // This dropzone sits inside the <label> that `Field` renders. A plain
+        // click would fire our handler AND the label's default action, which
+        // forwards a second click to its first labelable descendant — this
+        // very file input — opening the OS picker twice. preventDefault cancels
+        // that forwarding so one click opens the picker exactly once.
+        onClick={(e) => {
+          e.preventDefault();
+          fileRef.current?.click();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            fileRef.current?.click();
+          }
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);

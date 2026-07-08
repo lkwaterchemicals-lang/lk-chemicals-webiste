@@ -34,6 +34,11 @@
   --a-r: 10px;
   --a-r-lg: 16px;
 
+  /* Make native controls (select option lists, checkboxes, scrollbars,
+     autofill) follow the admin palette — without this, the <select> dropdown
+     popups render light in dark mode and their option text is invisible. */
+  color-scheme: light;
+
   background: var(--a-bg);
   color: var(--a-text);
   font-family: var(--font-sans);
@@ -44,6 +49,7 @@
 
 .adm[data-atheme="dark"] {
   /* ---- Dark (cinematic, not inverted) ---- */
+  color-scheme: dark;
   --a-bg: #09090b;
   --a-surface: #18181b;
   --a-surface2: #27272a;

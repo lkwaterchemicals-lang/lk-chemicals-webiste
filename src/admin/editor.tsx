@@ -53,10 +53,14 @@ export function EditorDrawer({
   const [confirmClose, setConfirmClose] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
 
-  // Re-sync when a different record opens.
-  const [seenStart, setSeenStart] = useState(start);
-  if (start !== seenStart) {
-    setSeenStart(start);
+  // Re-sync only when a *different* record opens — keyed on the record's
+  // identity (`initial`), NOT on `start`. `start` also changes reference
+  // whenever select/multiref options refetch in the background (react-query
+  // refetches on window focus — e.g. after the file picker closes), and that
+  // must never wipe the admin's in-progress edits.
+  const [seenInitial, setSeenInitial] = useState(initial);
+  if (initial !== seenInitial) {
+    setSeenInitial(initial);
     setValues(start);
     setErrors({});
     setSlugTouched(false);

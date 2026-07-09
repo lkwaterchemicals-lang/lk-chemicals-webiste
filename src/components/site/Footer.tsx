@@ -111,6 +111,10 @@ export function Footer() {
             © {new Date().getFullYear()} {g.brandName} All rights reserved.
           </p>
           <p>{g.footerNote}</p>
+          <p>
+            Designed &amp; developed by{" "}
+            <span className="font-medium text-white/60">Dream Team Services</span>
+          </p>
         </div>
       </div>
     </footer>

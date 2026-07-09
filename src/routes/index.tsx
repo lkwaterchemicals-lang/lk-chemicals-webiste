@@ -691,7 +691,10 @@ function WhyLK() {
   const items = c.whyItems;
   return (
     <section className="section-light py-28 relative overflow-hidden">
-      <GhostWord className="absolute bottom-2 right-0 text-[22vw]">PURITY</GhostWord>
+      {/* Centred on phones — right-anchored it cropped at the viewport edge */}
+      <GhostWord className="absolute bottom-2 max-md:left-1/2 max-md:-translate-x-1/2 md:right-0 text-[22vw]">
+        PURITY
+      </GhostWord>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
         <MicroLabel n="07" className="!text-royal">
           Why LK

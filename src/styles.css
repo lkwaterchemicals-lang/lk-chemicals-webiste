@@ -560,6 +560,18 @@
     padding-top: 3.5rem;
     padding-bottom: 3.5rem;
   }
+
+  /* Marquees tuned for desktop crawl on a narrow screen — speed them up so
+     they read as motion, not a stall. */
+  .marquee-track {
+    animation-duration: 20s;
+  }
+  .marquee-track-rev {
+    animation-duration: 24s;
+  }
+  .marquee-slow {
+    animation-duration: 30s;
+  }
 }
 
 /* ---------- Back to top ---------- */

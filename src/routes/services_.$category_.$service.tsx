@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Check, ChevronDown, Download } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Download, Phone } from "lucide-react";
 import { useServiceCategories, useServices, useSiteSettings } from "@/lib/content";
 import { type Service } from "@/data/products";
 import { MicroLabel } from "@/components/site/GhostWord";
 import { LiquidButton } from "@/components/site/LiquidButton";
+import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
 
@@ -33,6 +34,15 @@ function ServiceDetail() {
   const { data: settings } = useSiteSettings();
   const [activeImg, setActiveImg] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  // Phones swap the floating contact cluster for the fixed action dock while
+  // this page is open — see body[data-dock] in styles.css.
+  useEffect(() => {
+    document.body.dataset.dock = "1";
+    return () => {
+      delete document.body.dataset.dock;
+    };
+  }, []);
 
   const service: Service | null = services.find((s) => s.slug === serviceSlug) ?? null;
   if (!service) {
@@ -255,21 +265,30 @@ function ServiceDetail() {
             </div>
           )}
 
-          {/* Sticky enquiry bar */}
-          <div className="mt-10 sticky bottom-4 z-20 glass-dark rounded-full px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="text-white/80 text-sm px-2">
-              <span className="micro-label">Enquire · {service.name}</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <LiquidButton href={waLink(msg)} external variant="leaf">
-                WhatsApp
-              </LiquidButton>
-              <LiquidButton href={`tel:${settings.phone.replace(/\s+/g, "")}`} variant="ghost">
-                Call
-              </LiquidButton>
-              <LiquidButton href="#enquire" variant="primary">
-                Send enquiry
-              </LiquidButton>
+          {/* Action dock — fixed to the screen bottom on phones, floating
+              pill inside the section on desktop. */}
+          <div className="mt-10 sticky bottom-4 z-20 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[60] max-lg:mt-0 max-lg:px-3 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="glass-dark rounded-full px-4 py-3 flex flex-wrap items-center justify-between gap-3 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2.5">
+              <div className="hidden lg:block text-white/80 text-sm px-2">
+                <span className="micro-label">Enquire · {service.name}</span>
+              </div>
+              <div className="flex gap-2 max-lg:w-full">
+                <WhatsAppButton href={waLink(msg)} className="max-lg:flex-1 justify-center !px-4">
+                  WhatsApp
+                </WhatsAppButton>
+                <a
+                  href={`tel:${settings.phone.replace(/\s+/g, "")}`}
+                  className="max-lg:flex-1 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm text-white/85 transition-colors hover:border-cyan-hi hover:text-white"
+                >
+                  <Phone className="h-4 w-4" /> Call
+                </a>
+                <a
+                  href="#enquire"
+                  className="max-lg:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-cyan-hi px-5 py-3 text-sm font-semibold text-ink shadow-[0_10px_30px_-10px_var(--cyan-hi)] transition-all hover:brightness-110"
+                >
+                  Enquiry
+                </a>
+              </div>
             </div>
           </div>
         </div>

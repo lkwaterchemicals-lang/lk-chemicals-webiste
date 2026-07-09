@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
+import { getRecaptchaToken, honeypotProps, isLikelySpam } from "@/lib/spam";
 import { LiquidButton } from "./LiquidButton";
 import { Check } from "lucide-react";
 
@@ -23,9 +24,12 @@ export function EnquiryForm({
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState("");
+  const openedAt = useRef(Date.now());
 
-  const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const update =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +38,14 @@ export function EnquiryForm({
       setError("Please share your name, phone and a short requirement.");
       return;
     }
+    // Bots (filled honeypot / instant submit) get a silent fake success.
+    if (isLikelySpam(honeypot, openedAt.current)) {
+      setSent(true);
+      return;
+    }
     setSubmitting(true);
     try {
+      const recaptcha = await getRecaptchaToken("enquiry");
       await addDoc(collection(db, "enquiries"), {
         name: form.name,
         company: form.company || null,
@@ -44,6 +54,7 @@ export function EnquiryForm({
         requirement: form.requirement,
         product_ref: productRef || null,
         source,
+        recaptcha: recaptcha ?? null,
         createdAt: serverTimestamp(),
       });
       setSent(true);
@@ -74,10 +85,32 @@ export function EnquiryForm({
   return (
     <form onSubmit={submit} className={"glass-dark rounded-2xl p-6 md:p-8 " + (compact ? "" : "")}>
       <div className="grid gap-4 md:grid-cols-2">
-        <input required className={input} placeholder="Your name" value={form.name} onChange={update("name")} />
-        <input className={input} placeholder="Company (optional)" value={form.company} onChange={update("company")} />
-        <input required className={input} placeholder="Phone" value={form.phone} onChange={update("phone")} />
-        <input className={input} placeholder="Email (optional)" value={form.email} onChange={update("email")} />
+        <input
+          required
+          className={input}
+          placeholder="Your name"
+          value={form.name}
+          onChange={update("name")}
+        />
+        <input
+          className={input}
+          placeholder="Company (optional)"
+          value={form.company}
+          onChange={update("company")}
+        />
+        <input
+          required
+          className={input}
+          placeholder="Phone"
+          value={form.phone}
+          onChange={update("phone")}
+        />
+        <input
+          className={input}
+          placeholder="Email (optional)"
+          value={form.email}
+          onChange={update("email")}
+        />
       </div>
       <textarea
         required
@@ -86,6 +119,7 @@ export function EnquiryForm({
         value={form.requirement}
         onChange={update("requirement")}
       />
+      <input {...honeypotProps} value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <LiquidButton size="lg" onClick={() => {}}>

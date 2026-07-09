@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { MicroLabel } from "@/components/site/GhostWord";
 import { useGalleryItems } from "@/lib/content";
 import { useGalleryContent } from "@/lib/pages";
@@ -43,16 +43,19 @@ function GalleryPage() {
         <div className="relative mx-auto max-w-7xl px-6 md:px-8">
           <MicroLabel n="00">Gallery</MicroLabel>
           <h1 className="display-xl mt-4 text-6xl md:text-9xl grad-text">{c.heroHeading}</h1>
-          <div className="mt-10 flex flex-wrap gap-2">
+          {/* Filter chips: one scrollable row on phones; quiet glass tiles so
+              they read as filters, not a wall of buttons. */}
+          <div className="mt-10 -mx-6 px-6 md:mx-0 md:px-0 flex gap-2 overflow-x-auto md:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tabs.map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
+                aria-pressed={tab === t}
                 className={
-                  "text-xs uppercase tracking-widest px-4 py-2 rounded-full border transition-all " +
+                  "shrink-0 text-[11px] uppercase tracking-widest px-4 py-2 rounded-full transition-all " +
                   (tab === t
-                    ? "bg-cyan-hi text-ink border-cyan-hi"
-                    : "border-white/15 text-white/70 hover:border-cyan-hi")
+                    ? "bg-cyan-hi text-ink shadow-[0_8px_24px_-10px_var(--cyan-hi)]"
+                    : "bento-tile text-foreground opacity-70 hover:opacity-100")
                 }
               >
                 {t}
@@ -93,7 +96,7 @@ function GalleryPage() {
       </section>
 
       <AnimatePresence>
-        {open !== null && (
+        {open !== null && filtered[open] && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -103,18 +106,71 @@ function GalleryPage() {
           >
             <button
               aria-label="Close"
-              className="absolute top-6 right-6 grid h-11 w-11 place-items-center rounded-full glass text-white"
+              className="absolute top-6 right-6 z-10 grid h-11 w-11 place-items-center rounded-full glass text-white"
             >
               <X className="h-5 w-5" />
             </button>
+
+            {/* Prev / next — buttons on desktop, swipe on touch */}
+            {filtered.length > 1 && (
+              <>
+                <button
+                  aria-label="Previous image"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen((open + filtered.length - 1) % filtered.length);
+                  }}
+                  className="hidden sm:grid absolute left-5 top-1/2 -translate-y-1/2 z-10 h-11 w-11 place-items-center rounded-full glass text-white hover:text-cyan-hi"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  aria-label="Next image"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen((open + 1) % filtered.length);
+                  }}
+                  className="hidden sm:grid absolute right-5 top-1/2 -translate-y-1/2 z-10 h-11 w-11 place-items-center rounded-full glass text-white hover:text-cyan-hi"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            )}
+
             <motion.img
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
+              key={filtered[open].src}
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] }}
               src={filtered[open].src}
               alt={filtered[open].alt}
-              className="max-h-[80vh] max-w-full rounded-3xl object-contain shadow-2xl"
+              drag={filtered.length > 1 ? "x" : false}
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.18}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -56 || info.velocity.x < -420)
+                  setOpen((open + 1) % filtered.length);
+                else if (info.offset.x > 56 || info.velocity.x > 420)
+                  setOpen((open + filtered.length - 1) % filtered.length);
+              }}
+              className="max-h-[76vh] max-w-full rounded-3xl object-contain shadow-2xl cursor-grab active:cursor-grabbing"
               onClick={(e) => e.stopPropagation()}
             />
+
+            {/* Caption + counter */}
+            <div
+              className="absolute bottom-6 inset-x-0 px-6 flex items-center justify-center gap-3 text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="glass rounded-full px-4 py-2 text-xs text-white/85 max-w-[70vw] truncate">
+                {filtered[open].alt}
+              </span>
+              {filtered.length > 1 && (
+                <span className="glass rounded-full px-3 py-2 text-[11px] tabular-nums text-white/70">
+                  {open + 1} / {filtered.length}
+                </span>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

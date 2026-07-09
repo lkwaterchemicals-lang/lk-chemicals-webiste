@@ -1,7 +1,15 @@
 // Module registry — one place that describes every content collection the
 // admin manages: its Firestore shape, edit fields, seeds and public preview.
 import type { LucideIcon } from "lucide-react";
-import { FolderTree, Image as ImageIcon, LayoutGrid, Package, Quote, Wrench } from "lucide-react";
+import {
+  Briefcase,
+  FolderTree,
+  Image as ImageIcon,
+  LayoutGrid,
+  Package,
+  Quote,
+  Wrench,
+} from "lucide-react";
 import { staticGallery, staticTestimonials } from "@/data/content";
 import { ICON_NAMES } from "@/lib/icons";
 
@@ -420,6 +428,7 @@ export const MODULES: ModuleDef[] = [
     icon: Quote,
     idField: "",
     titleField: "who",
+    imageKey: "image",
     fields: [
       { key: "q", label: "Quote", type: "textarea", required: true },
       {
@@ -429,9 +438,76 @@ export const MODULES: ModuleDef[] = [
         required: true,
         placeholder: "Plant Head, API pharma manufacturer",
       },
+      {
+        key: "company",
+        label: "Company / plant",
+        type: "text",
+        hint: "Optional — shown under the attribution",
+      },
+      {
+        key: "rating",
+        label: "Star rating",
+        type: "select",
+        options: ["5", "4", "3"],
+        hint: "Optional — shows gold stars with the quote",
+      },
+      {
+        key: "image",
+        label: "Photo / logo",
+        type: "image",
+        hint: "Optional headshot or company logo",
+      },
     ],
     seed: () => staticTestimonials.map((t) => ({ ...t })),
     publicPath: () => "/",
+  },
+  {
+    id: "careers",
+    label: "Careers",
+    singular: "opening",
+    icon: Briefcase,
+    idField: "slug",
+    titleField: "title",
+    subtitleField: "location",
+    order: "order",
+    reorderable: true,
+    fields: [
+      {
+        key: "title",
+        label: "Job title",
+        type: "text",
+        required: true,
+        placeholder: "e.g. Field Service Engineer",
+      },
+      {
+        key: "slug",
+        label: "Slug",
+        type: "text",
+        hint: "URL id — auto-generated from the title",
+        slugOf: "title",
+      },
+      { key: "department", label: "Department", type: "text", placeholder: "Field Operations" },
+      { key: "location", label: "Location", type: "text", placeholder: "Hyderabad · On-site" },
+      {
+        key: "type",
+        label: "Employment type",
+        type: "select",
+        options: ["Full-time", "Part-time", "Contract", "Internship"],
+      },
+      { key: "experience", label: "Experience", type: "text", placeholder: "2–5 years" },
+      { ...STATUS_FIELD },
+      { key: "order", label: "Display order", type: "text", hint: "Lower shows first (e.g. 10)" },
+      {
+        key: "summary",
+        label: "Summary",
+        type: "textarea",
+        required: true,
+        hint: "Short pitch shown on the careers page",
+      },
+      { key: "responsibilities", label: "Responsibilities", type: "list", hint: "One per line" },
+      { key: "requirements", label: "Requirements", type: "list", hint: "One per line" },
+    ],
+    publicPath: () => "/careers",
   },
 ];
 

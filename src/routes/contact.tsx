@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { MapPin, Phone, Mail, Clock, User, Navigation } from "lucide-react";
 import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
+import { RequestCallButton } from "@/components/site/RequestCall";
+import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { waLink } from "@/components/site/WaCluster";
 import { Waterline } from "@/components/site/Waterline";
@@ -34,7 +36,11 @@ function ContactPage() {
     <>
       <section className="section-dark relative pt-32 sm:pt-40 pb-16 overflow-hidden">
         <div className="absolute inset-0 caustics opacity-40" />
-        <GhostWord className="absolute top-28 right-0 !text-[11vw] opacity-60">CONTACT</GhostWord>
+        {/* Bottom-anchored and desktop-only: at the old top position it sat
+            right on the section label and read as a broken overlap on phones. */}
+        <GhostWord className="hidden md:block absolute bottom-0 right-0 !text-[11vw] opacity-60">
+          CONTACT
+        </GhostWord>
         <div className="relative mx-auto max-w-7xl px-6 md:px-8">
           <MicroLabel n="00">Open a channel</MicroLabel>
           <h1 className="display-xl mt-4 grad-text" style={{ fontSize: "clamp(3rem, 12vw, 9rem)" }}>
@@ -96,9 +102,14 @@ function ContactPage() {
                   <span className="inline-block h-2 w-2 rounded-full bg-leaf animate-pulse-soft ml-1 align-middle" />
                 </div>
               </div>
-              <LiquidButton href={waLink()} external variant="leaf">
-                Chat now
-              </LiquidButton>
+              <WhatsAppButton href={waLink()}>WhatsApp</WhatsAppButton>
+            </div>
+            <div className="glass-dark rounded-2xl p-5 flex items-center justify-between gap-4 hover-lift">
+              <div>
+                <div className="micro-label">Prefer we call you?</div>
+                <div className="text-white mt-1">Pick a time — an engineer calls back.</div>
+              </div>
+              <RequestCallButton source="contact-page" />
             </div>
           </div>
           <div>

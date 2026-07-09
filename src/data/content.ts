@@ -37,6 +37,9 @@ export type GalleryItem = {
 export type Testimonial = {
   q: string;
   who: string;
+  company?: string;
+  rating?: string; // "3"–"5" — optional gold stars
+  image?: string; // optional headshot / logo
 };
 
 export type SiteSettings = {

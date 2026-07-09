@@ -58,12 +58,12 @@
 
 :root {
   --radius: 0.75rem;
-  --ink:      oklch(0.14 0.045 250);
-  --ink-2:    oklch(0.09 0.03 255);
-  --ice:      oklch(0.96 0.02 235);
-  --royal:    oklch(0.55 0.22 260);
-  --cyan-hi:  oklch(0.82 0.16 210);
-  --leaf:     oklch(0.78 0.22 145);
+  --ink: oklch(0.14 0.045 250);
+  --ink-2: oklch(0.09 0.03 255);
+  --ice: oklch(0.96 0.02 235);
+  --royal: oklch(0.55 0.22 260);
+  --cyan-hi: oklch(0.82 0.16 210);
+  --leaf: oklch(0.78 0.22 145);
 
   --background: var(--ink);
   --foreground: oklch(0.98 0.005 240);
@@ -102,14 +102,14 @@
 /* LIGHT THEME — "Surface": ice-white, pale sky, deep-ink text */
 .light {
   /* GLACIAL palette — designed light-first, not inverted from dark */
-  --ink:      oklch(0.20 0.06 258);    /* rich ink-navy — hero text */
-  --ink-2:    oklch(0.28 0.07 258);    /* softer navy */
-  --ice:      oklch(0.985 0.008 235);  /* near-white with cool undertone */
-  --mist:     oklch(0.955 0.020 235);  /* pale sky-mist */
-  --royal:    oklch(0.42 0.22 258);    /* deep gradient origin */
-  --cyan-hi:  oklch(0.62 0.17 232);    /* accessible cyan-blue for accents */
-  --cyan-deep:oklch(0.48 0.20 240);    /* text-safe navy-blue */
-  --leaf:     oklch(0.55 0.18 152);    /* precision green for live states */
+  --ink: oklch(0.2 0.06 258); /* rich ink-navy — hero text */
+  --ink-2: oklch(0.28 0.07 258); /* softer navy */
+  --ice: oklch(0.985 0.008 235); /* near-white with cool undertone */
+  --mist: oklch(0.955 0.02 235); /* pale sky-mist */
+  --royal: oklch(0.42 0.22 258); /* deep gradient origin */
+  --cyan-hi: oklch(0.62 0.17 232); /* accessible cyan-blue for accents */
+  --cyan-deep: oklch(0.48 0.2 240); /* text-safe navy-blue */
+  --leaf: oklch(0.55 0.18 152); /* precision green for live states */
   --hairline: oklch(0.22 0.06 258 / 12%);
 
   --background: var(--ice);
@@ -151,7 +151,9 @@
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
   border: 1px solid var(--hairline);
-  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 20px 40px -30px oklch(0.30 0.10 258 / 0.35);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 20px 40px -30px oklch(0.3 0.1 258 / 0.35);
   color: var(--ink);
 }
 .light .glass-dark {
@@ -159,28 +161,37 @@
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid var(--hairline);
-  box-shadow: 0 24px 60px -30px oklch(0.28 0.10 258 / 0.35);
+  box-shadow: 0 24px 60px -30px oklch(0.28 0.1 258 / 0.35);
   color: var(--ink);
 }
 .light .caustics {
   background-image:
     radial-gradient(ellipse at 20% 10%, oklch(0.75 0.09 220 / 0.18), transparent 60%),
-    radial-gradient(ellipse at 80% 30%, oklch(0.70 0.12 240 / 0.15), transparent 55%),
-    radial-gradient(ellipse at 50% 90%, oklch(0.80 0.10 155 / 0.10), transparent 60%);
+    radial-gradient(ellipse at 80% 30%, oklch(0.7 0.12 240 / 0.15), transparent 55%),
+    radial-gradient(ellipse at 50% 90%, oklch(0.8 0.1 155 / 0.1), transparent 60%);
 }
 .light .dot-grid {
-  background-image: radial-gradient(oklch(0.30 0.08 258 / 0.18) 1px, transparent 1px);
+  background-image: radial-gradient(oklch(0.3 0.08 258 / 0.18) 1px, transparent 1px);
 }
 .light .ghost-word {
-  -webkit-text-stroke: 1.5px oklch(0.30 0.12 258 / 0.28);
+  -webkit-text-stroke: 1.5px oklch(0.3 0.12 258 / 0.28);
   color: transparent;
 }
 .light .waterline {
-  background: linear-gradient(90deg, transparent, var(--cyan-deep), var(--leaf), var(--cyan-deep), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--cyan-deep),
+    var(--leaf),
+    var(--cyan-deep),
+    transparent
+  );
   filter: none;
   opacity: 0.6;
 }
-.light .micro-label { color: var(--cyan-deep); }
+.light .micro-label {
+  color: var(--cyan-deep);
+}
 .light .grad-text {
   /* Navy → royal blue only. Never ends in pale cyan so headlines stay fully legible. */
   background: linear-gradient(120deg, var(--ink) 0%, var(--ink) 40%, var(--cyan-deep) 100%);
@@ -189,7 +200,12 @@
   color: transparent;
 }
 .light .grad-leaf-text {
-  background: linear-gradient(120deg, var(--leaf) 0%, oklch(0.38 0.14 200) 60%, var(--cyan-deep) 100%);
+  background: linear-gradient(
+    120deg,
+    var(--leaf) 0%,
+    oklch(0.38 0.14 200) 60%,
+    var(--cyan-deep) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -211,14 +227,21 @@
   color: var(--ink);
 }
 .light .hover-lift:hover {
-  box-shadow: 0 24px 60px -20px oklch(0.30 0.12 258 / 0.30);
+  box-shadow: 0 24px 60px -20px oklch(0.3 0.12 258 / 0.3);
 }
-.light ::selection { background: var(--cyan-hi); color: white; }
-.light ::-webkit-scrollbar-track { background: var(--mist); }
+.light ::selection {
+  background: var(--cyan-hi);
+  color: white;
+}
+.light ::-webkit-scrollbar-track {
+  background: var(--mist);
+}
 .light ::-webkit-scrollbar-thumb {
   background: linear-gradient(var(--royal), var(--cyan-hi));
 }
-.light :focus-visible { outline-color: var(--cyan-deep); }
+.light :focus-visible {
+  outline-color: var(--cyan-deep);
+}
 
 /* ---------- Global Tailwind hardcoded-class overrides in light mode ----------
    The site was authored dark-first with many literal `text-white`, `bg-white/x`,
@@ -226,16 +249,24 @@
    tokens to glacial equivalents whenever the .light theme is active. */
 .light .text-white,
 .light [class*="text-white/"],
-.light [class*=":text-white"] { color: var(--ink); }
+.light [class*=":text-white"] {
+  color: var(--ink);
+}
 
 .light .text-cyan-hi,
-.light [class*=":text-cyan-hi"] { color: var(--cyan-deep); }
+.light [class*=":text-cyan-hi"] {
+  color: var(--cyan-deep);
+}
 
 .light [class*="border-white/"],
 .light [class*=":border-white/"],
-.light .border-white { border-color: var(--hairline); }
+.light .border-white {
+  border-color: var(--hairline);
+}
 
-.light [class*="bg-white/"] { background-color: color-mix(in oklab, white 92%, var(--ink) 4%); }
+.light [class*="bg-white/"] {
+  background-color: color-mix(in oklab, white 92%, var(--ink) 4%);
+}
 
 /* Flip full-bleed ink backgrounds to glacial section bands */
 .light .bg-ink,
@@ -244,19 +275,40 @@
   background: linear-gradient(180deg, var(--ice) 0%, var(--mist) 100%) !important;
   color: var(--ink);
 }
-.light .bg-ink-2 { background: var(--mist) !important; color: var(--ink); }
+.light .bg-ink-2 {
+  background: var(--mist) !important;
+  color: var(--ink);
+}
 
 /* Text tokens */
-.light .text-ink { color: var(--ink); }
-.light .text-ink\/70 { color: color-mix(in oklab, var(--ink) 75%, transparent); }
-.light .text-ink\/60 { color: color-mix(in oklab, var(--ink) 65%, transparent); }
+.light .text-ink {
+  color: var(--ink);
+}
+.light .text-ink\/70 {
+  color: color-mix(in oklab, var(--ink) 75%, transparent);
+}
+.light .text-ink\/60 {
+  color: color-mix(in oklab, var(--ink) 65%, transparent);
+}
 
 /* Inputs / form fields authored with white borders */
-.light input, .light textarea, .light select { color: var(--ink); }
-.light input::placeholder, .light textarea::placeholder { color: color-mix(in oklab, var(--ink) 45%, transparent); }
+.light input,
+.light textarea,
+.light select {
+  color: var(--ink);
+}
+.light input::placeholder,
+.light textarea::placeholder {
+  color: color-mix(in oklab, var(--ink) 45%, transparent);
+}
 
 /* Cards / tiles authored with white/[0.04] etc — give them proper light surface */
-.light [class*="bg-white/\\[0"] { background-color: white; box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 8px 24px -18px oklch(0.30 0.10 258 / 0.35); }
+.light [class*="bg-white/\\[0"] {
+  background-color: white;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 8px 24px -18px oklch(0.3 0.1 258 / 0.35);
+}
 
 /* Hero images in light mode: lift the dark dark-mode photo into a pale, airy
    backdrop so the whole hero reads as light and the dark headings stay legible
@@ -279,18 +331,19 @@
       oklch(0.16 0.05 250 / 0.12) 62%,
       transparent 88%
     ),
-    linear-gradient(
-      to top,
-      oklch(0.14 0.05 250 / 0.55) 0%,
-      transparent 46%
-    ) !important;
+    linear-gradient(to top, oklch(0.14 0.05 250 / 0.55) 0%, transparent 46%) !important;
 }
 
 /* These heroes are dark photographic bands. With the white wash removed the
    photo shows at full richness, so the copy must stay bright (dark-mode style)
    to keep contrast — no white film required. Scope by the hero image class. */
 .light section:has(.hero-lighten) .grad-text {
-  background: linear-gradient(120deg, #ffffff 0%, color-mix(in oklab, var(--cyan-hi) 78%, white) 52%, oklch(0.85 0.15 205) 100%) !important;
+  background: linear-gradient(
+    120deg,
+    #ffffff 0%,
+    color-mix(in oklab, var(--cyan-hi) 78%, white) 52%,
+    oklch(0.85 0.15 205) 100%
+  ) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
   color: transparent !important;
@@ -320,31 +373,50 @@
   background: linear-gradient(120deg, var(--royal), var(--cyan-hi));
   color: white !important;
   border-color: transparent !important;
-  box-shadow: 0 10px 30px -12px oklch(0.42 0.20 258 / 0.45);
+  box-shadow: 0 10px 30px -12px oklch(0.42 0.2 258 / 0.45);
 }
 
 /* Nav pill in light: frosted white with navy links */
-.light nav .glass-dark { color: var(--ink); }
+.light nav .glass-dark {
+  color: var(--ink);
+}
 
 /* Footer originally full-dark: reframe as pale ice band with navy text */
-.light footer { color: var(--ink); }
-.light footer .bg-\[var\(--ink-2\)\] { background: var(--mist) !important; }
+.light footer {
+  color: var(--ink);
+}
+.light footer .bg-\[var\(--ink-2\)\] {
+  background: var(--mist) !important;
+}
 
 /* Liquid theme transition — View Transitions API */
 ::view-transition-old(root),
-::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
-::view-transition-old(root) { z-index: 1; }
-::view-transition-new(root) { z-index: 2; }
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 2;
+}
 @keyframes liquid-reveal {
-  from { clip-path: circle(0% at var(--lk-x, 50%) var(--lk-y, 50%)); }
-  to   { clip-path: circle(150% at var(--lk-x, 50%) var(--lk-y, 50%)); }
+  from {
+    clip-path: circle(0% at var(--lk-x, 50%) var(--lk-y, 50%));
+  }
+  to {
+    clip-path: circle(150% at var(--lk-x, 50%) var(--lk-y, 50%));
+  }
 }
 .lk-theme-anim::view-transition-new(root) {
-  animation: liquid-reveal 0.9s cubic-bezier(.7,.02,.2,1) forwards;
+  animation: liquid-reveal 0.9s cubic-bezier(0.7, 0.02, 0.2, 1) forwards;
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   /* No CSS smooth-scroll: it fights the router's instant scroll restoration
      (navigation appeared "stuck" mid-page). Programmatic smooth scrolling
      passes behavior:"smooth" explicitly where wanted. */
@@ -356,12 +428,18 @@
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.025em;
     font-weight: 700;
   }
-  ::selection { background: var(--leaf); color: var(--ink); }
+  ::selection {
+    background: var(--leaf);
+    color: var(--ink);
+  }
 }
 
 /* ---------- Living water canvas ----------
@@ -395,7 +473,7 @@
   pointer-events: none;
   background:
     radial-gradient(90rem 50rem at 70% 40%, oklch(0.24 0.07 235 / 0.35), transparent 60%),
-    linear-gradient(180deg, oklch(0.13 0.04 252) 0%, oklch(0.10 0.035 250) 100%);
+    linear-gradient(180deg, oklch(0.13 0.04 252) 0%, oklch(0.1 0.035 250) 100%);
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 14%, black 100%);
   mask-image: linear-gradient(180deg, transparent 0%, black 14%, black 100%);
 }
@@ -417,7 +495,7 @@
 .light .bento-tile {
   background: white;
   border: 1px solid var(--hairline);
-  box-shadow: 0 14px 34px -22px oklch(0.30 0.10 252 / 0.30);
+  box-shadow: 0 14px 34px -22px oklch(0.3 0.1 252 / 0.3);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
@@ -425,8 +503,14 @@
 /* ---------- Text over media (image + scrim) ----------
    Semantic token: copy sitting on a photographic scrim is always light, in
    BOTH themes — the scrim, not the theme, provides its background. */
-.text-on-media, .light .text-on-media { color: #fff !important; }
-.text-on-media-soft, .light .text-on-media-soft { color: rgba(255, 255, 255, 0.78) !important; }
+.text-on-media,
+.light .text-on-media {
+  color: #fff !important;
+}
+.text-on-media-soft,
+.light .text-on-media-soft {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
 
 /* ---------- Touch ergonomics (system rule) ----------
    On coarse pointers every compact icon button and pill control meets the
@@ -446,6 +530,38 @@
   }
 }
 
+/* ---------- Product / service action dock (mobile) ----------
+   While a detail page shows its fixed bottom dock, the floating contact
+   cluster and back-to-top button would collide with it — hide them on phones
+   and pad the page bottom so no content is buried under the dock. */
+@media (max-width: 1023px) {
+  body[data-dock="1"] .wa-cluster,
+  body[data-dock="1"] .back-to-top {
+    display: none;
+  }
+  body[data-dock="1"] main {
+    padding-bottom: 92px;
+  }
+}
+
+/* ---------- Mobile section rhythm ----------
+   The desktop's generous vertical bands read as dead gaps on phones —
+   tighten every standard band on small screens without touching desktop. */
+@media (max-width: 767px) {
+  section.py-32 {
+    padding-top: 4.5rem;
+    padding-bottom: 4.5rem;
+  }
+  section.py-28 {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+  section.py-24 {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+}
+
 /* ---------- Back to top ---------- */
 .back-to-top {
   background: color-mix(in oklab, var(--ink-2) 72%, transparent);
@@ -453,8 +569,11 @@
   backdrop-filter: blur(14px) saturate(150%);
   border: 1px solid color-mix(in oklab, white 14%, transparent);
   color: #fff;
-  box-shadow: 0 12px 32px -14px oklch(0.10 0.04 250 / 0.7);
-  transition: opacity .4s, transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .3s;
+  box-shadow: 0 12px 32px -14px oklch(0.1 0.04 250 / 0.7);
+  transition:
+    opacity 0.4s,
+    transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.3s;
 }
 .back-to-top:hover {
   transform: translateY(-3px);
@@ -493,7 +612,12 @@
   background: linear-gradient(120deg, var(--royal), var(--cyan-hi));
 }
 @utility grad-text {
-  background: linear-gradient(120deg, #ffffff 0%, color-mix(in oklab, var(--cyan-hi) 70%, white) 55%, var(--cyan-hi) 100%);
+  background: linear-gradient(
+    120deg,
+    #ffffff 0%,
+    color-mix(in oklab, var(--cyan-hi) 70%, white) 55%,
+    var(--cyan-hi) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -518,12 +642,27 @@
 }
 @utility caustics {
   background-image:
-    radial-gradient(ellipse at 20% 10%, color-mix(in oklab, var(--cyan-hi) 25%, transparent), transparent 60%),
-    radial-gradient(ellipse at 80% 30%, color-mix(in oklab, var(--royal) 30%, transparent), transparent 55%),
-    radial-gradient(ellipse at 50% 90%, color-mix(in oklab, var(--leaf) 15%, transparent), transparent 60%);
+    radial-gradient(
+      ellipse at 20% 10%,
+      color-mix(in oklab, var(--cyan-hi) 25%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at 80% 30%,
+      color-mix(in oklab, var(--royal) 30%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 50% 90%,
+      color-mix(in oklab, var(--leaf) 15%, transparent),
+      transparent 60%
+    );
 }
 @utility dot-grid {
-  background-image: radial-gradient(color-mix(in oklab, var(--cyan-hi) 25%, transparent) 1px, transparent 1px);
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--cyan-hi) 25%, transparent) 1px,
+    transparent 1px
+  );
   background-size: 22px 22px;
 }
 /* Category chips floating over hero photos — same premium glass pill in both
@@ -532,13 +671,13 @@
   background: oklch(0.15 0.045 252 / 0.74);
   -webkit-backdrop-filter: blur(12px) saturate(120%);
   backdrop-filter: blur(12px) saturate(120%);
-  border: 1px solid oklch(0.82 0.16 210 / 0.30);
+  border: 1px solid oklch(0.82 0.16 210 / 0.3);
   color: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 8px 24px -12px oklch(0.10 0.04 250 / 0.6);
+  box-shadow: 0 8px 24px -12px oklch(0.1 0.04 250 / 0.6);
 }
 .light .hero-chip {
   background: oklch(0.15 0.045 252 / 0.74) !important;
-  border-color: oklch(0.82 0.16 210 / 0.30) !important;
+  border-color: oklch(0.82 0.16 210 / 0.3) !important;
   color: rgba(255, 255, 255, 0.94) !important;
 }
 .hero-chip .hero-chip-n,
@@ -548,7 +687,14 @@
 }
 @utility waterline {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--cyan-hi), var(--leaf), var(--cyan-hi), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--cyan-hi),
+    var(--leaf),
+    var(--cyan-hi),
+    transparent
+  );
   filter: drop-shadow(0 0 6px color-mix(in oklab, var(--cyan-hi) 60%, transparent));
 }
 /* Section bands are translucent: the living water canvas flows beneath the
@@ -577,53 +723,102 @@
   border-color: color-mix(in oklab, white 25%, transparent) !important;
 }
 @utility hover-lift {
-  transition: transform .5s cubic-bezier(.2,.7,.2,1), box-shadow .5s;
+  transition:
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.5s;
   &:hover {
     transform: translateY(-4px);
     /* Diffused like light through water, not cast through air */
     box-shadow:
       0 24px 70px -24px color-mix(in oklab, var(--cyan-hi) 35%, transparent),
-      0 8px 30px -12px oklch(0.10 0.04 250 / 0.35);
+      0 8px 30px -12px oklch(0.1 0.04 250 / 0.35);
   }
 }
 
 @keyframes float-slow {
-  0%,100% { transform: translateY(0) }
-  50% { transform: translateY(-14px) }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
 }
 @keyframes drift-x {
-  from { transform: translateX(0) }
-  to   { transform: translateX(-50%) }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 @keyframes drift-x-rev {
-  from { transform: translateX(-50%) }
-  to   { transform: translateX(0) }
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 @keyframes blob {
-  0%,100% { border-radius: 42% 58% 63% 37% / 40% 45% 55% 60% }
-  50%     { border-radius: 60% 40% 30% 70% / 55% 60% 40% 45% }
+  0%,
+  100% {
+    border-radius: 42% 58% 63% 37% / 40% 45% 55% 60%;
+  }
+  50% {
+    border-radius: 60% 40% 30% 70% / 55% 60% 40% 45%;
+  }
 }
 @keyframes pulse-soft {
-  0%,100% { opacity: 0.55 }
-  50%     { opacity: 1 }
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 @keyframes shimmer {
-  0% { background-position: -200% 0 }
-  100% { background-position: 200% 0 }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 @keyframes bubble-rise {
-  0%   { transform: translateY(20vh) scale(.8); opacity: 0 }
-  20%  { opacity: .6 }
-  100% { transform: translateY(-90vh) scale(1.2); opacity: 0 }
+  0% {
+    transform: translateY(20vh) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-90vh) scale(1.2);
+    opacity: 0;
+  }
 }
 
-.animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
-.animate-blob { animation: blob 14s ease-in-out infinite; }
-.animate-pulse-soft { animation: pulse-soft 2.2s ease-in-out infinite; }
-.marquee-track { animation: drift-x 40s linear infinite; }
-.marquee-track-rev { animation: drift-x-rev 45s linear infinite; }
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+.animate-blob {
+  animation: blob 14s ease-in-out infinite;
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2.2s ease-in-out infinite;
+}
+.marquee-track {
+  animation: drift-x 40s linear infinite;
+}
+.marquee-track-rev {
+  animation: drift-x-rev 45s linear infinite;
+}
 /* Certification strip reads at a glance — slow, unhurried drift */
-.marquee-slow { animation-duration: 70s; }
+.marquee-slow {
+  animation-duration: 70s;
+}
 
 /* Infrastructure 3D auto-scroll carousel */
 .facility-track {
@@ -633,7 +828,9 @@
   animation-play-state: paused;
 }
 .facility-card {
-  transition: transform 0.5s cubic-bezier(.2,.7,.2,1), box-shadow 0.5s;
+  transition:
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.5s;
 }
 .facility-card:hover {
   transform: rotateY(0deg) scale(1.04) !important;
@@ -642,15 +839,22 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
 }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: var(--ink-2); }
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--ink-2);
+}
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(var(--royal), var(--cyan-hi));
   border-radius: 8px;
@@ -669,7 +873,9 @@
    ================================================================ */
 
 /* Every section is offset from the fixed nav for smooth-scroll & anchors */
-html { scroll-padding-top: 96px; }
+html {
+  scroll-padding-top: 96px;
+}
 
 /* Ghost decorative words: always behind real content, never above nav */
 .ghost-word {
@@ -677,14 +883,17 @@ html { scroll-padding-top: 96px; }
   opacity: 0.55;
 }
 .light .ghost-word {
-  -webkit-text-stroke: 1.5px oklch(0.30 0.12 258 / 0.28);
+  -webkit-text-stroke: 1.5px oklch(0.3 0.12 258 / 0.28);
   color: transparent;
   opacity: 1;
 }
 
 /* Ensure content sits above decorative layers by default */
 section > .relative,
-section > .mx-auto { position: relative; z-index: 1; }
+section > .mx-auto {
+  position: relative;
+  z-index: 1;
+}
 
 /* --- LIGHT MODE: neutralise dark gradient scrims that were made for
    dark hero images. In light mode those scrims turned every hero into
@@ -712,14 +921,19 @@ section > .mx-auto { position: relative; z-index: 1; }
 .light form textarea,
 .light form select {
   background: color-mix(in oklab, white 92%, var(--ink) 3%) !important;
-  border: 1px solid oklch(0.30 0.08 258 / 0.22) !important;
+  border: 1px solid oklch(0.3 0.08 258 / 0.22) !important;
   border-bottom-width: 1px !important;
   border-radius: 10px !important;
   padding: 0.75rem 0.9rem !important;
   color: var(--ink) !important;
-  transition: border-color .2s, box-shadow .2s, background .2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
 }
-.light form textarea { min-height: 8rem; }
+.light form textarea {
+  min-height: 8rem;
+}
 .light form input::placeholder,
 .light form textarea::placeholder {
   color: color-mix(in oklab, var(--ink) 45%, transparent) !important;
@@ -746,12 +960,14 @@ section > .mx-auto { position: relative; z-index: 1; }
   -webkit-backdrop-filter: blur(18px) saturate(150%);
   backdrop-filter: blur(18px) saturate(150%);
   border-color: var(--hairline);
-  box-shadow: 0 12px 32px -20px oklch(0.30 0.10 258 / 0.4);
+  box-shadow: 0 12px 32px -20px oklch(0.3 0.1 258 / 0.4);
 }
 
 /* --- LIGHT MODE: fix chip / pill contrast on marquees & rows ------- */
 .light .glass .micro-label,
-.light .glass-dark .micro-label { color: var(--cyan-deep); }
+.light .glass-dark .micro-label {
+  color: var(--cyan-deep);
+}
 
 /* --- Nav readability: always a subtle frosted surface, even at top -- */
 header nav.bg-transparent {
@@ -765,13 +981,23 @@ header nav.bg-transparent {
   border: 1px solid var(--hairline);
 }
 .light header nav a,
-.light header nav span { color: var(--ink) !important; }
-.light header nav a.active { color: var(--cyan-deep) !important; }
-.light header nav .text-white\/70 { color: color-mix(in oklab, var(--ink) 70%, transparent) !important; }
-.light header nav .text-white\/60 { color: color-mix(in oklab, var(--ink) 55%, transparent) !important; }
+.light header nav span {
+  color: var(--ink) !important;
+}
+.light header nav a.active {
+  color: var(--cyan-deep) !important;
+}
+.light header nav .text-white\/70 {
+  color: color-mix(in oklab, var(--ink) 70%, transparent) !important;
+}
+.light header nav .text-white\/60 {
+  color: color-mix(in oklab, var(--ink) 55%, transparent) !important;
+}
 
 /* --- LIGHT MODE: destructive text remains readable ---------------- */
-.light .text-destructive { color: oklch(0.55 0.22 25); }
+.light .text-destructive {
+  color: oklch(0.55 0.22 25);
+}
 
 /* --- LIGHT MODE: bottom ink corner tile in SeeThePlant ------------ */
 .light .bg-ink.p-6,
@@ -780,7 +1006,9 @@ header nav.bg-transparent {
   color: white !important;
 }
 .light .bg-ink.p-6 .text-white\/60,
-.light .bg-ink.p-6 .text-white\/40 { color: rgba(255,255,255,.75) !important; }
+.light .bg-ink.p-6 .text-white\/40 {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
 .light .bg-ink.p-6 .grad-text,
 .light .bg-ink.p-6 .grad-leaf-text,
 .light .bg-ink[class*="rounded"] .grad-text,

@@ -104,6 +104,37 @@ export function useServices() {
   });
 }
 
+export type CareerOpening = {
+  id?: string;
+  slug?: string;
+  title: string;
+  department?: string;
+  location?: string;
+  type?: string;
+  experience?: string;
+  summary?: string;
+  responsibilities?: string[];
+  requirements?: string[];
+  status?: string;
+  order?: string;
+};
+
+export function useCareers() {
+  return useQuery({
+    queryKey: ["content", "careers"],
+    queryFn: async () => {
+      const rows = await fetchCollection<CareerOpening>("careers", []);
+      return rows
+        .filter(isLive)
+        .sort(
+          (a, b) => orderNum(a) - orderNum(b) || String(a.title).localeCompare(String(b.title)),
+        );
+    },
+    initialData: [] as CareerOpening[],
+    ...common,
+  });
+}
+
 export function useGalleryItems() {
   return useQuery({
     queryKey: ["content", "gallery"],

@@ -46,6 +46,7 @@ function useNav(): NavSection[] {
   const services = useCol("services").data?.length;
   const gallery = useCol("gallery").data?.length;
   const testimonials = useCol("testimonials").data?.length;
+  const careers = useCol("careers").data?.length;
   const enquiries = useEnquiries().data;
   const newEnq = enquiries?.filter((e) => !e.status || e.status === "new").length ?? 0;
 
@@ -119,6 +120,13 @@ function useNav(): NavSection[] {
           icon: moduleById("testimonials").icon,
           key: "t",
           count: testimonials,
+        },
+        {
+          to: "/admin/careers",
+          label: "Careers",
+          icon: moduleById("careers").icon,
+          key: "j",
+          count: careers,
         },
       ],
     },

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { collection, doc, getDocs, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
-import { Clock, Mail, MapPin, Phone, RotateCcw, Save, User } from "lucide-react";
+import { Clock, DatabaseBackup, Mail, MapPin, Phone, RotateCcw, Save, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { db } from "@/integrations/firebase/client";
 import { staticSettings } from "@/data/content";
@@ -60,6 +60,77 @@ const GROUPS: Group[] = [
 ];
 
 const ALL_KEYS = GROUPS.flatMap((g) => g.fields.map((f) => f.key));
+
+/* ---------------------------------------------------------------- backup */
+
+// Every collection the site stores. Exported as one JSON file so the client
+// always has an offline copy of their content, catalog and leads.
+const BACKUP_COLLECTIONS = [
+  "products",
+  "categories",
+  "serviceCategories",
+  "services",
+  "gallery",
+  "testimonials",
+  "careers",
+  "pages",
+  "settings",
+  "enquiries",
+  "activity",
+];
+
+function BackupCard() {
+  const [busy, setBusy] = useState(false);
+
+  const download = async () => {
+    setBusy(true);
+    try {
+      const dump: Record<string, unknown[]> = {};
+      for (const name of BACKUP_COLLECTIONS) {
+        const snap = await getDocs(collection(db, name));
+        dump[name] = snap.docs.map((d) => ({ __id: d.id, ...d.data() }));
+      }
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        site: "lk-chemicals",
+        collections: dump,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `lk-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      void logActivity("updated", "settings", "Downloaded full site backup");
+      toast.success("Backup downloaded — keep it somewhere safe");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Backup failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card
+      className="a-rise"
+      title={
+        <span className="flex items-center gap-2">
+          <DatabaseBackup className="h-3.5 w-3.5" style={{ color: "var(--a-accent)" }} /> Backup
+        </span>
+      }
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="max-w-md text-[13px]" style={{ color: "var(--a-text2)" }}>
+          Downloads every collection — catalog, pages, media, testimonials, careers, enquiries and
+          settings — as a single JSON file. Do this after big edits; it's your offline safety copy.
+        </p>
+        <Btn variant="primary" icon={DatabaseBackup} busy={busy} onClick={download}>
+          Download backup
+        </Btn>
+      </div>
+    </Card>
+  );
+}
 
 function SettingsAdmin() {
   const invalidate = useInvalidate();
@@ -116,10 +187,7 @@ function SettingsAdmin() {
         actions={
           <>
             {dirty && (
-              <Btn
-                icon={RotateCcw}
-                onClick={() => baseline && setValues({ ...baseline })}
-              >
+              <Btn icon={RotateCcw} onClick={() => baseline && setValues({ ...baseline })}>
                 Reset
               </Btn>
             )}
@@ -131,7 +199,9 @@ function SettingsAdmin() {
       />
 
       {isLoading || !values ? (
-        <div className="a-card"><SkeletonRows n={6} /></div>
+        <div className="a-card">
+          <SkeletonRows n={6} />
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {GROUPS.map((g, gi) => (
@@ -144,7 +214,10 @@ function SettingsAdmin() {
                 </span>
               }
             >
-              <div className={`grid gap-4 ${g.title === "Addresses" ? "md:grid-cols-2" : ""}`} style={{ animationDelay: `${gi * 50}ms` }}>
+              <div
+                className={`grid gap-4 ${g.title === "Addresses" ? "md:grid-cols-2" : ""}`}
+                style={{ animationDelay: `${gi * 50}ms` }}
+              >
                 {g.fields.map((f) => (
                   <div key={f.key} className={f.key === "mapQuery" ? "md:col-span-2" : ""}>
                     <Field label={f.label} hint={f.hint}>
@@ -170,6 +243,8 @@ function SettingsAdmin() {
         </div>
       )}
 
+      <BackupCard />
+
       <p className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--a-text3)" }}>
         <Clock className="h-3 w-3" /> Changes publish the moment you save — no deploy needed.
       </p>
@@ -178,10 +253,18 @@ function SettingsAdmin() {
       {dirty && (
         <div
           className="a-pop sticky bottom-3 z-10 flex items-center justify-between gap-3 rounded-xl px-4 py-3 md:hidden"
-          style={{ background: "var(--a-surface2)", border: "1px solid var(--a-border2)", boxShadow: "var(--a-shadow-lg)" }}
+          style={{
+            background: "var(--a-surface2)",
+            border: "1px solid var(--a-border2)",
+            boxShadow: "var(--a-shadow-lg)",
+          }}
         >
-          <span className="text-xs font-semibold" style={{ color: "var(--a-warn)" }}>Unsaved changes</span>
-          <Btn size="sm" variant="primary" busy={busy} onClick={save}>Save</Btn>
+          <span className="text-xs font-semibold" style={{ color: "var(--a-warn)" }}>
+            Unsaved changes
+          </span>
+          <Btn size="sm" variant="primary" busy={busy} onClick={save}>
+            Save
+          </Btn>
         </div>
       )}
     </div>

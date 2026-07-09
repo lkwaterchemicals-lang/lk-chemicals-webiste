@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
-import { ArrowLeft, Check, Download } from "lucide-react";
+import { ArrowLeft, Check, Download, Phone } from "lucide-react";
 import { findProduct, type Product } from "@/data/products";
 import { useCategories, useProducts, useSiteSettings } from "@/lib/content";
 import { MicroLabel } from "@/components/site/GhostWord";
-import { LiquidButton } from "@/components/site/LiquidButton";
+import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
 import drumImg from "@/assets/drum.jpg";
@@ -53,6 +53,15 @@ function ProductDetail() {
   const { data: products, isFetching } = useProducts();
   const { data: categories } = useCategories();
   const { data: settings } = useSiteSettings();
+
+  // While this page is open, phones swap the floating contact cluster for the
+  // fixed action dock (they'd overlap) — see body[data-dock] in styles.css.
+  useEffect(() => {
+    document.body.dataset.dock = "1";
+    return () => {
+      delete document.body.dataset.dock;
+    };
+  }, []);
 
   const product: Product | null = staticProduct ?? products.find((p) => p.slug === slug) ?? null;
   if (!product) {
@@ -139,117 +148,135 @@ function ProductDetail() {
               {cat.number} · {cat.name}
             </span>
           </div>
-          <h1 className="display-xl mt-4 text-5xl md:text-7xl grad-text max-w-4xl">
+          {/* Mobile-first hierarchy: compact title, then the PHOTO (what buyers
+              look for first), then facts, with the long description tucked
+              behind a read-more so it never buries the product. */}
+          <h1 className="display-xl mt-4 text-3xl sm:text-5xl md:text-7xl grad-text max-w-4xl">
             {product.name}
           </h1>
-          <p className="mt-6 max-w-2xl text-lg text-white/70">{product.description}</p>
 
-          <div className="mt-14 grid lg:grid-cols-5 gap-10 items-start">
+          <div className="mt-6 lg:mt-10 grid lg:grid-cols-5 gap-8 lg:gap-10 items-start">
             <div className="lg:col-span-2">
               <ProductGallery images={images} catImage={cat.image} name={product.name} />
             </div>
-            <div className="lg:col-span-3 grid md:grid-cols-2 gap-6">
-              {features.length > 0 && (
-                <Panel title="Features">
-                  <ul className="space-y-2">
-                    {features.map((f: string) => (
-                      <li key={f} className="flex gap-2 text-white/80 text-sm">
-                        <Check className="h-4 w-4 text-leaf shrink-0 mt-0.5" /> {f}
-                      </li>
-                    ))}
-                  </ul>
-                </Panel>
-              )}
-              {applications.length > 0 && (
-                <Panel title="Applications">
-                  <div className="flex flex-wrap gap-2">
-                    {applications.map((a: string) => (
-                      <span
-                        key={a}
-                        className="text-xs uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/15 text-white/80"
-                      >
-                        {a}
-                      </span>
-                    ))}
-                  </div>
-                </Panel>
-              )}
-              {specs.length > 0 && (
-                <Panel title="Specifications" className="md:col-span-2">
-                  <table className="w-full text-sm">
-                    <tbody>
-                      {specs.map((s, i) => (
-                        <tr
-                          key={(s.name ?? "") + i}
-                          className="border-b border-white/10 last:border-0"
-                        >
-                          <td className="py-2 pr-4 text-white/60">{s.name}</td>
-                          <td className="py-2 text-white/90 font-medium">
-                            {s.value}
-                            {s.unit ? (
-                              <span className="text-white/50 font-normal"> {s.unit}</span>
-                            ) : null}
-                          </td>
-                        </tr>
+            <div className="lg:col-span-3 space-y-6">
+              <ProductDescription text={product.description} />
+              <div className="grid md:grid-cols-2 gap-6">
+                {features.length > 0 && (
+                  <Panel title="Features">
+                    <ul className="space-y-2">
+                      {features.map((f: string) => (
+                        <li key={f} className="flex gap-2 text-white/80 text-sm">
+                          <Check className="h-4 w-4 text-leaf shrink-0 mt-0.5" /> {f}
+                        </li>
                       ))}
-                    </tbody>
-                  </table>
-                </Panel>
-              )}
-              {packing.length > 0 && (
-                <Panel title="Packing" className="md:col-span-2">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {packing.map((p: string) => (
-                      <div
-                        key={p}
-                        className="rounded-xl bg-white/[0.04] border border-white/10 p-3 text-sm text-white/80"
-                      >
-                        {p}
-                      </div>
-                    ))}
-                  </div>
-                </Panel>
-              )}
-              {documents.length > 0 && (
-                <Panel title="Downloads" className="md:col-span-2">
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {documents.map((d, i) => (
-                      <a
-                        key={d.url + i}
-                        href={d.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-3 hover:border-cyan-hi transition-colors"
-                      >
-                        <span className="grid h-9 w-9 place-items-center rounded-lg bg-cyan-hi/15 text-cyan-hi shrink-0">
-                          <Download className="h-4 w-4" />
+                    </ul>
+                  </Panel>
+                )}
+                {applications.length > 0 && (
+                  <Panel title="Applications">
+                    <div className="flex flex-wrap gap-2">
+                      {applications.map((a: string) => (
+                        <span
+                          key={a}
+                          className="text-xs uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/15 text-white/80"
+                        >
+                          {a}
                         </span>
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm text-white/90">{d.label}</span>
-                          {d.type && <span className="text-[11px] text-white/50">{d.type}</span>}
-                        </span>
-                      </a>
-                    ))}
-                  </div>
-                </Panel>
-              )}
+                      ))}
+                    </div>
+                  </Panel>
+                )}
+                {specs.length > 0 && (
+                  <Panel title="Specifications" className="md:col-span-2">
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {specs.map((s, i) => (
+                          <tr
+                            key={(s.name ?? "") + i}
+                            className="border-b border-white/10 last:border-0"
+                          >
+                            <td className="py-2 pr-4 text-white/60">{s.name}</td>
+                            <td className="py-2 text-white/90 font-medium">
+                              {s.value}
+                              {s.unit ? (
+                                <span className="text-white/50 font-normal"> {s.unit}</span>
+                              ) : null}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Panel>
+                )}
+                {packing.length > 0 && (
+                  <Panel title="Packing" className="md:col-span-2">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {packing.map((p: string) => (
+                        <div
+                          key={p}
+                          className="rounded-xl bg-white/[0.04] border border-white/10 p-3 text-sm text-white/80"
+                        >
+                          {p}
+                        </div>
+                      ))}
+                    </div>
+                  </Panel>
+                )}
+                {documents.length > 0 && (
+                  <Panel title="Downloads" className="md:col-span-2">
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {documents.map((d, i) => (
+                        <a
+                          key={d.url + i}
+                          href={d.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-3 hover:border-cyan-hi transition-colors"
+                        >
+                          <span className="grid h-9 w-9 place-items-center rounded-lg bg-cyan-hi/15 text-cyan-hi shrink-0">
+                            <Download className="h-4 w-4" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm text-white/90">{d.label}</span>
+                            {d.type && <span className="text-[11px] text-white/50">{d.type}</span>}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  </Panel>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="mt-10 sticky bottom-4 z-20 glass-dark rounded-full px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="text-white/80 text-sm px-2">
-              <span className="micro-label">Enquire · {product.name}</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <LiquidButton href={waLink(msg)} external variant="leaf">
-                WhatsApp
-              </LiquidButton>
-              <LiquidButton href={`tel:${settings.phone.replace(/\s+/g, "")}`} variant="ghost">
-                Call
-              </LiquidButton>
-              <LiquidButton href="#enquire" variant="primary">
-                Send enquiry
-              </LiquidButton>
+          {/* Action dock — phones get it pinned to the bottom of the screen
+              from the first paint (no scrolling hunt to buy); desktop keeps
+              the floating pill inside the section. The floating contact
+              cluster is hidden on phones while this page is open (see the
+              body[data-dock] rules in styles.css). */}
+          <div className="mt-10 sticky bottom-4 z-20 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[60] max-lg:mt-0 max-lg:px-3 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="glass-dark rounded-full px-4 py-3 flex flex-wrap items-center justify-between gap-3 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2.5">
+              <div className="hidden lg:block text-white/80 text-sm px-2">
+                <span className="micro-label">Enquire · {product.name}</span>
+              </div>
+              <div className="flex gap-2 max-lg:w-full">
+                <WhatsAppButton href={waLink(msg)} className="max-lg:flex-1 justify-center !px-4">
+                  WhatsApp
+                </WhatsAppButton>
+                <a
+                  href={`tel:${settings.phone.replace(/\s+/g, "")}`}
+                  className="max-lg:flex-1 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm text-white/85 transition-colors hover:border-cyan-hi hover:text-white"
+                >
+                  <Phone className="h-4 w-4" /> Call
+                </a>
+                <a
+                  href="#enquire"
+                  className="max-lg:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-cyan-hi px-5 py-3 text-sm font-semibold text-ink shadow-[0_10px_30px_-10px_var(--cyan-hi)] transition-all hover:brightness-110"
+                >
+                  Enquiry
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -312,6 +339,36 @@ function Panel({
     <div className={"rounded-3xl glass-dark p-6 " + className}>
       <div className="micro-label mb-3">{title}</div>
       {children}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------- description clamp */
+
+// Long copy buries the product on phones — clamp it behind a read-more there,
+// show it in full on desktop.
+function ProductDescription({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const long = text.length > 180;
+  return (
+    <div>
+      <p
+        className={
+          "text-base lg:text-lg text-white/70 " +
+          (!open && long ? "line-clamp-3 lg:line-clamp-none" : "")
+        }
+      >
+        {text}
+      </p>
+      {long && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="lg:hidden mt-1.5 text-sm font-medium text-cyan-hi"
+        >
+          {open ? "Read less" : "Read more"}
+        </button>
+      )}
     </div>
   );
 }

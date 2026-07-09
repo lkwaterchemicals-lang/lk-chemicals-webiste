@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useInView } from "motion/react";
-import { ArrowDown, Droplets } from "lucide-react";
+import { ArrowDown, Droplets, Star } from "lucide-react";
 import { useCategories, useTestimonials, useSiteSettings } from "@/lib/content";
 import { useHomeContent } from "@/lib/pages";
 import { iconByName } from "@/lib/icons";
@@ -11,6 +11,8 @@ import { Waterline } from "@/components/site/Waterline";
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
 import { Coverflow3D } from "@/components/site/Coverflow3D";
 import { ServiceIndex } from "@/components/site/ServiceIndex";
+import { RequestCallButton } from "@/components/site/RequestCall";
+import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
 import { WaterCore } from "@/components/site/WaterCore";
@@ -771,7 +773,42 @@ function Proof() {
           >
             "{quotes[i % quotes.length].q}"
           </motion.blockquote>
-          <div className="mt-6 micro-label">{quotes[i % quotes.length].who}</div>
+          {(() => {
+            const t = quotes[i % quotes.length];
+            const stars = Math.min(5, Math.max(0, Number(t.rating ?? 0) || 0));
+            return (
+              <motion.div
+                key={"who-" + i}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.15 }}
+                className="mt-7 flex items-center gap-4"
+              >
+                {t.image ? (
+                  <img
+                    src={t.image}
+                    alt=""
+                    className="h-12 w-12 rounded-full object-cover border border-white/20 shadow-lg"
+                  />
+                ) : (
+                  <span className="grid h-12 w-12 place-items-center rounded-full bg-cyan-hi/15 text-cyan-hi font-display font-bold">
+                    {(t.who ?? "?").trim().charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <div className="min-w-0">
+                  {stars > 0 && (
+                    <span className="flex gap-0.5 mb-1" aria-label={`${stars} star rating`}>
+                      {Array.from({ length: stars }).map((_, k) => (
+                        <Star key={k} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      ))}
+                    </span>
+                  )}
+                  <div className="micro-label">{t.who}</div>
+                  {t.company && <div className="mt-0.5 text-xs text-white/50">{t.company}</div>}
+                </div>
+              </motion.div>
+            );
+          })()}
           <div className="mt-8 flex gap-2">
             {quotes.map((_, k) => (
               <button
@@ -879,9 +916,8 @@ function TalkToUs() {
           </h2>
           <p className="mt-6 max-w-md text-white/70">{c.talkBody}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <LiquidButton href={waLink()} external variant="leaf">
-              WhatsApp us
-            </LiquidButton>
+            <WhatsAppButton href={waLink()}>WhatsApp us</WhatsAppButton>
+            <RequestCallButton source="home:talk-to-us" />
             <LiquidButton href={tel} variant="ghost">
               {s.phone}
             </LiquidButton>

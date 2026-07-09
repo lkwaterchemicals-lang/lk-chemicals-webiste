@@ -4,7 +4,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, Inbox, Mail, MessageCircle, Phone, Trash2 } from "lucide-react";
-import { deleteEnquiries, setEnquiryStatus, useEnquiries, useInvalidate, type EnquiryStatus } from "@/admin/api";
+import {
+  deleteEnquiries,
+  setEnquiryStatus,
+  useEnquiries,
+  useInvalidate,
+  type EnquiryStatus,
+} from "@/admin/api";
 import { timeAgo, toDate, type Row } from "@/admin/registry";
 import { DataTable, type Col } from "@/admin/table";
 import { Badge, Btn, Confirm, Drawer, IconBtn, PageHeader } from "@/admin/ui";
@@ -40,7 +46,10 @@ function EnquiriesAdmin() {
   const [open, setOpen] = useState<Row | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Row[] | null>(null);
 
-  const filtered = useMemo(() => (tab === "all" ? rows : rows.filter((r) => statusOf(r) === tab)), [rows, tab]);
+  const filtered = useMemo(
+    () => (tab === "all" ? rows : rows.filter((r) => statusOf(r) === tab)),
+    [rows, tab],
+  );
   const counts = useMemo(() => {
     const c = { all: rows.length, new: 0, contacted: 0, closed: 0 };
     rows.forEach((r) => c[statusOf(r)]++);
@@ -82,17 +91,30 @@ function EnquiriesAdmin() {
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-bold"
             style={{ background: "var(--a-accent-soft)", color: "var(--a-accent)" }}
           >
-            {String(r.name ?? "?").trim().charAt(0).toUpperCase()}
+            {String(r.name ?? "?")
+              .trim()
+              .charAt(0)
+              .toUpperCase()}
           </span>
           <div className="min-w-0">
             <div className="text-[13px] font-semibold truncate">
               {String(r.name ?? "Unknown")}
               {typeof r.company === "string" && r.company && (
-                <span className="font-normal" style={{ color: "var(--a-text3)" }}> · {r.company}</span>
+                <span className="font-normal" style={{ color: "var(--a-text3)" }}>
+                  {" "}
+                  · {r.company}
+                </span>
+              )}
+              {r.kind === "call-request" && (
+                <Badge tone="warn" className="ml-2 align-middle">
+                  📞 call back
+                </Badge>
               )}
             </div>
             <div className="text-[11px] truncate" style={{ color: "var(--a-text3)" }}>
-              {String(r.phone ?? "")}{typeof r.email === "string" && r.email ? ` · ${r.email}` : ""}
+              {String(r.phone ?? "")}
+              {typeof r.email === "string" && r.email ? ` · ${r.email}` : ""}
+              {typeof r.callSlot === "string" && r.callSlot ? ` · prefers ${r.callSlot}` : ""}
             </div>
           </div>
         </div>
@@ -104,7 +126,9 @@ function EnquiriesAdmin() {
       hideBelow: "md",
       csv: (r) => String(r.requirement ?? ""),
       render: (r) => (
-        <p className="max-w-[380px] truncate text-xs" style={{ color: "var(--a-text2)" }}>{String(r.requirement ?? "")}</p>
+        <p className="max-w-[380px] truncate text-xs" style={{ color: "var(--a-text2)" }}>
+          {String(r.requirement ?? "")}
+        </p>
       ),
     },
     {
@@ -115,7 +139,8 @@ function EnquiriesAdmin() {
       csv: (r) => String(r.source ?? ""),
       render: (r) => (
         <span className="text-[11px]" style={{ color: "var(--a-text3)" }}>
-          {String(r.source ?? "")}{typeof r.product_ref === "string" && r.product_ref ? ` · ${r.product_ref}` : ""}
+          {String(r.source ?? "")}
+          {typeof r.product_ref === "string" && r.product_ref ? ` · ${r.product_ref}` : ""}
         </span>
       ),
     },
@@ -131,11 +156,15 @@ function EnquiriesAdmin() {
       label: "Received",
       sortVal: (r) => toDate(r.createdAt)?.getTime() ?? 0,
       csv: (r) => toDate(r.createdAt)?.toISOString() ?? "",
-      render: (r) => <span className="text-xs whitespace-nowrap" style={{ color: "var(--a-text3)" }}>{timeAgo(toDate(r.createdAt))}</span>,
+      render: (r) => (
+        <span className="text-xs whitespace-nowrap" style={{ color: "var(--a-text3)" }}>
+          {timeAgo(toDate(r.createdAt))}
+        </span>
+      ),
     },
   ];
 
-  const openRow = open ? rows.find((r) => r.__id === open.__id) ?? open : null;
+  const openRow = open ? (rows.find((r) => r.__id === open.__id) ?? open) : null;
   const phoneDigits = openRow ? String(openRow.phone ?? "").replace(/\D/g, "") : "";
 
   return (
@@ -170,7 +199,9 @@ function EnquiriesAdmin() {
         loading={isLoading}
         error={error}
         initialSearch={q ?? ""}
-        searchText={(r) => `${r.name ?? ""} ${r.company ?? ""} ${r.phone ?? ""} ${r.email ?? ""} ${r.requirement ?? ""} ${r.source ?? ""}`}
+        searchText={(r) =>
+          `${r.name ?? ""} ${r.company ?? ""} ${r.phone ?? ""} ${r.email ?? ""} ${r.requirement ?? ""} ${r.source ?? ""}`
+        }
         searchPlaceholder="Search enquiries…  ( / )"
         csvName="enquiries"
         onRow={(r) => setOpen(r)}
@@ -190,15 +221,27 @@ function EnquiriesAdmin() {
           </>
         )}
         bulkActions={(selected, clear) => (
-          <Btn size="sm" variant="danger" icon={Trash2} onClick={() => { setConfirmDelete(selected); clear(); }}>
+          <Btn
+            size="sm"
+            variant="danger"
+            icon={Trash2}
+            onClick={() => {
+              setConfirmDelete(selected);
+              clear();
+            }}
+          >
             Delete {selected.length}
           </Btn>
         )}
         mobileCard={(r) => (
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[13px] font-semibold truncate">{String(r.name ?? "Unknown")}</span>
-              <Badge tone={statusTone(statusOf(r))} className="shrink-0">{statusOf(r)}</Badge>
+              <span className="text-[13px] font-semibold truncate">
+                {String(r.name ?? "Unknown")}
+              </span>
+              <Badge tone={statusTone(statusOf(r))} className="shrink-0">
+                {statusOf(r)}
+              </Badge>
             </div>
             <div className="text-[11px] truncate" style={{ color: "var(--a-text3)" }}>
               {String(r.requirement ?? "")}
@@ -212,11 +255,17 @@ function EnquiriesAdmin() {
         open={openRow !== null}
         onClose={() => setOpen(null)}
         title={openRow ? String(openRow.name ?? "Enquiry") : ""}
-        sub={openRow ? `${timeAgo(toDate(openRow.createdAt))} · ${String(openRow.source ?? "")}` : undefined}
+        sub={
+          openRow
+            ? `${timeAgo(toDate(openRow.createdAt))} · ${String(openRow.source ?? "")}`
+            : undefined
+        }
         footer={
           openRow && (
             <>
-              <Btn variant="danger" icon={Trash2} onClick={() => setConfirmDelete([openRow])}>Delete</Btn>
+              <Btn variant="danger" icon={Trash2} onClick={() => setConfirmDelete([openRow])}>
+                Delete
+              </Btn>
               <div className="ml-auto flex gap-2">
                 {STATUSES.filter((s) => s.id !== "all").map((s) => (
                   <Btn
@@ -237,7 +286,12 @@ function EnquiriesAdmin() {
           <div className="space-y-5">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {String(openRow.phone ?? "") && (
-                <a href={`tel:${String(openRow.phone)}`} className="a-btn a-btn-ghost justify-start"><Phone className="h-3.5 w-3.5" /> {String(openRow.phone)}</a>
+                <a
+                  href={`tel:${String(openRow.phone)}`}
+                  className="a-btn a-btn-ghost justify-start"
+                >
+                  <Phone className="h-3.5 w-3.5" /> {String(openRow.phone)}
+                </a>
               )}
               {phoneDigits && (
                 <a
@@ -250,19 +304,31 @@ function EnquiriesAdmin() {
                 </a>
               )}
               {typeof openRow.email === "string" && openRow.email && (
-                <a href={`mailto:${openRow.email}`} className="a-btn a-btn-ghost justify-start truncate"><Mail className="h-3.5 w-3.5" /> Email</a>
+                <a
+                  href={`mailto:${openRow.email}`}
+                  className="a-btn a-btn-ghost justify-start truncate"
+                >
+                  <Mail className="h-3.5 w-3.5" /> Email
+                </a>
               )}
             </div>
 
             <div>
-              <div className="text-xs font-semibold mb-1.5" style={{ color: "var(--a-text3)" }}>REQUIREMENT</div>
-              <div className="a-card p-4 text-[13px] whitespace-pre-wrap leading-relaxed" style={{ color: "var(--a-text2)", background: "var(--a-surface2)" }}>
+              <div className="text-xs font-semibold mb-1.5" style={{ color: "var(--a-text3)" }}>
+                REQUIREMENT
+              </div>
+              <div
+                className="a-card p-4 text-[13px] whitespace-pre-wrap leading-relaxed"
+                style={{ color: "var(--a-text2)", background: "var(--a-surface2)" }}
+              >
                 {String(openRow.requirement ?? "—")}
               </div>
             </div>
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]">
               {[
+                ["Type", openRow.kind === "call-request" ? "📞 Call-back request" : "Enquiry"],
+                ["Preferred time", String(openRow.callSlot ?? "") || "—"],
                 ["Company", String(openRow.company ?? "") || "—"],
                 ["Email", String(openRow.email ?? "") || "—"],
                 ["Product", String(openRow.product_ref ?? "") || "—"],
@@ -271,14 +337,22 @@ function EnquiriesAdmin() {
                 ["Status", statusOf(openRow)],
               ].map(([k, v]) => (
                 <div key={k}>
-                  <dt className="text-[11px] font-semibold" style={{ color: "var(--a-text3)" }}>{k}</dt>
-                  <dd className="mt-0.5 break-words" style={{ color: "var(--a-text2)" }}>{v}</dd>
+                  <dt className="text-[11px] font-semibold" style={{ color: "var(--a-text3)" }}>
+                    {k}
+                  </dt>
+                  <dd className="mt-0.5 break-words" style={{ color: "var(--a-text2)" }}>
+                    {v}
+                  </dd>
                 </div>
               ))}
             </dl>
 
-            <p className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--a-text3)" }}>
-              <Inbox className="h-3 w-3" /> Replying fast wins the order — the brochure promise is service.
+            <p
+              className="flex items-center gap-1.5 text-[11px]"
+              style={{ color: "var(--a-text3)" }}
+            >
+              <Inbox className="h-3 w-3" /> Replying fast wins the order — the brochure promise is
+              service.
             </p>
           </div>
         )}
@@ -290,7 +364,11 @@ function EnquiriesAdmin() {
         onConfirm={async () => {
           if (confirmDelete) await doDelete(confirmDelete);
         }}
-        title={confirmDelete && confirmDelete.length > 1 ? `Delete ${confirmDelete.length} enquiries?` : "Delete this enquiry?"}
+        title={
+          confirmDelete && confirmDelete.length > 1
+            ? `Delete ${confirmDelete.length} enquiries?`
+            : "Delete this enquiry?"
+        }
         body="You can undo from the toast for a few seconds after deleting."
       />
     </div>

@@ -77,21 +77,51 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+// Analytics & Search Console are activated purely by env config — set
+// VITE_GA_ID (G-XXXXXXX) and/or VITE_GSC_VERIFICATION in .env and rebuild.
+const GA_ID = (import.meta.env.VITE_GA_ID as string | undefined) || "";
+const GSC_TOKEN = (import.meta.env.VITE_GSC_VERIFICATION as string | undefined) || "";
+
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      ...(GSC_TOKEN ? [{ name: "google-site-verification", content: GSC_TOKEN }] : []),
       { title: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad" },
-      { name: "description", content: "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013." },
+      {
+        name: "description",
+        content:
+          "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013.",
+      },
       { name: "author", content: "LK Chemicals Pvt. Ltd." },
-      { property: "og:title", content: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad" },
-      { property: "og:description", content: "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013." },
+      {
+        property: "og:title",
+        content: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad",
+      },
+      {
+        property: "og:description",
+        content:
+          "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#0a0f1e" },
-      { name: "twitter:title", content: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad" },
-      { name: "twitter:description", content: "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013." },
+      {
+        name: "twitter:title",
+        content: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013.",
+      },
       { property: "og:image", content: "/og-image.png" },
       { name: "twitter:image", content: "/og-image.png" },
     ],
@@ -104,8 +134,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/og-image.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+      },
     ],
+    scripts: GA_ID
+      ? [
+          { src: `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`, async: true },
+          {
+            children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:true});`,
+          },
+        ]
+      : [],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -136,6 +177,11 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname.startsWith("/admin");
+
+  // SPA navigations don't reload the page — report each route change to GA4.
+  useEffect(() => {
+    if (GA_ID) window.gtag?.("event", "page_view", { page_path: pathname });
+  }, [pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>

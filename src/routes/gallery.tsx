@@ -64,23 +64,25 @@ function GalleryPage() {
 
       <section className="section-dark pb-24">
         <div className="mx-auto max-w-7xl px-6 md:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[180px] md:auto-rows-[220px] gap-4">
+          {/* Masonry columns: every photo keeps its own aspect ratio instead
+              of being cropped into uniform grid cells. */}
+          <div className="columns-2 md:columns-3 xl:columns-4 gap-4">
             {filtered.map((it, idx) => (
               <motion.button
-                layout
                 key={idx + it.src}
                 onClick={() => setOpen(idx)}
-                className={
-                  "relative overflow-hidden rounded-3xl group hover-lift " +
-                  (it.wide ? "md:col-span-2 " : "") +
-                  (it.tall ? "row-span-2 " : "")
-                }
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-6%" }}
+                transition={{ duration: 0.5, delay: (idx % 4) * 0.05 }}
+                className="relative mb-4 block w-full break-inside-avoid overflow-hidden rounded-3xl group hover-lift"
                 whileHover={{ scale: 1.01 }}
               >
                 <img
                   src={it.src}
                   alt={it.alt}
-                  className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  loading="lazy"
+                  className="w-full h-auto group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 <div className="absolute bottom-3 left-4 micro-label text-cyan-hi">{it.cat}</div>

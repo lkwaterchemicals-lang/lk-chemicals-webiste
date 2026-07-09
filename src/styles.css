@@ -738,6 +738,17 @@ section > .mx-auto { position: relative; z-index: 1; }
   color: var(--ink) !important;
 }
 
+/* …but the fixed nav pill must stay frosted glass, never a solid white
+   slab — content scrolling behind it read as a "white layer" across the
+   top of every page. Translucent + blur keeps links legible over photos. */
+.light header nav.glass-dark {
+  background: color-mix(in oklab, white 52%, transparent) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border-color: var(--hairline);
+  box-shadow: 0 12px 32px -20px oklch(0.30 0.10 258 / 0.4);
+}
+
 /* --- LIGHT MODE: fix chip / pill contrast on marquees & rows ------- */
 .light .glass .micro-label,
 .light .glass-dark .micro-label { color: var(--cyan-deep); }
@@ -750,7 +761,7 @@ header nav.bg-transparent {
   border: 1px solid color-mix(in oklab, white 6%, transparent);
 }
 .light header nav.bg-transparent {
-  background: color-mix(in oklab, white 70%, transparent);
+  background: color-mix(in oklab, white 45%, transparent);
   border: 1px solid var(--hairline);
 }
 .light header nav a,

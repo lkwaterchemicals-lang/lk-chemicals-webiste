@@ -10,6 +10,7 @@ import { LiquidButton } from "@/components/site/LiquidButton";
 import { Waterline } from "@/components/site/Waterline";
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
 import { Coverflow3D } from "@/components/site/Coverflow3D";
+import { ServiceIndex } from "@/components/site/ServiceIndex";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
 import { WaterCore } from "@/components/site/WaterCore";
@@ -41,6 +42,7 @@ function HomePage() {
       <WaterlineTransition />
       <WhoWeAre />
       <WhatWeMake />
+      <ServiceIndex />
       <WhereWeWork />
       <HowWaterGetsTreated />
       <WhyLK />
@@ -405,24 +407,48 @@ function WhoWeAre() {
 function CategoryCard({ c }: { c: import("@/data/products").Category }) {
   return (
     <article className="rounded-3xl overflow-hidden glass-dark relative flex flex-col h-full">
-      <div className="relative h-56 sm:h-64 md:h-72 overflow-hidden">
+      <div className="relative h-40 sm:h-44 xl:h-48 overflow-hidden">
         <img src={c.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-black/15 to-transparent" />
-        <div className="absolute top-4 left-5 right-5 flex items-start justify-between">
-          <span className="display-xl text-5xl grad-text">{c.number}</span>
-          <span className="micro-label text-cyan-hi">{c.name}</span>
+        <div className="absolute top-3.5 left-4 right-4 flex items-start justify-between">
+          <span className="display-xl text-4xl grad-text">{c.number}</span>
+          <span className="micro-label text-cyan-hi text-right">{c.name}</span>
         </div>
       </div>
-      <div className="p-6 md:p-8 flex-1 flex flex-col">
-        <h3 className="display-xl text-2xl sm:text-3xl text-white">{c.tagline}</h3>
-        <p className="mt-3 text-sm text-white/70 flex-1">{c.description}</p>
-        <div className="mt-5">
+      <div className="p-5 sm:p-6 flex-1 flex flex-col">
+        <h3 className="display-xl text-xl sm:text-2xl text-white line-clamp-2">{c.tagline}</h3>
+        <p className="mt-2.5 text-sm text-white/70 flex-1 line-clamp-3">{c.description}</p>
+        <div className="mt-4">
           <LiquidButton to="/products" size="md">
             Explore {c.name}
           </LiquidButton>
         </div>
       </div>
     </article>
+  );
+}
+
+// The rail shows a curated five; this closing card carries the rest of the
+// formulary without ever quoting a count that goes stale.
+function ViewAllCard() {
+  return (
+    <Link
+      to="/products"
+      className="group rounded-3xl overflow-hidden glass-dark relative flex flex-col items-center justify-center text-center h-full min-h-[280px] p-8 hover-lift"
+    >
+      <div className="absolute inset-0 caustics opacity-40" aria-hidden />
+      <span className="relative grid h-16 w-16 place-items-center rounded-full bg-cyan-hi/15 text-cyan-hi transition-transform duration-500 group-hover:scale-110 group-hover:rotate-45">
+        <span className="text-2xl" aria-hidden>
+          →
+        </span>
+      </span>
+      <span className="relative display-xl text-2xl sm:text-3xl text-white mt-6">
+        View all categories
+      </span>
+      <span className="relative mt-2 text-sm text-white/60">
+        Browse the complete formulary — every range, every grade.
+      </span>
+    </Link>
   );
 }
 
@@ -473,11 +499,14 @@ function WhatWeMakePinned() {
       <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden py-16">
         <WhatWeMakeHeading />
         <motion.div ref={trackRef} style={{ x }} className="mt-10 flex gap-5 pl-6 md:pl-8 w-max">
-          {categories.map((c) => (
-            <div key={c.slug} className="w-[42vw] xl:w-[34vw] shrink-0">
+          {categories.slice(0, 5).map((c) => (
+            <div key={c.slug} className="w-[26vw] xl:w-[22vw] shrink-0">
               <CategoryCard c={c} />
             </div>
           ))}
+          <div className="w-[26vw] xl:w-[22vw] shrink-0">
+            <ViewAllCard />
+          </div>
           <div className="shrink-0 w-1 lg:pr-6 md:pr-8" aria-hidden />
         </motion.div>
       </div>
@@ -495,10 +524,11 @@ function WhatWeMakeSwipe() {
       <Coverflow3D
         className="mt-8"
         variant="y"
-        cardClass="w-[80vw] sm:w-[62vw] md:w-[48vw]"
-        items={categories.map((c) => (
-          <CategoryCard key={c.slug} c={c} />
-        ))}
+        cardClass="w-[68vw] max-w-[300px] sm:w-[48vw] md:w-[38vw]"
+        items={[
+          ...categories.slice(0, 5).map((c) => <CategoryCard key={c.slug} c={c} />),
+          <ViewAllCard key="view-all" />,
+        ]}
       />
     </section>
   );
@@ -522,7 +552,7 @@ function WhereWeWork() {
   return (
     <section className="section-dark py-28 overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 md:px-8">
-        <MicroLabel n="04">Where we work</MicroLabel>
+        <MicroLabel n="05">Where we work</MicroLabel>
         <h2 className="display-xl mt-3 grad-text" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>
           {c.whereHeading}
         </h2>
@@ -592,7 +622,7 @@ function HowWaterGetsTreated() {
     <section ref={ref} className="section-dark relative" style={{ height: "260vh" }}>
       <div className="sticky top-0 min-h-screen flex flex-col overflow-hidden py-24">
         <div className="mx-auto max-w-7xl w-full px-6 md:px-8">
-          <MicroLabel n="05">How water gets treated</MicroLabel>
+          <MicroLabel n="06">How water gets treated</MicroLabel>
           <h2
             className="display-xl mt-3 grad-text max-w-4xl"
             style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}
@@ -661,7 +691,7 @@ function WhyLK() {
     <section className="section-light py-28 relative overflow-hidden">
       <GhostWord className="absolute bottom-2 right-0 text-[22vw]">PURITY</GhostWord>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
-        <MicroLabel n="06" className="!text-royal">
+        <MicroLabel n="07" className="!text-royal">
           Why LK
         </MicroLabel>
         <h2 className="display-xl mt-3" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>
@@ -730,7 +760,7 @@ function Proof() {
     <section className="section-dark py-28 relative overflow-hidden">
       <div className="absolute inset-0 caustics opacity-30" />
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
-        <MicroLabel n="07">Proof</MicroLabel>
+        <MicroLabel n="08">Proof</MicroLabel>
         <div className="mt-8 min-h-[280px] md:min-h-[220px]">
           <motion.blockquote
             key={i}
@@ -780,7 +810,7 @@ function SeeThePlant() {
   return (
     <section className="section-light py-28 relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 md:px-8">
-        <MicroLabel n="08" className="!text-royal">
+        <MicroLabel n="09" className="!text-royal">
           See the plant
         </MicroLabel>
         <div className="mt-6 flex flex-wrap justify-between items-end gap-6">
@@ -838,7 +868,7 @@ function TalkToUs() {
       <Waterline className="absolute top-6 left-0" />
       <div className="relative mx-auto max-w-7xl px-6 md:px-8 grid lg:grid-cols-2 gap-12 items-center">
         <div>
-          <MicroLabel n="09">Talk to us</MicroLabel>
+          <MicroLabel n="10">Talk to us</MicroLabel>
           <h2
             className="display-xl mt-4 grad-text leading-[0.9]"
             style={{ fontSize: "clamp(2.5rem, 10vw, 6rem)" }}

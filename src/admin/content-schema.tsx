@@ -132,6 +132,14 @@ export const PAGE_SCHEMAS: PageSchema[] = [
         fields: [{ key: "makeHeading", label: "Heading", type: "text", full: true }],
       },
       {
+        title: "What we service",
+        fields: [
+          { key: "serviceHeadingLead", label: "Heading (lead)", type: "text" },
+          { key: "serviceHeadingAccent", label: "Heading (accent)", type: "text" },
+          { key: "serviceSubtitle", label: "Subtitle", type: "textarea", full: true },
+        ],
+      },
+      {
         title: "Where we work",
         fields: [
           { key: "whereHeading", label: "Heading", type: "text", full: true },

@@ -48,6 +48,9 @@ export type HomeContent = {
   stats: Stat[];
   whoImages: string[];
   makeHeading: string;
+  serviceHeadingLead: string;
+  serviceHeadingAccent: string;
+  serviceSubtitle: string;
   whereHeading: string;
   whereSubtitle: string;
   industries: Industry[];
@@ -137,7 +140,11 @@ export const homeContent: HomeContent = {
     { value: 70, suffix: "+", label: "Products & formulations" },
   ],
   whoImages: [plant, lab, droplet],
-  makeHeading: "Nine categories. One formulary.",
+  makeHeading: "Every category. One formulary.",
+  serviceHeadingLead: "We don't just supply.",
+  serviceHeadingAccent: "We service.",
+  serviceSubtitle:
+    "Every drum we sell is backed by our own crew — engineers, vehicles and field-proven procedures that keep your plant running at spec.",
   whereHeading: "Twelve industries. One chemistry.",
   whereSubtitle:
     "Supplying and servicing across Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra.",

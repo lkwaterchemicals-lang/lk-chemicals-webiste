@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import { ArrowLeft, Check, Download } from "lucide-react";
 import { findProduct, type Product } from "@/data/products";
 import { useCategories, useProducts, useSiteSettings } from "@/lib/content";
@@ -53,7 +53,6 @@ function ProductDetail() {
   const { data: products, isFetching } = useProducts();
   const { data: categories } = useCategories();
   const { data: settings } = useSiteSettings();
-  const [activeImg, setActiveImg] = useState(0);
 
   const product: Product | null = staticProduct ?? products.find((p) => p.slug === slug) ?? null;
   if (!product) {
@@ -77,7 +76,6 @@ function ProductDetail() {
   const specs = product.specifications ?? [];
   const documents = product.documents ?? [];
   const images = [product.image, ...(product.gallery ?? [])].filter(Boolean) as string[];
-  const mainImg = images[activeImg] ?? images[0] ?? null;
 
   // Related: explicit picks first, otherwise same-category siblings.
   const relatedSlugs = product.related ?? [];
@@ -148,46 +146,7 @@ function ProductDetail() {
 
           <div className="mt-14 grid lg:grid-cols-5 gap-10 items-start">
             <div className="lg:col-span-2">
-              <motion.div
-                whileHover={{ rotateY: 8, rotateX: -6, scale: 1.03 }}
-                transition={{ type: "spring", stiffness: 150, damping: 15 }}
-                style={{ transformStyle: "preserve-3d" }}
-                className="relative rounded-3xl overflow-hidden glass-dark"
-              >
-                {mainImg ? (
-                  <img src={mainImg} alt={product.name} className="h-72 w-full object-cover" />
-                ) : (
-                  <>
-                    <img src={cat.image} alt="" className="h-72 w-full object-cover" />
-                    <img
-                      src={drumImg}
-                      alt={product.name}
-                      className="absolute inset-0 h-full w-full object-contain p-8 mix-blend-screen"
-                    />
-                  </>
-                )}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent" />
-              </motion.div>
-              {images.length > 1 && (
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {images.map((src, i) => (
-                    <button
-                      key={src + i}
-                      type="button"
-                      onClick={() => setActiveImg(i)}
-                      aria-label={`View image ${i + 1}`}
-                      className={
-                        "h-16 w-16 shrink-0 overflow-hidden rounded-xl border transition-all " +
-                        (i === activeImg
-                          ? "border-cyan-hi"
-                          : "border-white/10 opacity-70 hover:opacity-100")
-                      }
-                    >
-                      <img src={src} alt="" className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
+              <ProductGallery images={images} catImage={cat.image} name={product.name} />
             </div>
             <div className="lg:col-span-3 grid md:grid-cols-2 gap-6">
               {features.length > 0 && (
@@ -353,6 +312,159 @@ function Panel({
     <div className={"rounded-3xl glass-dark p-6 " + className}>
       <div className="micro-label mb-3">{title}</div>
       {children}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------ image stage */
+
+// Directional cinematic transition: the incoming photo slides and folds in
+// from the side you're heading toward, the outgoing one falls away.
+const stageVariants: Variants = {
+  enter: (d: number) => ({ x: d * 72, opacity: 0, scale: 1.05, rotateY: d * 10 }),
+  center: {
+    x: 0,
+    opacity: 1,
+    scale: 1,
+    rotateY: 0,
+    transition: { type: "spring", stiffness: 220, damping: 27 },
+  },
+  exit: (d: number) => ({
+    x: d * -72,
+    opacity: 0,
+    scale: 0.97,
+    rotateY: d * -8,
+    transition: { duration: 0.28, ease: "easeIn" },
+  }),
+};
+
+// Animated product gallery — crossfading Ken-Burns stage with swipe support
+// on touch devices, hover tilt on desktop, and a polite auto-play that stops
+// the moment the visitor takes over. Falls back to the category photo when a
+// product has no images of its own.
+function ProductGallery({
+  images,
+  catImage,
+  name,
+}: {
+  images: string[];
+  catImage: string;
+  name: string;
+}) {
+  const reduced = useReducedMotion();
+  const [active, setActive] = useState(0);
+  const [dir, setDir] = useState(1);
+  const lastUser = useRef(0);
+  const many = images.length > 1;
+
+  const go = (i: number, user = false) => {
+    if (user) lastUser.current = Date.now();
+    const next = ((i % images.length) + images.length) % images.length;
+    setDir(next > active || (active === images.length - 1 && next === 0) ? 1 : -1);
+    setActive(next);
+  };
+
+  // Auto-advance keeps the stage alive on phones (no hover there), but never
+  // fights the user: any touch/click pauses it for a while.
+  useEffect(() => {
+    if (reduced || !many) return;
+    const id = setInterval(() => {
+      if (document.hidden || Date.now() - lastUser.current < 9000) return;
+      setDir(1);
+      setActive((a) => (a + 1) % images.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [images.length, many, reduced]);
+
+  const src = images[active] ?? images[0] ?? null;
+
+  return (
+    <div style={{ perspective: 1000 }}>
+      <motion.div
+        whileHover={reduced ? undefined : { rotateY: 6, rotateX: -4, scale: 1.02 }}
+        transition={{ type: "spring", stiffness: 150, damping: 16 }}
+        style={{ transformStyle: "preserve-3d" }}
+        className="relative h-72 rounded-3xl overflow-hidden glass-dark"
+      >
+        <AnimatePresence initial={false} custom={dir}>
+          {src ? (
+            <motion.div
+              key={src + active}
+              custom={dir}
+              variants={reduced ? undefined : stageVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              drag={many ? "x" : false}
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.16}
+              onDragStart={() => (lastUser.current = Date.now())}
+              onDragEnd={(_, info) => {
+                lastUser.current = Date.now();
+                if (info.offset.x < -56 || info.velocity.x < -420) go(active + 1, true);
+                else if (info.offset.x > 56 || info.velocity.x > 420) go(active - 1, true);
+              }}
+              className={"absolute inset-0 " + (many ? "cursor-grab active:cursor-grabbing" : "")}
+            >
+              <motion.img
+                src={src}
+                alt={name}
+                draggable={false}
+                animate={reduced ? undefined : { scale: [1, 1.07] }}
+                transition={
+                  reduced
+                    ? undefined
+                    : { duration: 9, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }
+                }
+                className="h-full w-full object-cover"
+              />
+            </motion.div>
+          ) : (
+            <div key="fallback" className="absolute inset-0">
+              <img src={catImage} alt="" className="h-full w-full object-cover" />
+              <img
+                src={drumImg}
+                alt={name}
+                className="absolute inset-0 h-full w-full object-contain p-8 mix-blend-screen"
+              />
+            </div>
+          )}
+        </AnimatePresence>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent" />
+        {many && (
+          <div className="pointer-events-none absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
+            {images.map((_, i) => (
+              <span
+                key={i}
+                className={
+                  "h-1.5 rounded-full transition-all duration-300 " +
+                  (i === active ? "w-6 bg-cyan-hi" : "w-1.5 bg-white/40")
+                }
+              />
+            ))}
+          </div>
+        )}
+      </motion.div>
+      {many && (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {images.map((s, i) => (
+            <motion.button
+              key={s + i}
+              type="button"
+              onClick={() => go(i, true)}
+              aria-label={`View image ${i + 1}`}
+              whileTap={{ scale: 0.92 }}
+              animate={{ scale: i === active ? 1.06 : 1 }}
+              className={
+                "h-16 w-16 shrink-0 overflow-hidden rounded-xl border transition-all " +
+                (i === active ? "border-cyan-hi" : "border-white/10 opacity-70 hover:opacity-100")
+              }
+            >
+              <img src={s} alt="" className="h-full w-full object-cover" />
+            </motion.button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -31,6 +31,9 @@ export function Nav() {
   }, []);
   useEffect(() => {
     document.documentElement.style.overflow = open ? "hidden" : "";
+    // Drop focus from inside the menu before it becomes inert — a focused
+    // descendant in a hidden subtree trips the browser's a11y warning.
+    if (!open) (document.activeElement as HTMLElement | null)?.blur?.();
   }, [open]);
 
   return (
@@ -107,9 +110,9 @@ export function Nav() {
           "fixed inset-0 z-50 transition-all duration-500 " +
           (open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")
         }
-        aria-hidden={!open}
-        // inert removes the closed menu from focus/AT entirely (fixes the
-        // "aria-hidden on focused ancestor" console warning)
+        // inert alone removes the closed menu from focus/AT entirely; adding
+        // aria-hidden on top is what triggered the "blocked aria-hidden on a
+        // focused ancestor" console warning, so it stays off.
         inert={!open}
       >
         <div className="absolute inset-0 bg-ink-2 caustics" />

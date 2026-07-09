@@ -72,15 +72,18 @@ vec3 envDark(vec2 p, float t) {
   col += shaft * vec3(0.018, 0.065, 0.095) * SHAFT_GAIN;
   return col;
 }
-/* Crystal purified water — marble ivory, soft silver, ice blue daylight. */
+/* Crystal purified water — glacial pool daylight: defined blue depth and
+   visible sun caustics, never a white haze. */
 vec3 envLight(vec2 p, float t) {
   float g = clamp(p.y + 0.5, 0.0, 1.0);
-  vec3 col = mix(vec3(0.906, 0.933, 0.957), vec3(0.968, 0.976, 0.984), g);
+  vec3 col = mix(vec3(0.760, 0.848, 0.918), vec3(0.912, 0.945, 0.972), g);
   float vein = fbm(p * 2.0 + fbm(p * 3.1 + t * 0.02) * 1.2);
-  col -= (vein - 0.5) * 0.030;
+  col -= (vein - 0.5) * 0.050;
   vec2 q = vec2(fbm(p * 2.6 + t * 0.05), fbm(p * 2.6 - vec2(t * 0.04, 0.0)));
   float ca = pow(clamp(1.0 - abs(2.0 * fbm(p * 3.4 + 2.1 * q) - 1.0), 0.0, 1.0), 6.0);
-  col = mix(col, vec3(0.720, 0.840, 0.918), ca * 0.16);
+  col = mix(col, vec3(0.470, 0.690, 0.870), ca * 0.34);
+  float shaft = pow(smoothstep(0.52, 0.95, fbm(vec2(p.x * 1.4 - p.y * 0.5, t * 0.03))), 2.0) * smoothstep(-0.55, 0.55, p.y);
+  col = mix(col, vec3(0.965, 0.985, 1.0), shaft * 0.30);
   return col;
 }
 vec3 env(vec2 p, float t) { return mix(envDark(p, t), envLight(p, t), u_theme); }
@@ -118,10 +121,10 @@ void main() {
   // Suspended particles on two depth layers, drifting with the current and
   // parallaxed by the cursor.
   float p1 = particles(p + u_mouse * 0.020, 6.0, vec2(t * 0.016, -t * 0.011), 0.88);
-  col = mix(col, mix(vec3(0.38, 0.72, 0.86), vec3(0.52, 0.66, 0.76), u_theme), p1 * mix(0.35, 0.30, u_theme));
+  col = mix(col, mix(vec3(0.38, 0.72, 0.86), vec3(0.26, 0.52, 0.75), u_theme), p1 * mix(0.35, 0.45, u_theme));
 #if Q == 1
   float p2 = particles(p + u_mouse * 0.045, 11.0, vec2(-t * 0.010, -t * 0.018), 0.90);
-  col = mix(col, mix(vec3(0.55, 0.85, 0.95), vec3(0.45, 0.58, 0.70), u_theme), p2 * mix(0.28, 0.22, u_theme));
+  col = mix(col, mix(vec3(0.55, 0.85, 0.95), vec3(0.33, 0.56, 0.76), u_theme), p2 * mix(0.28, 0.36, u_theme));
 #endif
 
   // ---- the centrepiece ----
@@ -140,7 +143,7 @@ void main() {
     float ringR = R * (1.06 + ph * 1.35);
     float ring = exp(-abs(r - ringR) * 58.0) * (1.0 - ph) * step(R, r) * u_reveal;
     col += ring * vec3(0.020, 0.105, 0.145) * (1.0 - u_theme) * 0.9;
-    col = mix(col, vec3(0.56, 0.72, 0.85), ring * u_theme * 0.22);
+    col = mix(col, vec3(0.34, 0.60, 0.84), ring * u_theme * 0.38);
   }
 
   // Orbiting micro-droplets — three glass beads on a tilted ellipse. Beads on
@@ -158,7 +161,7 @@ void main() {
       vec2 hq = p - orb + vec2(oR * 0.35, -oR * 0.35); \
       beadCol += exp(-dot(hq, hq) * (9.0 / (oR * oR))) * mix(vec3(0.45, 0.75, 0.88), vec3(1.0), u_theme) * 0.8; \
       float rimB = smoothstep(oR * 0.6, oR * 0.95, od) * (1.0 - smoothstep(oR * 0.95, oR, od)); \
-      beadCol += rimB * mix(vec3(0.10, 0.34, 0.44), vec3(0.55, 0.68, 0.80), u_theme) * 0.5; \
+      beadCol += rimB * mix(vec3(0.10, 0.34, 0.44), vec3(0.30, 0.55, 0.78), u_theme) * 0.5; \
       col = mix(col, beadCol, mask); \
     } \
   }
@@ -185,15 +188,15 @@ void main() {
     // Absorption tint by optical thickness (Beer-Lambert, cheap). In daylight
     // the glass reads a touch deeper than the marble behind it — real lensing,
     // not a glow.
-    vec3 tint = mix(vec3(0.70, 0.90, 1.00), vec3(0.80, 0.905, 0.965), u_theme);
+    vec3 tint = mix(vec3(0.70, 0.90, 1.00), vec3(0.60, 0.79, 0.93), u_theme);
     glass *= mix(vec3(1.0), tint, 0.35 + 0.55 * n.z);
-    glass *= mix(1.0, 0.965, u_theme);
+    glass *= mix(1.0, 0.925, u_theme);
 
     // The living core — a slow luminous swirl, denser toward the centre.
     vec2 s = rot(t * 0.11) * q * (3.2 / R);
     float swirl = fbm(s * 1.6 + vec2(fbm(s + vec2(0.0, t * 0.14)), fbm(s - vec2(t * 0.11, 0.0))));
     float core = pow(clamp(1.0 - abs(2.0 * swirl - 1.0), 0.0, 1.0), 4.0) * smoothstep(R * 0.92, R * 0.22, r);
-    glass += core * mix(vec3(0.075, 0.330, 0.430), vec3(0.10, 0.24, 0.36), u_theme) * mix(0.5, 0.32, u_theme);
+    glass += core * mix(vec3(0.075, 0.330, 0.430), vec3(0.06, 0.28, 0.46), u_theme) * mix(0.5, 0.55, u_theme);
 
 #if Q == 1
     // Rising micro-bubbles inside the chamber.
@@ -216,7 +219,7 @@ void main() {
 
     // Glass rim — cyan whisper in the deep, cool silver in daylight.
     float rim = smoothstep(R * 0.90, R * 0.98, r) * (1.0 - smoothstep(R * 0.98, R, r));
-    glass += rim * mix(vec3(0.10, 0.36, 0.46) * 0.5, vec3(0.44, 0.56, 0.68) * 0.22, u_theme);
+    glass += rim * mix(vec3(0.10, 0.36, 0.46) * 0.5, vec3(0.24, 0.50, 0.74) * 0.5, u_theme);
     // Daylight: a darker refraction band hugs the lower edge of real glass.
     glass -= rim * vec3(0.10, 0.08, 0.05) * u_theme * smoothstep(0.0, -R * 0.6, q.y);
 
@@ -229,7 +232,7 @@ void main() {
   // Cinematic edges (subtle in daylight).
   vec2 uv = frag / u_res;
   float vig = smoothstep(0.55, 1.15, length(uv - 0.5) * 1.35);
-  col *= 1.0 - mix(0.26, 0.06, u_theme) * vig;
+  col *= 1.0 - mix(0.26, 0.13, u_theme) * vig;
 
   col += (hash(frag * 0.7) - 0.5) * 0.008;
 
@@ -262,7 +265,10 @@ function WaterCoreCanvas() {
 
     let flowTime = Math.random() * 60;
     let last = performance.now();
-    let tmx = 0, tmy = 0, mx = 0, my = 0; // scene units
+    let tmx = 0,
+      tmy = 0,
+      mx = 0,
+      my = 0; // scene units
     let themeTarget = document.documentElement.classList.contains("light") ? 1 : 0;
     let themeS = themeTarget;
     let revealTarget = 0;
@@ -278,7 +284,7 @@ function WaterCoreCanvas() {
       const aspect = rect.width / Math.max(1, rect.height);
       if (aspect >= 1.05) {
         anchor = { x: Math.min(0.52, aspect * 0.26), y: 0.0 };
-        radius = 0.30;
+        radius = 0.3;
       } else {
         anchor = { x: 0, y: 0.235 }; // portrait: sphere above the copy
         radius = Math.min(0.27, aspect * 0.42);
@@ -298,7 +304,12 @@ function WaterCoreCanvas() {
 
     function setupGL() {
       // alpha:true so the top of the scene can dissolve into the page's water
-      gl = canvas!.getContext("webgl", { alpha: true, antialias: false, depth: false, stencil: false });
+      gl = canvas!.getContext("webgl", {
+        alpha: true,
+        antialias: false,
+        depth: false,
+        stencil: false,
+      });
       if (!gl) return false;
       const g = gl;
       const compile = (type: number, src: string) => {
@@ -327,10 +338,24 @@ function WaterCoreCanvas() {
       g.enableVertexAttribArray(loc);
       g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
       uniforms = {};
-      for (const n of ["u_res", "u_time", "u_theme", "u_mouse", "u_anchor", "u_radius", "u_reveal", "u_ripples[0]"]) {
+      for (const n of [
+        "u_res",
+        "u_time",
+        "u_theme",
+        "u_mouse",
+        "u_anchor",
+        "u_radius",
+        "u_reveal",
+        "u_ripples[0]",
+      ]) {
         uniforms[n] = g.getUniformLocation(prog, n);
       }
-      cleanupGL = () => { g.deleteProgram(prog); g.deleteShader(vs); g.deleteShader(fs); g.deleteBuffer(buf); };
+      cleanupGL = () => {
+        g.deleteProgram(prog);
+        g.deleteShader(vs);
+        g.deleteShader(fs);
+        g.deleteBuffer(buf);
+      };
       return true;
     }
 
@@ -364,8 +389,10 @@ function WaterCoreCanvas() {
       rippleData.fill(0);
       for (let i = 0; i < ripples.length; i++) {
         const r = ripples[i];
-        rippleData[i * 4] = r.x; rippleData[i * 4 + 1] = r.y;
-        rippleData[i * 4 + 2] = r.age; rippleData[i * 4 + 3] = r.amp;
+        rippleData[i * 4] = r.x;
+        rippleData[i * 4 + 1] = r.y;
+        rippleData[i * 4 + 2] = r.age;
+        rippleData[i * 4 + 3] = r.amp;
       }
       g.uniform2f(uniforms.u_res, canvas!.width, canvas!.height);
       g.uniform1f(uniforms.u_time, flowTime);
@@ -379,7 +406,9 @@ function WaterCoreCanvas() {
     }
 
     // Adaptive governor: resolution steps → static frame. Never jank.
-    let ema = 1 / 60, lastGov = performance.now(), govStart = lastGov;
+    let ema = 1 / 60;
+    let lastGov = performance.now();
+    const govStart = lastGov;
     let staticFallback = false;
     let lastDrawn = performance.now();
 
@@ -387,7 +416,10 @@ function WaterCoreCanvas() {
 
     function frame(now: number) {
       if (destroyed || staticFallback) return;
-      if (!inView || document.hidden) { raf = 0; return; } // resumes via observer
+      if (!inView || document.hidden) {
+        raf = 0;
+        return;
+      } // resumes via observer
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       draw(dt);
@@ -396,9 +428,17 @@ function WaterCoreCanvas() {
       ema = ema * 0.8 + gap * 0.2;
       if (now - govStart > 900 && now - lastGov > 400) {
         lastGov = now;
-        if (ema > 0.08 && resScale > 0.24) { resScale = 0.24; ema = 0.02; }
-        else if (ema > 0.028 && resScale > 0.24) { resScale = Math.max(0.24, resScale * 0.7); ema = 0.02; }
-        else if (ema > 0.06 && resScale <= 0.24) { staticFallback = true; renderOnce(); return; }
+        if (ema > 0.08 && resScale > 0.24) {
+          resScale = 0.24;
+          ema = 0.02;
+        } else if (ema > 0.028 && resScale > 0.24) {
+          resScale = Math.max(0.24, resScale * 0.7);
+          ema = 0.02;
+        } else if (ema > 0.06 && resScale <= 0.24) {
+          staticFallback = true;
+          renderOnce();
+          return;
+        }
       }
       raf = requestAnimationFrame(frame);
     }
@@ -413,14 +453,17 @@ function WaterCoreCanvas() {
 
     layout();
 
-    const io = new IntersectionObserver(([e]) => {
-      inView = e.isIntersecting;
-      // Scroll-linked reveal: the core rises and settles as more of the
-      // section enters the viewport.
-      revealTarget = e.isIntersecting ? Math.min(1, e.intersectionRatio * 1.6) : 0;
-      if (inView && reduced) renderOnce();
-      kick();
-    }, { rootMargin: "120px", threshold: [0, 0.15, 0.3, 0.45, 0.6, 0.75] });
+    const io = new IntersectionObserver(
+      ([e]) => {
+        inView = e.isIntersecting;
+        // Scroll-linked reveal: the core rises and settles as more of the
+        // section enters the viewport.
+        revealTarget = e.isIntersecting ? Math.min(1, e.intersectionRatio * 1.6) : 0;
+        if (inView && reduced) renderOnce();
+        kick();
+      },
+      { rootMargin: "120px", threshold: [0, 0.15, 0.3, 0.45, 0.6, 0.75] },
+    );
     io.observe(canvas);
 
     const section = canvas.parentElement!;
@@ -436,10 +479,16 @@ function WaterCoreCanvas() {
       if (reduced) renderOnce();
     };
     const onVis = () => kick();
-    const onResize = () => { layout(); if (reduced && inView) renderOnce(); };
+    const onResize = () => {
+      layout();
+      if (reduced && inView) renderOnce();
+    };
     const themeObs = new MutationObserver(() => {
       themeTarget = document.documentElement.classList.contains("light") ? 1 : 0;
-      if (reduced) { themeS = themeTarget; if (inView) renderOnce(); }
+      if (reduced) {
+        themeS = themeTarget;
+        if (inView) renderOnce();
+      }
       kick();
     });
     themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
@@ -482,17 +531,22 @@ export function WaterCore() {
           transition={{ duration: 0.9, ease: [0.2, 0.7, 0.2, 1] }}
         >
           <MicroLabel n="11">The living water core</MicroLabel>
-          <h2 className="display-xl mt-4 leading-[0.9]" style={{ fontSize: "clamp(2.6rem, 8vw, 6rem)" }}>
+          <h2
+            className="display-xl mt-4 leading-[0.9]"
+            style={{ fontSize: "clamp(2.6rem, 8vw, 6rem)" }}
+          >
             <span className="grad-text">Purity,</span>
             <br />
             <span className="grad-leaf-text">engineered.</span>
           </h2>
           <p className="mt-6 max-w-md text-white/70">
-            Every formulation begins as one measured drop — tested, refined and
-            perfected in Cherlapally before it ever reaches your plant.
+            Every formulation begins as one measured drop — tested, refined and perfected in
+            Cherlapally before it ever reaches your plant.
           </p>
           <div className="mt-9">
-            <LiquidButton to="/contact" size="lg">Begin your water story</LiquidButton>
+            <LiquidButton to="/contact" size="lg">
+              Begin your water story
+            </LiquidButton>
           </div>
         </motion.div>
       </div>

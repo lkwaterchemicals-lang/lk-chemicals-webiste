@@ -6,6 +6,7 @@ import { findProduct, type Product } from "@/data/products";
 import { useCategories, useProducts, useSiteSettings } from "@/lib/content";
 import { MicroLabel } from "@/components/site/GhostWord";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
+import { RequestCallButton } from "@/components/site/RequestCall";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
 import drumImg from "@/assets/drum.jpg";
@@ -293,6 +294,9 @@ function ProductDetail() {
               Feed water conditions, flow rate, dosing question — we'll come back with a specific
               recommendation.
             </p>
+            <div className="mt-6">
+              <RequestCallButton source={`product:${product.slug}`} />
+            </div>
           </div>
           <div className="lg:col-span-3">
             <EnquiryForm source={`product:${product.slug}`} productRef={product.name} />

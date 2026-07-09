@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { ArrowUpRight, Wrench } from "lucide-react";
 import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
+import { RequestCallButton } from "@/components/site/RequestCall";
 import { useServiceCategories, useServices } from "@/lib/content";
 import { useServicesContent } from "@/lib/pages";
 
@@ -52,6 +53,9 @@ function ServicesPage() {
                 }, backed by our own chemistry, our own crew and our own vehicles.`
               : "Our field operations, backed by our own chemistry, crew and vehicles."}
           </p>
+          <div className="mt-8">
+            <RequestCallButton source="services-page" />
+          </div>
         </div>
       </section>
 

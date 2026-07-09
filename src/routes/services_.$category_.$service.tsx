@@ -7,6 +7,7 @@ import { type Service } from "@/data/products";
 import { MicroLabel } from "@/components/site/GhostWord";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
+import { RequestCallButton } from "@/components/site/RequestCall";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
 
@@ -303,6 +304,9 @@ function ServiceDetail() {
               Tell us your site, equipment and timeline — we'll come back with a specific scope and
               quote.
             </p>
+            <div className="mt-6">
+              <RequestCallButton source={`service:${service.slug}`} />
+            </div>
           </div>
           <div className="lg:col-span-3">
             <EnquiryForm source={`service:${service.slug}`} productRef={service.name} />

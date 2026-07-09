@@ -15,6 +15,7 @@ import { Nav } from "../components/site/Nav";
 import { Footer } from "../components/site/Footer";
 import { WaCluster } from "../components/site/WaCluster";
 import { ScrollProgress } from "../components/site/ScrollProgress";
+import { SmoothScroll } from "../components/site/SmoothScroll";
 import { WaterCanvas } from "../components/site/WaterCanvas";
 import { BackToTop } from "../components/site/BackToTop";
 
@@ -189,6 +190,7 @@ function RootComponent() {
         <Outlet />
       ) : (
         <>
+          <SmoothScroll />
           <WaterCanvas />
           <div className="site-shell">
             <ScrollProgress />

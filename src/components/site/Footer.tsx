@@ -141,9 +141,10 @@ export function Footer() {
           <p>{g.footerNote}</p>
           <p>
             Designed &amp; developed by{" "}
-            {/* Point href at the Dream Team website once its URL is final. */}
             <a
-              href="mailto:thedreamteamconsultancy@gmail.com"
+              href="https://www.thedreamteamservices.com/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-semibold text-cyan-hi hover:underline underline-offset-4"
             >
               Dream Team Services

@@ -902,6 +902,23 @@ html {
   scroll-padding-top: 96px;
 }
 
+/* ---------- Lenis smooth scroll (public site) ----------
+   Base rules from the library docs: never let CSS smooth-scroll fight the
+   inertial engine, and pause the smoothing cleanly while it's stopped. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
 /* Ghost decorative words: always behind real content, never above nav */
 .ghost-word {
   z-index: 0 !important;

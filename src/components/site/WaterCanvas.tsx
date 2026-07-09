@@ -169,15 +169,17 @@ export function WaterCanvas() {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isMobile = matchMedia("(pointer: coarse)").matches || innerWidth < 768;
     const quality = isMobile ? 0 : 1;
-    let resScale = isMobile ? 0.45 : 0.6; // adaptive: governor may lower it
-    const DPR_CAP = isMobile ? 1 : 1.5;
+    let resScale = isMobile ? 0.45 : 0.5; // adaptive: governor may lower it
+    const DPR_CAP = isMobile ? 1 : 1.25;
 
     // ---- simulation state shared across context (re)inits ----
     let flowTime = Math.random() * 100;
     let last = performance.now();
     let scrollS = window.scrollY;
-    let tmx = innerWidth / 2, tmy = innerHeight * 0.4;
-    let mx = tmx, my = tmy;
+    let tmx = innerWidth / 2,
+      tmy = innerHeight * 0.4;
+    let mx = tmx,
+      my = tmy;
     let themeTarget = document.documentElement.classList.contains("light") ? 1 : 0;
     let themeS = themeTarget;
     const ripples: Ripple[] = [];
@@ -201,9 +203,15 @@ export function WaterCanvas() {
     let renderOnce = () => {};
 
     function setupGL() {
+      // low-power: this canvas runs on every page for the whole visit — on
+      // dual-GPU laptops "high-performance" pinned the discrete GPU at full
+      // clocks and made the whole machine feel stuck.
       gl = canvas!.getContext("webgl", {
-        alpha: false, antialias: false, depth: false, stencil: false,
-        powerPreference: "high-performance",
+        alpha: false,
+        antialias: false,
+        depth: false,
+        stencil: false,
+        powerPreference: "low-power",
       });
       if (!gl) return false;
       const g = gl;
@@ -312,16 +320,19 @@ export function WaterCanvas() {
     let lastGovCheck = govStart;
 
     function govern(now: number) {
-      if (now - govStart < 800 || now - lastGovCheck < 400) return;
+      if (now - govStart < 500 || now - lastGovCheck < 300) return;
       lastGovCheck = now;
       // After each step, reset ema optimistically so we re-measure the new
       // configuration instead of acting again on stale history.
       if (ema > 0.08 && resScale > 0.22) {
-        resScale = 0.22; ema = 0.03; // catastrophic (software rasterizer) → floor at once
+        resScale = 0.22;
+        ema = 0.03; // catastrophic (software rasterizer) → floor at once
       } else if (ema > 0.026 && resScale > 0.22) {
-        resScale = Math.max(0.22, resScale * 0.7); ema = 0.02;
+        resScale = Math.max(0.22, resScale * 0.7);
+        ema = 0.02;
       } else if (ema > 0.033 && resScale <= 0.22 && !frameSkip) {
-        frameSkip = true; ema = 0.03;
+        frameSkip = true;
+        ema = 0.03;
       } else if (ema > 0.055 && frameSkip) {
         // Hopeless: one calm static frame, kept aligned on scroll. Zero jank.
         staticFallback = true;
@@ -335,7 +346,10 @@ export function WaterCanvas() {
     const onStaticScroll = () => {
       if (staticScrollQueued) return;
       staticScrollQueued = true;
-      requestAnimationFrame(() => { staticScrollQueued = false; renderOnce(); });
+      requestAnimationFrame(() => {
+        staticScrollQueued = false;
+        renderOnce();
+      });
     };
 
     let lastDrawn = performance.now();
@@ -364,7 +378,10 @@ export function WaterCanvas() {
     if (!setupGL()) return; // WebGL unavailable → CSS backgrounds still carry the site
 
     // ---- listeners ----
-    const onMove = (e: PointerEvent) => { tmx = e.clientX; tmy = e.clientY; };
+    const onMove = (e: PointerEvent) => {
+      tmx = e.clientX;
+      tmy = e.clientY;
+    };
     const onDown = (e: PointerEvent) => addRipple(e.clientX, e.clientY, 1.0);
     let lastHover = 0;
     let lastHoverEl: Element | null = null;
@@ -385,18 +402,29 @@ export function WaterCanvas() {
         raf = requestAnimationFrame(frame);
       }
     };
-    const onResize = () => { if (reduced) renderOnce(); };
+    const onResize = () => {
+      if (reduced) renderOnce();
+    };
     const themeObs = new MutationObserver(() => {
       themeTarget = document.documentElement.classList.contains("light") ? 1 : 0;
-      if (reduced) { themeS = themeTarget; renderOnce(); }
+      if (reduced) {
+        themeS = themeTarget;
+        renderOnce();
+      }
     });
     themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-    const onLost = (e: Event) => { e.preventDefault(); cancelAnimationFrame(raf); };
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      cancelAnimationFrame(raf);
+    };
     const onRestored = () => {
       if (setupGL() && !destroyed) {
         if (reduced) renderOnce();
-        else { last = performance.now(); raf = requestAnimationFrame(frame); }
+        else {
+          last = performance.now();
+          raf = requestAnimationFrame(frame);
+        }
       }
     };
     canvas.addEventListener("webglcontextlost", onLost);

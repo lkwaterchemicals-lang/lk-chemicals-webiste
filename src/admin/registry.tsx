@@ -190,6 +190,12 @@ export const MODULES: ModuleDef[] = [
       { ...STATUS_FIELD },
       { key: "featured", label: "Featured", type: "boolean", hint: "Highlight on listings" },
       { key: "order", label: "Display order", type: "text", hint: "Lower shows first (e.g. 10)" },
+      {
+        key: "price",
+        label: "Price",
+        type: "text",
+        hint: "Optional — shown on the product page, e.g. ₹2,400 / 25 L drum",
+      },
       { key: "description", label: "Description", type: "textarea", required: true },
       { key: "features", label: "Features", type: "list", hint: "One per line" },
       { key: "applications", label: "Applications", type: "list", hint: "One per line" },

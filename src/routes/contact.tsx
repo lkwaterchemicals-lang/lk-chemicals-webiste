@@ -29,9 +29,18 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
 });
 
+// Cosmetic variants of the same address ("Phase-2" / "Phase-II") shouldn't
+// render twice.
+const normAddr = (v: string) =>
+  v
+    .toLowerCase()
+    .replace(/phase[\s-]*ii/g, "phase 2")
+    .replace(/[^a-z0-9]/g, "");
+
 function ContactPage() {
   const { data: s } = useSiteSettings();
   const { data: c } = useContactContent();
+  const showAddress2 = Boolean(s.address2 && normAddr(s.address2) !== normAddr(s.address));
   return (
     <>
       <section className="section-dark relative pt-32 sm:pt-40 pb-16 overflow-hidden">
@@ -57,7 +66,7 @@ function ContactPage() {
           <div className="grid gap-4 content-start">
             <Card icon={<MapPin className="h-4 w-4" />} label="Address">
               {s.address}
-              {s.address2 && (
+              {showAddress2 && (
                 <>
                   <br />
                   <span className="text-white/50">Unit: {s.address2}</span>
@@ -152,11 +161,36 @@ function MapInfoCard({
   address,
   directionsUrl,
   viewUrl,
+  compact,
 }: {
   address: string;
   directionsUrl: string;
   viewUrl: string;
+  /** Mobile: the address is already shown in the cards above — buttons only. */
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <div className="flex gap-2">
+        <a
+          href={directionsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-cyan-hi text-ink px-4 py-2 text-sm font-medium hover:brightness-110 transition"
+        >
+          <Navigation className="h-4 w-4" /> Directions
+        </a>
+        <a
+          href={viewUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/20 text-white/85 px-4 py-2 text-sm hover:border-cyan-hi hover:text-white transition"
+        >
+          Google Maps
+        </a>
+      </div>
+    );
+  }
   return (
     <div className="flex items-start gap-3">
       <span className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-hi/15 text-cyan-hi shrink-0">
@@ -235,9 +269,15 @@ function SignatureMap() {
             </div>
           </div>
 
-          {/* Info card — mobile, in normal flow under the map */}
-          <div className="sm:hidden p-5 border-t border-white/10">
-            <MapInfoCard address={s.address} directionsUrl={directionsUrl} viewUrl={viewUrl} />
+          {/* Mobile: just the two actions — the address cards above already
+              carry the full address, repeating it here read as clutter. */}
+          <div className="sm:hidden p-4 border-t border-white/10">
+            <MapInfoCard
+              address={s.address}
+              directionsUrl={directionsUrl}
+              viewUrl={viewUrl}
+              compact
+            />
           </div>
         </div>
       </div>

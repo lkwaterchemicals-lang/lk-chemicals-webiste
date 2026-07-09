@@ -43,6 +43,7 @@ export type Product = {
   /** Optional product photo — falls back to the category image when absent. */
   image?: string;
   // Rich, admin-managed fields — all optional, created from the dashboard.
+  price?: string; // display string, e.g. "₹2,400 / 25 L drum"
   subcategory?: string;
   status?: Status;
   featured?: boolean;

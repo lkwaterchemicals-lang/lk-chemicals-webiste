@@ -5,10 +5,22 @@ import { MapPin, Phone, Mail } from "lucide-react";
 import { useSiteSettings } from "@/lib/content";
 import { useGlobalContent } from "@/lib/pages";
 
+// "Phase-2" vs "Phase-II" etc. — treat cosmetic variants of the same address
+// as duplicates so it never renders twice.
+const normAddr = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/phase[\s-]*ii/g, "phase 2")
+    .replace(/[^a-z0-9]/g, "");
+
+const mapsUrl = (addr: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+
 export function Footer() {
   const { data: s } = useSiteSettings();
   const { data: g } = useGlobalContent();
   const pathname = useRouterState({ select: (st) => st.location.pathname });
+  const showAddress2 = Boolean(s.address2 && normAddr(s.address2) !== normAddr(s.address));
   return (
     <footer className="relative section-dark overflow-hidden pt-16 pb-24 sm:pb-8">
       <Waterline className="absolute top-0 left-0" />
@@ -68,11 +80,27 @@ export function Footer() {
             <div className="micro-label mb-4">Reach us</div>
             <ul className="space-y-3 text-sm text-white/70">
               <li className="flex gap-2">
-                <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" /> {s.address}
+                <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />
+                <a
+                  href={mapsUrl(s.address)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-white"
+                >
+                  {s.address}
+                </a>
               </li>
-              {s.address2 && (
+              {showAddress2 && (
                 <li className="flex gap-2">
-                  <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" /> {s.address2}
+                  <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />
+                  <a
+                    href={mapsUrl(s.address2!)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-white"
+                  >
+                    {s.address2}
+                  </a>
                 </li>
               )}
               <li className="flex gap-2">
@@ -113,7 +141,13 @@ export function Footer() {
           <p>{g.footerNote}</p>
           <p>
             Designed &amp; developed by{" "}
-            <span className="font-medium text-white/60">Dream Team Services</span>
+            {/* Point href at the Dream Team website once its URL is final. */}
+            <a
+              href="mailto:thedreamteamconsultancy@gmail.com"
+              className="font-semibold text-cyan-hi hover:underline underline-offset-4"
+            >
+              Dream Team Services
+            </a>
           </p>
         </div>
       </div>

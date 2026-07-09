@@ -309,6 +309,8 @@ function WaterCoreCanvas() {
         antialias: false,
         depth: false,
         stencil: false,
+        // Decorative scene — never wake the discrete GPU for it.
+        powerPreference: "low-power",
       });
       if (!gl) return false;
       const g = gl;

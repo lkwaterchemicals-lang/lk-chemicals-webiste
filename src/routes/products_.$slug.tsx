@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
-import { ArrowLeft, Check, Download, Phone } from "lucide-react";
+import { ArrowLeft, Check, Download, Phone, Share2 } from "lucide-react";
 import { findProduct, type Product } from "@/data/products";
 import { useCategories, useProducts, useSiteSettings } from "@/lib/content";
 import { MicroLabel } from "@/components/site/GhostWord";
@@ -149,18 +149,29 @@ function ProductDetail() {
               {cat.number} · {cat.name}
             </span>
           </div>
-          {/* Mobile-first hierarchy: compact title, then the PHOTO (what buyers
-              look for first), then facts, with the long description tucked
-              behind a read-more so it never buries the product. */}
-          <h1 className="display-xl mt-4 text-3xl sm:text-5xl md:text-7xl grad-text max-w-4xl">
+          {/* Desktop keeps the display headline. Phones get the PHOTO first,
+              then a compact title with price + share — buyers scan image →
+              price → facts, so the type never buries the product. */}
+          <h1 className="hidden lg:block display-xl mt-4 text-7xl grad-text max-w-4xl">
             {product.name}
           </h1>
+          <div className="hidden lg:flex mt-5 flex-wrap items-center gap-3">
+            {product.price && <PriceChip price={product.price} />}
+            <ShareButton name={product.name} />
+          </div>
 
-          <div className="mt-6 lg:mt-10 grid lg:grid-cols-5 gap-8 lg:gap-10 items-start">
+          <div className="mt-4 lg:mt-10 grid lg:grid-cols-5 gap-6 lg:gap-10 items-start">
             <div className="lg:col-span-2">
               <ProductGallery images={images} catImage={cat.image} name={product.name} />
             </div>
             <div className="lg:col-span-3 space-y-6">
+              <div className="lg:hidden">
+                <h1 className="display-xl text-2xl sm:text-3xl grad-text">{product.name}</h1>
+                <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                  {product.price && <PriceChip price={product.price} />}
+                  <ShareButton name={product.name} />
+                </div>
+              </div>
               <ProductDescription text={product.description} />
               <div className="grid md:grid-cols-2 gap-6">
                 {features.length > 0 && (
@@ -344,6 +355,44 @@ function Panel({
       <div className="micro-label mb-3">{title}</div>
       {children}
     </div>
+  );
+}
+
+/* ----------------------------------------------------------- price & share */
+
+function PriceChip({ price }: { price: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-leaf/30 bg-leaf/15 px-4 py-2 text-sm font-semibold text-leaf">
+      {price}
+    </span>
+  );
+}
+
+function ShareButton({ name }: { name: string }) {
+  const [copied, setCopied] = useState(false);
+  const share = async () => {
+    const url = typeof location !== "undefined" ? location.href : "";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${name} — LK Chemicals`, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Visitor cancelled the share sheet — nothing to do.
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={share}
+      aria-label="Share this product"
+      className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs text-white/80 transition-colors hover:border-cyan-hi hover:text-white"
+    >
+      <Share2 className="h-3.5 w-3.5" /> {copied ? "Link copied!" : "Share"}
+    </button>
   );
 }
 

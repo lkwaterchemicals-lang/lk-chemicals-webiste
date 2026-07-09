@@ -367,6 +367,18 @@
   text-shadow: 0 1px 10px oklch(0.12 0.05 250 / 0.7);
 }
 
+/* Inputs inside a glass pill in a hero: the pill is WHITE in light mode, so
+   the hero's forced-white text + dark glow turned the placeholder into a
+   black smudge. Ink text, no shadow. */
+.light section:has(.hero-lighten) .glass-dark input {
+  color: var(--ink) !important;
+  text-shadow: none !important;
+}
+.light section:has(.hero-lighten) .glass-dark input::placeholder {
+  color: color-mix(in oklab, var(--ink) 45%, transparent) !important;
+  text-shadow: none !important;
+}
+
 /* Buttons authored as border-white/xx text-white → give solid gradient in light */
 .light a[class*="border-white/"][class*="text-white"],
 .light button[class*="border-white/"][class*="text-white"] {

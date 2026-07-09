@@ -58,6 +58,18 @@ function ProductsPage() {
     if (cat) gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [cat]);
 
+  // Living placeholder: cycles through real product names so visitors see
+  // what the catalog actually holds before they type.
+  const [hintIdx, setHintIdx] = useState(0);
+  useEffect(() => {
+    if (products.length < 2) return;
+    const id = setInterval(() => setHintIdx((i) => (i + 1) % products.length), 2400);
+    return () => clearInterval(id);
+  }, [products.length]);
+  const searchHint = products.length
+    ? `Search "${products[hintIdx % products.length].name}"…`
+    : "Search antiscalant, biocide, descaler…";
+
   return (
     <>
       {/* Hero */}
@@ -83,8 +95,8 @@ function ProductsPage() {
           <div className="mt-10 glass-dark rounded-full flex items-center px-5 py-3 max-w-xl">
             <Search className="h-4 w-4 text-cyan-hi" />
             <input
-              className="ml-3 flex-1 bg-transparent outline-none text-white placeholder:text-white/40 min-h-11"
-              placeholder="Search antiscalant, biocide, descaler…"
+              className="ml-3 flex-1 bg-transparent outline-none text-white placeholder:text-white/40 min-h-11 transition-all"
+              placeholder={searchHint}
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />

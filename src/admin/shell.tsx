@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { auth } from "@/integrations/firebase/client";
+import { auth } from "@/integrations/firebase/auth";
 import logoUrl from "@/assets/lk-logo.png";
 import { MODULES, moduleById } from "./registry";
 import { useCol, useEnquiries } from "./api";

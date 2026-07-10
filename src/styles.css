@@ -1017,6 +1017,20 @@
   text-shadow: none !important;
 }
 
+/* ---------- Pinned category rail (What we make) ----------
+   The rail lives inside a pinned 100svh band with overflow:hidden, so its
+   heights must derive from the viewport: fixed card-media heights used to
+   push the buttons past the clip edge on short laptop screens. */
+.wwm-media {
+  height: clamp(6.5rem, 18svh, 12rem);
+}
+@media (max-height: 820px) {
+  .wwm-sticky {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+}
+
 /* ---------- Gallery: Life-at-LK diamond mosaic ---------- */
 .mosaic-diamond {
   transform: rotate(45deg);

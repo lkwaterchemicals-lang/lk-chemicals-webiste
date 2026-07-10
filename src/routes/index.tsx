@@ -32,6 +32,10 @@ export const Route = createFileRoute("/")({
           "Industrial water treatment chemicals, plants and services from Hyderabad since 2013.",
       },
     ],
+    // The hero photo is the LCP element (painted as a CSS background, which
+    // browsers discover late) — preload it at high priority so first paint
+    // doesn't wait a full network round-trip.
+    links: [{ rel: "preload", as: "image", href: homeContent.heroImage, fetchpriority: "high" }],
   }),
   component: HomePage,
 });
@@ -81,7 +85,10 @@ function Hero() {
   return (
     <section
       id="home-hero"
-      className="relative h-[100svh] min-h-[640px] overflow-hidden bg-ink-2 flex flex-col"
+      // min-h (not h): on short laptop windows the centred content used to
+      // overflow its padding box UPWARD and collide with the fixed nav — the
+      // section must grow with its content, never let content escape.
+      className="relative min-h-[100svh] overflow-hidden bg-ink-2 flex flex-col"
     >
       {/* Backdrop — photo + overlays + bubbles ride together */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -138,15 +145,17 @@ function Hero() {
         })}
       </div>
 
-      {/* Content — flex column that always fits viewport */}
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-6 md:px-8 flex-1 flex flex-col justify-center pt-24 sm:pt-28 pb-24 sm:pb-20 min-h-0">
+      {/* Content — top padding always clears the fixed nav (~5.5rem) */}
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-6 md:px-8 flex-1 flex flex-col justify-center pt-28 sm:pt-32 pb-20 sm:pb-20">
         <MicroLabel n="00">{c.heroLabel}</MicroLabel>
         <motion.h1
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.2, 0.7, 0.2, 1] }}
           className="display-xl mt-4 sm:mt-6 leading-[0.85] tracking-tighter"
-          style={{ fontSize: "clamp(3rem, 13vw, 12rem)" }}
+          // Capped by viewport HEIGHT too, so a wide-but-short laptop window
+          // never inflates the headline until it crowds the nav.
+          style={{ fontSize: "clamp(2.75rem, min(13vw, 18svh), 12rem)" }}
         >
           <span className="grad-text">{c.heroTitleTop}</span>
           <br />
@@ -360,6 +369,8 @@ function WhoWeAre() {
           <div className="lg:col-span-5">
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:hidden">
               <motion.img
+                loading="lazy"
+                decoding="async"
                 src={img(0)}
                 alt="Manufacturing plant"
                 className="h-48 sm:h-56 w-full rounded-2xl object-cover shadow-xl"
@@ -368,6 +379,8 @@ function WhoWeAre() {
                 viewport={{ once: true }}
               />
               <motion.img
+                loading="lazy"
+                decoding="async"
                 src={img(1)}
                 alt="Laboratory"
                 className="h-48 sm:h-56 w-full rounded-2xl object-cover shadow-xl"
@@ -377,6 +390,8 @@ function WhoWeAre() {
                 transition={{ delay: 0.1 }}
               />
               <motion.img
+                loading="lazy"
+                decoding="async"
                 src={img(2)}
                 alt="Water droplet"
                 className="col-span-2 h-40 sm:h-48 w-full rounded-2xl object-cover shadow-xl"
@@ -388,6 +403,8 @@ function WhoWeAre() {
             </div>
             <div className="hidden lg:block relative h-[clamp(340px,34vw,460px)]">
               <motion.img
+                loading="lazy"
+                decoding="async"
                 src={img(0)}
                 alt="Manufacturing plant"
                 className="absolute top-0 left-0 h-72 w-72 rounded-3xl object-cover shadow-2xl hover-lift"
@@ -397,6 +414,8 @@ function WhoWeAre() {
                 style={{ transform: "rotate(-4deg)" }}
               />
               <motion.img
+                loading="lazy"
+                decoding="async"
                 src={img(1)}
                 alt="Laboratory"
                 className="absolute top-20 right-0 h-60 w-48 rounded-3xl object-cover shadow-2xl hover-lift"
@@ -407,6 +426,8 @@ function WhoWeAre() {
                 style={{ transform: "rotate(6deg)" }}
               />
               <motion.img
+                loading="lazy"
+                decoding="async"
                 src={img(2)}
                 alt="Water droplet"
                 className="absolute bottom-0 left-16 h-40 w-56 rounded-3xl object-cover shadow-2xl hover-lift"
@@ -428,8 +449,16 @@ function WhoWeAre() {
 function CategoryCard({ c }: { c: import("@/data/products").Category }) {
   return (
     <article className="rounded-3xl overflow-hidden glass-dark relative flex flex-col h-full">
-      <div className="relative h-40 sm:h-44 xl:h-48 overflow-hidden">
-        <img src={c.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      {/* wwm-media scales with viewport HEIGHT so the pinned rail always fits
+          short laptop screens — the fixed heights used to clip the buttons. */}
+      <div className="relative wwm-media overflow-hidden shrink-0">
+        <img
+          src={c.image}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-black/15 to-transparent" />
         <div className="absolute top-3.5 left-4 right-4 flex items-start justify-between">
           <span className="display-xl text-4xl grad-text">{c.number}</span>
@@ -440,8 +469,15 @@ function CategoryCard({ c }: { c: import("@/data/products").Category }) {
         <h3 className="display-xl text-xl sm:text-2xl text-white line-clamp-2">{c.tagline}</h3>
         <p className="mt-2.5 text-sm text-white/70 flex-1 line-clamp-3">{c.description}</p>
         <div className="mt-4">
-          <LiquidButton to="/products" search={{ cat: c.slug }} size="md">
-            Explore {c.name}
+          {/* Short fixed label: "Explore Cooling Tower Chemicals" wrapped to
+              two lines on narrow cards and broke the card rhythm. */}
+          <LiquidButton
+            to="/products"
+            search={{ cat: c.slug }}
+            size="md"
+            className="whitespace-nowrap"
+          >
+            Explore range
           </LiquidButton>
         </div>
       </div>
@@ -479,8 +515,10 @@ function WhatWeMakeHeading() {
     <div className="mx-auto max-w-7xl px-6 md:px-8 w-full shrink-0">
       <MicroLabel n="03">What we make</MicroLabel>
       <h2
-        className="display-xl mt-3 grad-text max-w-4xl"
-        style={{ fontSize: "clamp(2rem, 6vw, 4.5rem)" }}
+        className="display-xl mt-2.5 grad-text max-w-4xl"
+        // Height-capped: inside a pinned 100svh band the heading must share
+        // the viewport with a full card row, even on short laptop screens.
+        style={{ fontSize: "clamp(1.9rem, min(5vw, 7.5svh), 3.75rem)" }}
       >
         {c.makeHeading}
       </h2>
@@ -529,12 +567,12 @@ function WhatWeMake() {
       className="section-dark relative"
       style={{ height: `calc(100svh + ${distance}px)` }}
     >
-      <div className="sticky top-0 h-[100svh] flex flex-col justify-center overflow-hidden py-14 lg:py-16">
+      <div className="wwm-sticky sticky top-0 h-[100svh] flex flex-col justify-center overflow-hidden py-14 lg:py-16">
         <WhatWeMakeHeading />
         {/* Horizontal progress — tells the visitor this band travels sideways
             and exactly how much of it is left. */}
         <div className="mx-auto max-w-7xl px-6 md:px-8 w-full shrink-0">
-          <div className="mt-5 flex items-center gap-3 max-w-xs">
+          <div className="mt-4 flex items-center gap-3 max-w-xs">
             <div className="h-[3px] flex-1 rounded-full bg-white/10 overflow-hidden">
               <motion.div
                 style={{ scaleX: progressX }}
@@ -549,7 +587,7 @@ function WhatWeMake() {
         <motion.div
           ref={trackRef}
           style={{ x }}
-          className="mt-8 lg:mt-10 flex gap-4 lg:gap-5 pl-5 sm:pl-6 md:pl-8 w-max"
+          className="mt-6 lg:mt-8 flex gap-4 lg:gap-5 pl-5 sm:pl-6 md:pl-8 w-max"
         >
           {categories.slice(0, 5).map((c) => (
             <div
@@ -662,7 +700,13 @@ function HowWaterGetsTreated() {
               transition={{ delay: (i % 5) * 0.08 }}
               className="relative overflow-hidden rounded-2xl p-5 min-h-[180px] flex flex-col justify-end glass"
             >
-              <img src={s.img} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              <img
+                src={s.img}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
               <div className="relative micro-label">{String(i + 1).padStart(2, "0")}</div>
               <div className="relative display-xl text-xl mt-2 text-on-media">{s.title}</div>
@@ -715,6 +759,8 @@ function WhyLK() {
                     <img
                       src={it.img}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="absolute inset-0 h-full w-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-br from-black/45 via-black/55 to-black/80" />
@@ -973,21 +1019,29 @@ function SeeThePlant() {
           <img
             src={img(0)}
             alt="Plant"
+            loading="lazy"
+            decoding="async"
             className="col-span-6 md:col-span-3 h-64 md:h-96 w-full object-cover rounded-3xl hover-lift"
           />
           <img
             src={img(1)}
             alt="Lab"
+            loading="lazy"
+            decoding="async"
             className="col-span-3 md:col-span-2 h-40 md:h-64 w-full object-cover rounded-3xl hover-lift"
           />
           <img
             src={img(2)}
             alt="Water"
+            loading="lazy"
+            decoding="async"
             className="col-span-3 md:col-span-1 h-40 md:h-64 w-full object-cover rounded-3xl hover-lift"
           />
           <img
             src={img(3)}
             alt="RO"
+            loading="lazy"
+            decoding="async"
             className="col-span-6 md:col-span-4 h-56 md:h-72 w-full object-cover rounded-3xl hover-lift"
           />
           <div className="col-span-6 md:col-span-2 rounded-3xl bg-ink p-6 flex flex-col justify-between">

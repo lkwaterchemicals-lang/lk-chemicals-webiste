@@ -55,7 +55,6 @@ export function ServiceIndex() {
   // without breaking sticky.
   return (
     <section className="section-light relative overflow-x-clip py-28">
-      <GhostWord className="absolute bottom-2 left-0 !text-[18vw] opacity-60">SERVICE</GhostWord>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="min-w-0">
@@ -83,7 +82,8 @@ export function ServiceIndex() {
               const Icon = iconByName(cat.iconName);
               const isActive = i === active;
               return (
-                <motion.div id={`svc-${cat.slug}`}
+                <motion.div
+                  id={`svc-${cat.slug}`}
                   key={cat.slug}
                   initial={{ opacity: 0, y: 18 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -267,6 +267,9 @@ export function ServiceIndex() {
         {/* ---------- Mobile / tablet: scroll-driven 3D card deck ---------- */}
         <ServiceDeck categories={categories} countFor={countFor} reduced={!!reduced} />
       </div>
+      {/* Decorative watermark in normal flow BELOW the rows — absolutely
+          positioned it sat behind the last category and read as a glitch. */}
+      <GhostWord className="mt-12 text-center !text-[15vw] opacity-60">SERVICE</GhostWord>
     </section>
   );
 }

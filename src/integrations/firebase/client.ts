@@ -1,8 +1,10 @@
-// Firebase client — auth (admin login) + Firestore (site content and enquiries).
+// Firebase client — Firestore (site content and enquiries).
 // The web config below is public by design; security comes from Firestore rules
 // and Firebase Auth, not from hiding these identifiers.
+//
+// Auth deliberately lives in ./auth (admin-only): importing firebase/auth here
+// shipped ~250 KB of login machinery to every public visitor.
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 export const firebaseConfig = {
@@ -17,6 +19,5 @@ export const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
 export const db = getFirestore(app);
 export { app };

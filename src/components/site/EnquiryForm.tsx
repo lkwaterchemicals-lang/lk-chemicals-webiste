@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore/lite";
 import { db } from "@/integrations/firebase/client";
 import { getRecaptchaToken, honeypotProps, isLikelySpam } from "@/lib/spam";
 import { LiquidButton } from "./LiquidButton";

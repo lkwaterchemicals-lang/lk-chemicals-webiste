@@ -4,7 +4,7 @@
 // site updates the moment you save.
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore/lite";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Clock, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { db } from "@/integrations/firebase/client";

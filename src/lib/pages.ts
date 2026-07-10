@@ -7,7 +7,7 @@
 // empty/unreachable Firestore keeps the built-ins entirely — the public site
 // can never go blank.
 import { useQuery } from "@tanstack/react-query";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore/lite";
 import { db } from "@/integrations/firebase/client";
 import { stabilizeDeep } from "@/lib/assets";
 import {

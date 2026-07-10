@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore/lite";
 import { Check, PhoneCall, X } from "lucide-react";
 import { db } from "@/integrations/firebase/client";
 import { getRecaptchaToken, honeypotProps, isLikelySpam } from "@/lib/spam";

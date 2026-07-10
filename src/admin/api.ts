@@ -11,7 +11,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
-} from "firebase/firestore";
+} from "firebase/firestore/lite";
 import { db } from "@/integrations/firebase/client";
 import { auth } from "@/integrations/firebase/auth";
 import { slugify, stabilizeAssets, type ModuleDef, type Row } from "./registry";

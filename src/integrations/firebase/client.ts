@@ -5,7 +5,7 @@
 // Auth deliberately lives in ./auth (admin-only): importing firebase/auth here
 // shipped ~250 KB of login machinery to every public visitor.
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore/lite";
 
 export const firebaseConfig = {
   apiKey: "AIzaSyC75KOofn4DBajf_zkESH7f8bft65EDsxs",

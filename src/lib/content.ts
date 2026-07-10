@@ -9,7 +9,7 @@
 // fallbacks (src/data/content.ts) so those surfaces never blank while the
 // client fills them in.
 import { useQuery } from "@tanstack/react-query";
-import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore/lite";
 import { db } from "@/integrations/firebase/client";
 import { type Category, type Product, type ServiceCategory, type Service } from "@/data/products";
 import {

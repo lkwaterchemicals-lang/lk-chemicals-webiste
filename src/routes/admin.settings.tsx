@@ -3,7 +3,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { collection, doc, getDocs, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, setDoc } from "firebase/firestore/lite";
 import { toast } from "sonner";
 import { Clock, DatabaseBackup, Mail, MapPin, Phone, RotateCcw, Save, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";

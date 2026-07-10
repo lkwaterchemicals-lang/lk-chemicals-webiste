@@ -845,53 +845,115 @@
   animation-duration: 70s;
 }
 
-/* ---------- Floating contact cluster ----------
-   Two of these actions are telephones: "Call now" dials, "Request a call"
-   books a call-back. An icon alone can never distinguish them, so every action
-   carries a permanent text label and the two primary channels get solid,
-   colour-coded skins. */
-.wa-action {
-  box-shadow: 0 12px 32px -14px oklch(0.1 0.04 250 / 0.7);
-}
-.wa-action-glass {
-  background: color-mix(in oklab, var(--ink-2) 74%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(150%);
-  backdrop-filter: blur(14px) saturate(150%);
-  border: 1px solid color-mix(in oklab, white 14%, transparent);
+/* ---------- Floating contact cluster (speed-dial) ----------
+   At rest: one 56px trigger, so the page keeps its air. Expanded: each channel
+   gets a circle AND a label chip — two of them are telephones ("Call now"
+   dials, "Request a call" books a call-back) and an icon alone could never
+   tell them apart. */
+.wa-fab {
+  position: relative;
+  background: linear-gradient(135deg, var(--royal), var(--cyan-hi));
   color: #fff;
+  border: 1px solid color-mix(in oklab, white 22%, transparent);
+  box-shadow:
+    0 14px 38px -12px color-mix(in oklab, var(--cyan-hi) 65%, transparent),
+    0 6px 18px -8px oklch(0.1 0.04 250 / 0.6);
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.3s;
 }
-.wa-action-glass .wa-action-icon {
-  background: color-mix(in oklab, var(--cyan-hi) 18%, transparent);
-  color: var(--cyan-hi);
+.wa-fab:hover,
+.wa-fab:focus-visible {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow:
+    0 20px 48px -12px color-mix(in oklab, var(--cyan-hi) 80%, transparent),
+    0 8px 22px -8px oklch(0.1 0.04 250 / 0.65);
 }
-.light .wa-action-glass {
-  background: color-mix(in oklab, white 90%, transparent);
+/* One slow halo so the trigger is discoverable without shouting. A ring, not a
+   filled circle — a filled one would tint the button's face on every cycle. */
+.wa-fab-ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in oklab, var(--cyan-hi) 75%, transparent);
+  animation: wa-ping 2.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+@keyframes wa-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  70%,
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wa-fab-ping {
+    display: none;
+  }
+}
+
+/* Label chip beside each expanded action */
+.wa-chip {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 0.4rem 0.7rem;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--ink-2) 82%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid color-mix(in oklab, white 12%, transparent);
+  color: #fff;
+  box-shadow: 0 8px 22px -12px oklch(0.1 0.04 250 / 0.7);
+}
+.light .wa-chip {
+  background: color-mix(in oklab, white 92%, transparent);
   border-color: var(--hairline);
   color: var(--ink);
 }
-.light .wa-action-glass .wa-action-icon {
-  background: color-mix(in oklab, var(--cyan-deep) 12%, transparent);
+
+/* Action circles */
+.wa-item {
+  display: grid;
+  place-items: center;
+  height: 3rem;
+  width: 3rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  box-shadow: 0 10px 26px -12px oklch(0.1 0.04 250 / 0.7);
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.group:hover .wa-item,
+.group:focus-visible .wa-item {
+  transform: scale(1.08);
+}
+.wa-item-glass {
+  background: color-mix(in oklab, var(--ink-2) 80%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid color-mix(in oklab, white 14%, transparent);
+  color: var(--cyan-hi);
+}
+.light .wa-item-glass {
+  background: color-mix(in oklab, white 92%, transparent);
+  border-color: var(--hairline);
   color: var(--cyan-deep);
 }
-.wa-action-accent {
+.wa-item-accent {
   background: var(--cyan-hi);
   color: var(--ink);
   border: 1px solid transparent;
-  box-shadow: 0 12px 34px -12px var(--cyan-hi);
+  box-shadow: 0 12px 30px -12px var(--cyan-hi);
 }
-.wa-action-accent .wa-action-icon {
-  background: oklch(0.15 0.045 252 / 0.16);
-  color: var(--ink);
-}
-.wa-action-whatsapp {
+.wa-item-whatsapp {
   background: #25d366;
   color: #fff;
   border: 1px solid transparent;
-  box-shadow: 0 12px 34px -12px rgba(37, 211, 102, 0.85);
-}
-.wa-action-whatsapp .wa-action-icon {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  box-shadow: 0 12px 30px -12px rgba(37, 211, 102, 0.85);
 }
 
 /* ---------- Hero: fixed, full-screen backdrop photo ----------

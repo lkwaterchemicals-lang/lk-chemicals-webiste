@@ -1,5 +1,15 @@
+// Floating contact cluster — a compact speed-dial.
+//
+// Four permanent labelled pills dominated every page and collided with the
+// hero's category chips on phones. At rest this is now a SINGLE 56px trigger;
+// tapping it fans the channels out with their labels attached, so the two
+// telephone actions ("Call now" dials, "Request a call" books a call-back) are
+// still impossible to confuse — the clarity lives in the expanded state, not
+// in permanent furniture.
 import { useEffect, useRef, useState } from "react";
-import { Mail, Phone, PhoneCall } from "lucide-react";
+import { useRouterState } from "@tanstack/react-router";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { Headset, Mail, Phone, PhoneCall, X } from "lucide-react";
 import { useSiteSettings } from "@/lib/content";
 import { RequestCallDialog } from "./RequestCall";
 import { WhatsAppIcon } from "./WhatsApp";
@@ -12,58 +22,42 @@ export function waLink(msg = "Hi LK Chemicals, I would like to enquire.") {
   return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
 }
 
+type Tone = "glass" | "accent" | "whatsapp";
+
 /* ------------------------------------------------------------------ action */
 
-// Every floating action carries a permanent text label, not just an icon.
-// Two of these are phones ("Call now" dials, "Request a call" books a call-back)
-// and an icon alone could never tell them apart — visitors were tapping the
-// wrong one. The label is the affordance; the icon only decorates it.
-function ClusterAction({
+function ClusterItem({
   label,
   hint,
   icon,
-  tone = "glass",
-  onClick,
+  tone,
   href,
   external,
-  tabIndex,
+  onClick,
 }: {
   label: string;
   hint: string;
   icon: React.ReactNode;
-  tone?: "glass" | "whatsapp" | "accent";
-  onClick?: () => void;
+  tone: Tone;
   href?: string;
   external?: boolean;
-  tabIndex?: number;
+  onClick?: () => void;
 }) {
-  const shell =
-    "wa-action group flex items-center gap-2.5 rounded-full pl-3.5 pr-2 py-2 min-h-12 " +
-    "transition-transform duration-300 hover:-translate-y-0.5 focus-visible:-translate-y-0.5";
-  const skin =
-    tone === "whatsapp"
-      ? "wa-action-whatsapp"
-      : tone === "accent"
-        ? "wa-action-accent"
-        : "wa-action-glass";
   const body = (
     <>
-      <span className="wa-action-label text-[12px] font-semibold whitespace-nowrap">{label}</span>
-      <span className="wa-action-icon grid h-9 w-9 shrink-0 place-items-center rounded-full">
-        {icon}
-      </span>
+      <span className="wa-chip">{label}</span>
+      <span className={`wa-item wa-item-${tone}`}>{icon}</span>
     </>
   );
-  const cls = `${shell} ${skin}`;
+  const cls = "group flex items-center justify-end gap-2.5";
   if (href) {
     return (
       <a
         href={href}
         aria-label={hint}
-        title={hint}
-        tabIndex={tabIndex}
         target={external ? "_blank" : undefined}
         rel={external ? "noopener noreferrer" : undefined}
+        onClick={onClick}
         className={cls}
       >
         {body}
@@ -71,14 +65,7 @@ function ClusterAction({
     );
   }
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={hint}
-      title={hint}
-      tabIndex={tabIndex}
-      className={cls}
-    >
+    <button type="button" aria-label={hint} onClick={onClick} className={cls}>
       {body}
     </button>
   );
@@ -86,81 +73,168 @@ function ClusterAction({
 
 /* ----------------------------------------------------------------- cluster */
 
-// Floating contact cluster. At the top of the page all four channels show with
-// their labels; once the visitor scrolls, the stack collapses to the two
-// primary ones (Call now + WhatsApp) so it never crowds the content.
 export function WaCluster() {
   const { data: settings } = useSiteSettings();
   WHATSAPP = settings.whatsapp || WHATSAPP;
   const phone = settings.phone.replace(/\s+/g, "");
 
-  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
   const [callOpen, setCallOpen] = useState(false);
-  const rafRef = useRef(0);
+  const reduced = useReducedMotion();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  // rAF-coalesced: Lenis fires scroll at display refresh, and a setState per
-  // event is wasted work on every frame of every scroll.
+  // Collapse whenever the visitor's attention moves elsewhere.
+  useEffect(() => setOpen(false), [pathname]);
+
   useEffect(() => {
-    const update = () => {
-      rafRef.current = 0;
-      setScrolled(window.scrollY > 160);
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      triggerRef.current?.focus();
     };
+    const onPointer = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    // Scrolling away is an implicit dismissal — but only on a deliberate move.
+    // Lenis keeps emitting scroll events while the page coasts, so opening the
+    // menu mid-inertia would otherwise slam it shut instantly. rAF-coalesced so
+    // a scroll frame never costs a state update it doesn't need.
+    const openY = window.scrollY;
+    let raf = 0;
     const onScroll = () => {
-      if (!rafRef.current) rafRef.current = requestAnimationFrame(update);
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (Math.abs(window.scrollY - openY) > 48) setOpen(false);
+      });
     };
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("keydown", onKey);
+    addEventListener("pointerdown", onPointer, { passive: true });
+    addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+      removeEventListener("keydown", onKey);
+      removeEventListener("pointerdown", onPointer);
+      removeEventListener("scroll", onScroll);
     };
-  }, []);
+  }, [open]);
+
+  const close = () => setOpen(false);
+
+  // Rendered top→bottom; WhatsApp sits closest to the trigger (shortest thumb
+  // travel) because it's the channel most visitors reach for.
+  const items = [
+    {
+      key: "email",
+      label: "Email",
+      hint: "Email LK Chemicals",
+      icon: <Mail className="h-[18px] w-[18px]" />,
+      tone: "glass" as Tone,
+      href: `mailto:${settings.email}?subject=${encodeURIComponent("Enquiry — LK Chemicals")}`,
+      onClick: close,
+    },
+    {
+      key: "request",
+      label: "Request a call",
+      hint: "Request a call back — leave your number and a preferred time",
+      icon: <PhoneCall className="h-[18px] w-[18px]" />,
+      tone: "glass" as Tone,
+      onClick: () => {
+        setOpen(false);
+        setCallOpen(true);
+      },
+    },
+    {
+      key: "call",
+      label: "Call now",
+      hint: `Call LK Chemicals on ${settings.phone}`,
+      icon: <Phone className="h-[18px] w-[18px]" />,
+      tone: "accent" as Tone,
+      href: `tel:${phone}`,
+      onClick: close,
+    },
+    {
+      key: "whatsapp",
+      label: "WhatsApp",
+      hint: "Chat with LK Chemicals on WhatsApp",
+      icon: <WhatsAppIcon className="h-[19px] w-[19px]" />,
+      tone: "whatsapp" as Tone,
+      href: waLink(),
+      external: true,
+      onClick: close,
+    },
+  ];
 
   return (
     <>
-      <div className="wa-cluster fixed right-4 bottom-4 z-50 flex flex-col items-end gap-2.5 sm:right-6 sm:bottom-6">
-        {/* Secondary channels — retire on scroll */}
-        <div
-          aria-hidden={scrolled}
-          className={
-            "flex flex-col items-end gap-2.5 transition-all duration-500 " +
-            (scrolled
-              ? "pointer-events-none max-h-0 translate-y-3 opacity-0 overflow-hidden"
-              : "max-h-40 opacity-100")
-          }
-        >
-          <ClusterAction
-            label="Request a call"
-            hint="Request a call back — leave your number and a preferred time"
-            icon={<PhoneCall className="h-[18px] w-[18px]" />}
-            onClick={() => setCallOpen(true)}
-            tabIndex={scrolled ? -1 : 0}
-          />
-          <ClusterAction
-            label="Email"
-            hint="Email LK Chemicals"
-            icon={<Mail className="h-[18px] w-[18px]" />}
-            href={`mailto:${settings.email}?subject=${encodeURIComponent("Enquiry — LK Chemicals")}`}
-            tabIndex={scrolled ? -1 : 0}
-          />
-        </div>
+      <div
+        ref={rootRef}
+        className="wa-cluster fixed right-4 bottom-4 z-50 flex flex-col items-end sm:right-6 sm:bottom-6"
+      >
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              id="contact-actions"
+              aria-label="Contact channels"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="mb-3 flex flex-col items-end gap-2.5"
+            >
+              {items.map((it, i) => (
+                <motion.div
+                  key={it.key}
+                  initial={reduced ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.86 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    transition: reduced
+                      ? { duration: 0.12 }
+                      : {
+                          type: "spring",
+                          stiffness: 420,
+                          damping: 28,
+                          delay: (items.length - 1 - i) * 0.035,
+                        },
+                  }}
+                  exit={
+                    reduced
+                      ? { opacity: 0, transition: { duration: 0.1 } }
+                      : { opacity: 0, y: 10, scale: 0.9, transition: { duration: 0.12 } }
+                  }
+                >
+                  <ClusterItem {...it} />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Primary channels — always available */}
-        <ClusterAction
-          label="Call now"
-          hint={`Call LK Chemicals on ${settings.phone}`}
-          icon={<Phone className="h-[18px] w-[18px]" />}
-          href={`tel:${phone}`}
-          tone="accent"
-        />
-        <ClusterAction
-          label="WhatsApp"
-          hint="Chat with LK Chemicals on WhatsApp"
-          icon={<WhatsAppIcon className="h-[19px] w-[19px]" />}
-          href={waLink()}
-          external
-          tone="whatsapp"
-        />
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="contact-actions"
+          aria-label={open ? "Close contact menu" : "Contact LK Chemicals"}
+          title={open ? "Close" : "Contact us"}
+          className="wa-fab grid h-14 w-14 place-items-center rounded-full"
+        >
+          {!open && <span aria-hidden className="wa-fab-ping" />}
+          <motion.span
+            aria-hidden
+            animate={reduced ? undefined : { rotate: open ? 90 : 0 }}
+            transition={{ type: "spring", stiffness: 360, damping: 24 }}
+            className="relative grid place-items-center"
+          >
+            {open ? <X className="h-6 w-6" /> : <Headset className="h-6 w-6" />}
+          </motion.span>
+        </button>
       </div>
 
       <RequestCallDialog

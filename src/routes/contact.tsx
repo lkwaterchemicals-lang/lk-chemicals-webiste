@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MapPin, Phone, Mail, Clock, User, Navigation } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, User, Navigation, ArrowUpRight } from "lucide-react";
 import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { RequestCallButton } from "@/components/site/RequestCall";
@@ -65,13 +65,23 @@ function ContactPage() {
         <div className="mx-auto max-w-7xl px-6 md:px-8 grid lg:grid-cols-2 gap-14">
           <div className="grid gap-4 content-start">
             <Card icon={<MapPin className="h-4 w-4" />} label="Address">
-              {s.address}
+              {/* Every address opens Google Maps — the arrow makes that obvious
+                  rather than leaving the text looking like plain copy. */}
+              <AddressLink query={s.mapQuery} label={s.address} />
               {showAddress2 && (
-                <>
-                  <br />
-                  <span className="text-white/50">Unit: {s.address2}</span>
-                </>
+                <div className="mt-2">
+                  <span className="text-white/50">Unit: </span>
+                  <AddressLink query={s.address2!} label={s.address2!} muted />
+                </div>
               )}
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.mapQuery)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border border-cyan-hi/30 bg-cyan-hi/10 px-4 py-2 text-xs font-medium text-cyan-hi transition-colors hover:bg-cyan-hi hover:text-ink"
+              >
+                <Navigation className="h-3.5 w-3.5" /> Get directions
+              </a>
             </Card>
             <Card icon={<User className="h-4 w-4" />} label="Contact person">
               {s.contactPerson}
@@ -130,6 +140,24 @@ function ContactPage() {
       {/* Signature map — custom branded coordinates */}
       <SignatureMap />
     </>
+  );
+}
+
+/** An address that reads as a link and opens Google Maps in a new tab. */
+function AddressLink({ query, label, muted }: { query: string; label: string; muted?: boolean }) {
+  return (
+    <a
+      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`}
+      target="_blank"
+      rel="noreferrer"
+      className={
+        "group inline decoration-cyan-hi/40 underline-offset-4 hover:underline hover:text-cyan-hi transition-colors " +
+        (muted ? "text-white/50" : "")
+      }
+    >
+      {label}
+      <ArrowUpRight className="ml-1 inline h-3.5 w-3.5 shrink-0 align-[-2px] text-cyan-hi opacity-70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+    </a>
   );
 }
 

@@ -5,12 +5,10 @@ import { ArrowDown, Droplets, Star } from "lucide-react";
 import { useCategories, useTestimonials, useSiteSettings } from "@/lib/content";
 import { useHomeContent } from "@/lib/pages";
 import { iconByName } from "@/lib/icons";
-import { imgFallback } from "@/lib/assets";
 import { homeContent, type WhyItem } from "@/data/site";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { Waterline } from "@/components/site/Waterline";
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
-import { Coverflow3D } from "@/components/site/Coverflow3D";
 import { ServiceIndex } from "@/components/site/ServiceIndex";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
@@ -60,57 +58,61 @@ function HomePage() {
 /* =============== 01 HERO =============== */
 
 function Hero() {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.15]);
-  const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const { data: categories } = useCategories();
   const { data: c } = useHomeContent();
 
+  // #1 — the hero photo never moves: no parallax, no zoom, no cursor drift. On
+  // desktop it's painted with `background-attachment: fixed` (see .hero-photo),
+  // so it stays anchored to the viewport while the hero copy scrolls up over
+  // it, yet stays clipped to the hero box — a `position: fixed` layer would
+  // escape `overflow` and bleed through the translucent sections below.
+  //
+  // Background images can't use onError, so probe the URL and fall back to the
+  // built-in photo if the stored one 404s (a stale hashed asset URL).
+  const [src, setSrc] = useState(c.heroImage);
+  useEffect(() => {
+    setSrc(c.heroImage);
+    if (!c.heroImage || c.heroImage === homeContent.heroImage) return;
+    const probe = new Image();
+    probe.onerror = () => setSrc(homeContent.heroImage);
+    probe.src = c.heroImage;
+  }, [c.heroImage]);
+
   return (
     <section
-      ref={ref}
-      onMouseMove={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        setMouse({
-          x: (e.clientX - r.left) / r.width - 0.5,
-          y: (e.clientY - r.top) / r.height - 0.5,
-        });
-      }}
+      id="home-hero"
       className="relative h-[100svh] min-h-[640px] overflow-hidden bg-ink-2 flex flex-col"
     >
-      {/* Depth image */}
-      <motion.img
-        src={c.heroImage}
-        alt=""
-        aria-hidden
-        onError={imgFallback(homeContent.heroImage)}
-        style={{ y, scale, x: mouse.x * -30, translateY: `calc(${mouse.y * -30}px + 0%)` }}
-        className="absolute inset-0 h-full w-full object-cover object-[68%_center] md:object-center opacity-70 hero-lighten"
-      />
-      {/* Vignette + caustics */}
-      <div className="absolute inset-0 bg-gradient-to-b from-ink-2/60 via-transparent to-ink hero-lighten-overlay" />
-      <div className="absolute inset-0 caustics opacity-40 mix-blend-screen" />
-
-      {/* Rising bubbles */}
-      {Array.from({ length: 10 }).map((_, i) => (
-        <span
-          key={i}
+      {/* Backdrop — photo + overlays + bubbles ride together */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
           aria-hidden
-          className="absolute bottom-0 rounded-full bg-cyan-hi/30 blur-[1px] hidden sm:block"
-          style={{
-            left: `${(i * 73) % 100}%`,
-            width: `${6 + (i % 5) * 4}px`,
-            height: `${6 + (i % 5) * 4}px`,
-            animation: `bubble-rise ${8 + (i % 6) * 2}s linear ${i * 0.7}s infinite`,
-          }}
+          style={{ backgroundImage: `url("${src}")` }}
+          className="hero-photo hero-lighten absolute inset-0 opacity-70"
         />
-      ))}
+        {/* Vignette + caustics */}
+        <div className="absolute inset-0 bg-gradient-to-b from-ink-2/60 via-transparent to-ink hero-lighten-overlay" />
+        <div className="absolute inset-0 caustics opacity-40 mix-blend-screen" />
+        {/* Rising bubbles */}
+        {Array.from({ length: 10 }).map((_, i) => (
+          <span
+            key={i}
+            aria-hidden
+            className="absolute bottom-0 rounded-full bg-cyan-hi/30 blur-[1px] hidden sm:block"
+            style={{
+              left: `${(i * 73) % 100}%`,
+              width: `${6 + (i % 5) * 4}px`,
+              height: `${6 + (i % 5) * 4}px`,
+              animation: `bubble-rise ${8 + (i % 6) * 2}s linear ${i * 0.7}s infinite`,
+            }}
+          />
+        ))}
+      </div>
 
-      {/* Corner-anchored decorative chips — only at ultra-wide where safe zones exist */}
-      <div className="pointer-events-none absolute inset-0 hidden 2xl:block z-[5]">
-        {categories.slice(0, 4).map((c, i) => {
+      {/* Corner-anchored category chips — jump straight to that category's
+          catalog. Only at ultra-wide where the safe zones exist. */}
+      <div className="absolute inset-0 hidden 2xl:block z-[5]">
+        {categories.slice(0, 4).map((cat, i) => {
           const positions = [
             { top: "7rem", left: "1.25rem" },
             { top: "7rem", right: "1.25rem" },
@@ -120,15 +122,18 @@ function Hero() {
           ] as const;
           const pos = positions[i];
           return (
-            <div
-              key={c.slug}
-              className="absolute hero-chip rounded-full px-3.5 py-2 text-[10px] tracking-widest uppercase animate-float-slow whitespace-nowrap"
+            <Link
+              key={cat.slug}
+              to="/products"
+              search={{ cat: cat.slug }}
+              aria-label={`Browse ${cat.name}`}
+              className="absolute hero-chip rounded-full px-3.5 py-2 text-[10px] tracking-widest uppercase animate-float-slow whitespace-nowrap pointer-events-auto hover:brightness-125 transition"
               style={{ ...pos, animationDelay: `${i * 0.6}s` }}
             >
-              <span className="hero-chip-n">{c.number}</span>
+              <span className="hero-chip-n">{cat.number}</span>
               <span className="mx-1.5 opacity-40">·</span>
-              {c.name}
-            </div>
+              {cat.name}
+            </Link>
           );
         })}
       </div>
@@ -209,6 +214,7 @@ function ChipMarquee({ categories }: { categories: import("@/data/products").Cat
     let raf = 0;
     let lastUser = 0;
     let engaged = false;
+    let onScreen = true;
     const markUser = () => {
       lastUser = Date.now();
     };
@@ -225,21 +231,26 @@ function ChipMarquee({ categories }: { categories: import("@/data/products").Cat
     addEventListener("pointerup", up, { passive: true });
     rail.addEventListener("touchend", up, { passive: true });
     rail.addEventListener("wheel", markUser, { passive: true });
+    // Pause the drift loop entirely when the hero is scrolled away — no reason
+    // to spend a rAF every frame moving an off-screen rail.
+    const io = new IntersectionObserver(([e]) => (onScreen = e.isIntersecting));
+    io.observe(rail);
     const tick = () => {
-      const half = rail.scrollWidth / 2;
-      if (half > rail.clientWidth) {
-        if (!engaged && Date.now() - lastUser > 2200 && !document.hidden) {
-          rail.scrollLeft += 0.5;
+      if (onScreen && !document.hidden) {
+        const half = rail.scrollWidth / 2;
+        if (half > rail.clientWidth) {
+          if (!engaged && Date.now() - lastUser > 2200) rail.scrollLeft += 0.5;
+          // seamless wrap in both directions
+          if (rail.scrollLeft >= half) rail.scrollLeft -= half;
+          else if (rail.scrollLeft <= 0) rail.scrollLeft += half;
         }
-        // seamless wrap in both directions
-        if (rail.scrollLeft >= half) rail.scrollLeft -= half;
-        else if (rail.scrollLeft <= 0) rail.scrollLeft += half;
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
+      io.disconnect();
       rail.removeEventListener("pointerdown", down);
       rail.removeEventListener("touchstart", down);
       removeEventListener("pointerup", up);
@@ -254,14 +265,17 @@ function ChipMarquee({ categories }: { categories: import("@/data/products").Cat
       className="flex gap-2 overflow-x-auto px-5 sm:px-6 md:px-8 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {row.map((c, i) => (
-        <span
+        <Link
           key={c.slug + i}
+          to="/products"
+          search={{ cat: c.slug }}
+          aria-label={`Browse ${c.name}`}
           className="shrink-0 hero-chip rounded-full px-3.5 py-2 text-[10px] tracking-widest uppercase whitespace-nowrap"
         >
           <span className="hero-chip-n">{c.number}</span>
           <span className="mx-1.5 opacity-40">·</span>
           {c.name}
-        </span>
+        </Link>
       ))}
     </div>
   );
@@ -423,7 +437,7 @@ function CategoryCard({ c }: { c: import("@/data/products").Category }) {
         <h3 className="display-xl text-xl sm:text-2xl text-white line-clamp-2">{c.tagline}</h3>
         <p className="mt-2.5 text-sm text-white/70 flex-1 line-clamp-3">{c.description}</p>
         <div className="mt-4">
-          <LiquidButton to="/products" size="md">
+          <LiquidButton to="/products" search={{ cat: c.slug }} size="md">
             Explore {c.name}
           </LiquidButton>
         </div>
@@ -527,22 +541,30 @@ function WhatWeMakePinned() {
   );
 }
 
-// Mobile / tablet: 3D coverflow rail — the centred card sits flat, neighbours
-// fold away in perspective. Auto-advances politely, fully touch-controllable.
+// Mobile / tablet: the SAME cards as desktop on a plain native horizontal
+// scroll rail. The old 3D coverflow fought the thumb, ran a rAF + transforms
+// on every card and read as a broken side-by-side stack on phones — a native
+// snap rail is faster, familiar and lets the cards render at full fidelity.
 function WhatWeMakeSwipe() {
   const { data: categories } = useCategories();
   return (
     <section className="lg:hidden section-dark relative py-24 overflow-hidden">
       <WhatWeMakeHeading />
-      <Coverflow3D
-        className="mt-8"
-        variant="y"
-        cardClass="w-[68vw] max-w-[300px] sm:w-[48vw] md:w-[38vw]"
-        items={[
-          ...categories.slice(0, 5).map((c) => <CategoryCard key={c.slug} c={c} />),
-          <ViewAllCard key="view-all" />,
-        ]}
-      />
+      <div className="mt-8 -mx-5 sm:-mx-6 md:-mx-8">
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-5 sm:px-6 md:px-8 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {categories.slice(0, 5).map((c) => (
+            <div
+              key={c.slug}
+              className="shrink-0 snap-start w-[78vw] max-w-[320px] sm:w-[52vw] md:w-[40vw]"
+            >
+              <CategoryCard c={c} />
+            </div>
+          ))}
+          <div className="shrink-0 snap-start w-[78vw] max-w-[320px] sm:w-[52vw] md:w-[40vw]">
+            <ViewAllCard />
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -626,61 +648,36 @@ function WhereWeWork() {
 /* =============== 05 HOW WATER GETS TREATED =============== */
 
 function HowWaterGetsTreated() {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
-  const dash = useTransform(scrollYProgress, [0, 1], [1000, 0]);
   const { data: c } = useHomeContent();
   const stations = c.journey;
   return (
-    <section ref={ref} className="section-dark relative" style={{ height: "260vh" }}>
-      <div className="sticky top-0 min-h-screen flex flex-col overflow-hidden py-24">
-        <div className="mx-auto max-w-7xl w-full px-6 md:px-8">
-          <MicroLabel n="06">How water gets treated</MicroLabel>
-          <h2
-            className="display-xl mt-3 grad-text max-w-4xl"
-            style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}
-          >
-            {c.journeyHeading}
-          </h2>
-          <p className="mt-4 max-w-xl text-white/60">{c.journeySubtitle}</p>
-        </div>
-        <div className="relative mt-10 flex-1 mx-auto max-w-7xl w-full px-6 md:px-8">
-          <svg viewBox="0 0 1000 260" className="w-full h-40 md:h-56" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="pathG" x1="0" x2="1">
-                <stop offset="0" stopColor="var(--royal)" />
-                <stop offset="0.5" stopColor="var(--cyan-hi)" />
-                <stop offset="1" stopColor="var(--leaf)" />
-              </linearGradient>
-            </defs>
-            <motion.path
-              d="M 20 130 C 200 30, 300 220, 500 130 S 800 30, 980 130"
-              fill="none"
-              stroke="url(#pathG)"
-              strokeWidth="3"
-              pathLength={1000}
-              strokeDasharray={1000}
-              style={{ strokeDashoffset: dash }}
-            />
-          </svg>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mt-8">
-            {stations.map((s, i) => (
-              <motion.div
-                key={s.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-15%" }}
-                transition={{ delay: i * 0.1 }}
-                className="relative overflow-hidden rounded-2xl p-5 min-h-[180px] flex flex-col justify-end glass"
-              >
-                <img src={s.img} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
-                <div className="relative micro-label">{String(i + 1).padStart(2, "0")}</div>
-                <div className="relative display-xl text-xl mt-2 text-on-media">{s.title}</div>
-                <p className="relative text-sm mt-2 text-on-media-soft">{s.body}</p>
-              </motion.div>
-            ))}
-          </div>
+    <section className="section-dark relative overflow-hidden py-24 md:py-28">
+      <div className="mx-auto max-w-7xl w-full px-6 md:px-8">
+        <MicroLabel n="06">How water gets treated</MicroLabel>
+        <h2
+          className="display-xl mt-3 grad-text max-w-4xl"
+          style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}
+        >
+          {c.journeyHeading}
+        </h2>
+        <p className="mt-4 max-w-xl text-white/60">{c.journeySubtitle}</p>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-5 mt-12">
+          {stations.map((s, i) => (
+            <motion.div
+              key={s.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-12%" }}
+              transition={{ delay: (i % 5) * 0.08 }}
+              className="relative overflow-hidden rounded-2xl p-5 min-h-[180px] flex flex-col justify-end glass"
+            >
+              <img src={s.img} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
+              <div className="relative micro-label">{String(i + 1).padStart(2, "0")}</div>
+              <div className="relative display-xl text-xl mt-2 text-on-media">{s.title}</div>
+              <p className="relative text-sm mt-2 text-on-media-soft">{s.body}</p>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>

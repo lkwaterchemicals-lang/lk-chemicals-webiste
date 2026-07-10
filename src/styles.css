@@ -845,6 +845,87 @@
   animation-duration: 70s;
 }
 
+/* ---------- Floating contact cluster ----------
+   Two of these actions are telephones: "Call now" dials, "Request a call"
+   books a call-back. An icon alone can never distinguish them, so every action
+   carries a permanent text label and the two primary channels get solid,
+   colour-coded skins. */
+.wa-action {
+  box-shadow: 0 12px 32px -14px oklch(0.1 0.04 250 / 0.7);
+}
+.wa-action-glass {
+  background: color-mix(in oklab, var(--ink-2) 74%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid color-mix(in oklab, white 14%, transparent);
+  color: #fff;
+}
+.wa-action-glass .wa-action-icon {
+  background: color-mix(in oklab, var(--cyan-hi) 18%, transparent);
+  color: var(--cyan-hi);
+}
+.light .wa-action-glass {
+  background: color-mix(in oklab, white 90%, transparent);
+  border-color: var(--hairline);
+  color: var(--ink);
+}
+.light .wa-action-glass .wa-action-icon {
+  background: color-mix(in oklab, var(--cyan-deep) 12%, transparent);
+  color: var(--cyan-deep);
+}
+.wa-action-accent {
+  background: var(--cyan-hi);
+  color: var(--ink);
+  border: 1px solid transparent;
+  box-shadow: 0 12px 34px -12px var(--cyan-hi);
+}
+.wa-action-accent .wa-action-icon {
+  background: oklch(0.15 0.045 252 / 0.16);
+  color: var(--ink);
+}
+.wa-action-whatsapp {
+  background: #25d366;
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 12px 34px -12px rgba(37, 211, 102, 0.85);
+}
+.wa-action-whatsapp .wa-action-icon {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* ---------- Hero: fixed, full-screen backdrop photo ----------
+   The photo never moves: no parallax, no zoom, no cursor drift, in either
+   theme. On desktop `background-attachment: fixed` anchors the painting to the
+   viewport while still CLIPPING to the hero box, so the copy scrolls up over a
+   perfectly still image and nothing bleeds into the translucent sections
+   below. (A `position: fixed` layer escapes ancestor `overflow` and would show
+   through them; only fixed-attachment gives viewport anchoring + clipping.)
+
+   It is deliberately NOT enabled on coarse pointers: iOS Safari ignores
+   fixed-attachment outright, and Android repaints the whole photo on every
+   scroll frame — the exact jank we removed elsewhere. There the photo is
+   simply static, which is what "don't make it move" asks for anyway. */
+.hero-photo {
+  background-size: cover;
+  background-position: 68% center;
+  background-repeat: no-repeat;
+}
+@media (min-width: 768px) {
+  .hero-photo {
+    background-position: center;
+  }
+}
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hero-photo {
+    background-attachment: fixed;
+  }
+}
+/* Light mode shows the photo at full richness (mirrors the <img> rule below). */
+.light .hero-photo {
+  opacity: 1 !important;
+}
+
 /* ---------- Catalog search: typewriter hint ----------
    The animated hint is a layer over the input (a native placeholder can't
    carry a blinking caret); it inherits the placeholder's muted color. */

@@ -168,6 +168,20 @@ export function WaterCanvas() {
 
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isMobile = matchMedia("(pointer: coarse)").matches || innerWidth < 768;
+    // Phones (and reduced-motion) render ONE static frame and never run the
+    // rAF loop: a full-screen fluid shader is the single most expensive thing
+    // on the page, and on mobile GPUs a live one is what made the whole site
+    // feel stuck. A calm static water field keeps the brand look at zero
+    // ongoing cost. Desktop runs live but frame-capped (below).
+    const staticOnly = reduced || isMobile;
+    // Extra safety: if the device reports low memory or the user asked for data
+    // saving, bail early rather than peg the CPU/GPU on a constrained device.
+    // (saveData is a boolean — the old regex test against it never matched.)
+    const nav = navigator as Navigator & {
+      deviceMemory?: number;
+      connection?: { saveData?: boolean };
+    };
+    const isLowPower = (nav.deviceMemory ?? 8) <= 1 || nav.connection?.saveData === true;
     const quality = isMobile ? 0 : 1;
     let resScale = isMobile ? 0.45 : 0.5; // adaptive: governor may lower it
     const DPR_CAP = isMobile ? 1 : 1.25;
@@ -194,7 +208,7 @@ export function WaterCanvas() {
       const wpos = worldFromClient(cx, cy);
       if (ripples.length >= MAX_RIPPLES) ripples.shift();
       ripples.push({ x: wpos.x, y: wpos.y, age: 0, amp });
-      if (reduced) renderOnce();
+      if (staticOnly) renderOnce();
     };
 
     // ---- GL setup (encapsulated so context-restore can rebuild) ----
@@ -307,67 +321,49 @@ export function WaterCanvas() {
       g.drawArrays(g.TRIANGLES, 0, 3);
     }
 
-    // ---- adaptive performance governor ----
-    // Some machines run WebGL on a software rasterizer (no GPU). Watch the real
-    // frame time and degrade gracefully: lower internal resolution → render
-    // every other frame → finally settle on a beautiful static frame. The site
-    // must feel effortless everywhere, never janky.
-    let ema = 1 / 60;
-    let skipToggle = false;
-    let frameSkip = false;
+    // ---- 30fps cap + adaptive governor ----
+    // A full-screen fluid shader does not need the display's full refresh rate.
+    // A hard 30fps cap roughly halves GPU load on 60Hz panels and cuts it far
+    // more on 120/144Hz ones — the uncapped loop was what pegged laptops. The
+    // governor then only steps in for genuinely slow GPUs (a single draw slower
+    // than ~18fps → software rasterizer): lower resolution, then a static frame.
+    const FRAME_MIN = 1000 / 30;
+    let lastFrameTs = performance.now();
+    let ema = 1 / 30;
     let staticFallback = false;
     const govStart = performance.now();
     let lastGovCheck = govStart;
 
     function govern(now: number) {
-      if (now - govStart < 500 || now - lastGovCheck < 300) return;
+      if (now - govStart < 800 || now - lastGovCheck < 400) return;
       lastGovCheck = now;
-      // After each step, reset ema optimistically so we re-measure the new
-      // configuration instead of acting again on stale history.
-      if (ema > 0.08 && resScale > 0.22) {
+      // Thresholds sit safely above the 33ms cap so a healthy capped frame
+      // never trips them — only a device that can't hit ~15fps degrades.
+      if (ema > 0.11 && resScale > 0.22) {
         resScale = 0.22;
-        ema = 0.03; // catastrophic (software rasterizer) → floor at once
-      } else if (ema > 0.026 && resScale > 0.22) {
+        ema = 1 / 30;
+      } else if (ema > 0.075 && resScale > 0.22) {
         resScale = Math.max(0.22, resScale * 0.7);
-        ema = 0.02;
-      } else if (ema > 0.033 && resScale <= 0.22 && !frameSkip) {
-        frameSkip = true;
-        ema = 0.03;
-      } else if (ema > 0.055 && frameSkip) {
-        // Hopeless: one calm static frame, kept aligned on scroll. Zero jank.
+        ema = 1 / 30;
+      } else if (ema > 0.09 && resScale <= 0.22) {
+        // Hopeless (software rasterizer): settle on one calm static frame.
         staticFallback = true;
         cancelAnimationFrame(raf);
         renderOnce();
-        addEventListener("scroll", onStaticScroll, { passive: true });
       }
     }
 
-    let staticScrollQueued = false;
-    const onStaticScroll = () => {
-      if (staticScrollQueued) return;
-      staticScrollQueued = true;
-      requestAnimationFrame(() => {
-        staticScrollQueued = false;
-        renderOnce();
-      });
-    };
-
-    let lastDrawn = performance.now();
     function frame(now: number) {
       if (destroyed || staticFallback) return;
+      raf = requestAnimationFrame(frame);
+      if (now - lastFrameTs < FRAME_MIN) return; // hold ~30fps
+      const drawGap = Math.min((now - lastFrameTs) / 1000, 0.5);
+      lastFrameTs = now;
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
-      skipToggle = !skipToggle;
-      if (!frameSkip || skipToggle) {
-        draw(dt);
-        // Wall time between drawn frames (per-vsync when not skipping, 2× when
-        // skipping) — this is what the governor thresholds are tuned against.
-        const drawGap = Math.min((now - lastDrawn) / 1000, 0.25);
-        lastDrawn = now;
-        ema = ema * 0.8 + (frameSkip ? drawGap / 2 : drawGap) * 0.2;
-        govern(now);
-      }
-      raf = requestAnimationFrame(frame);
+      draw(dt);
+      ema = ema * 0.85 + drawGap * 0.15;
+      govern(now);
     }
 
     renderOnce = () => {
@@ -375,7 +371,12 @@ export function WaterCanvas() {
       draw(1 / 60);
     };
 
-    if (!setupGL()) return; // WebGL unavailable → CSS backgrounds still carry the site
+    if (!setupGL() || isLowPower) {
+      // If WebGL can't be setup or device is low-power, render a single static
+      // fallback frame and don't start the animation loop.
+      renderOnce();
+      return;
+    } // WebGL unavailable → CSS backgrounds still carry the site
 
     // ---- listeners ----
     const onMove = (e: PointerEvent) => {
@@ -397,17 +398,17 @@ export function WaterCanvas() {
     const onVis = () => {
       if (document.hidden) {
         cancelAnimationFrame(raf);
-      } else if (!reduced && !destroyed && !staticFallback) {
-        last = lastDrawn = performance.now();
+      } else if (!staticOnly && !destroyed && !staticFallback) {
+        last = lastFrameTs = performance.now();
         raf = requestAnimationFrame(frame);
       }
     };
     const onResize = () => {
-      if (reduced) renderOnce();
+      if (staticOnly) renderOnce();
     };
     const themeObs = new MutationObserver(() => {
       themeTarget = document.documentElement.classList.contains("light") ? 1 : 0;
-      if (reduced) {
+      if (staticOnly) {
         themeS = themeTarget;
         renderOnce();
       }
@@ -420,9 +421,9 @@ export function WaterCanvas() {
     };
     const onRestored = () => {
       if (setupGL() && !destroyed) {
-        if (reduced) renderOnce();
+        if (staticOnly) renderOnce();
         else {
-          last = performance.now();
+          last = lastFrameTs = performance.now();
           raf = requestAnimationFrame(frame);
         }
       }
@@ -435,12 +436,8 @@ export function WaterCanvas() {
     addEventListener("resize", onResize);
     document.addEventListener("visibilitychange", onVis);
 
-    let removeStaticScroll: (() => void) | null = null;
-    if (reduced) {
-      renderOnce(); // a single, calm, already-composed frame — no motion
-      const onScrollStatic = () => renderOnce(); // keep world aligned with content
-      addEventListener("scroll", onScrollStatic, { passive: true });
-      removeStaticScroll = () => removeEventListener("scroll", onScrollStatic);
+    if (staticOnly) {
+      renderOnce(); // one calm, already-composed frame — zero per-frame cost
     } else {
       raf = requestAnimationFrame(frame);
     }
@@ -456,8 +453,6 @@ export function WaterCanvas() {
       removeEventListener("pointerover", onOver);
       removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", onVis);
-      removeEventListener("scroll", onStaticScroll);
-      removeStaticScroll?.();
       cleanupGL?.();
     };
   }, []);

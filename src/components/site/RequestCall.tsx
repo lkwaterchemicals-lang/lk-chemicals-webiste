@@ -52,25 +52,6 @@ export function RequestCallButton({
   );
 }
 
-/** Compact round trigger for the floating action cluster. */
-export function RequestCallFab({ source }: { source: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Request a call back"
-        title="Request a call back"
-        className="grid h-12 w-12 place-items-center rounded-full glass-dark text-cyan-hi hover:text-white hover-lift"
-      >
-        <PhoneCall className="h-5 w-5" />
-      </button>
-      <RequestCallDialog open={open} onClose={() => setOpen(false)} source={source} />
-    </>
-  );
-}
-
 export function RequestCallDialog({
   open,
   onClose,

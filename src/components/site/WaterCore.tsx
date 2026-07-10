@@ -259,6 +259,10 @@ function WaterCoreCanvas() {
 
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isMobile = matchMedia("(pointer: coarse)").matches || innerWidth < 768;
+    // Phones / reduced-motion: draw the sphere once (fully revealed) and never
+    // loop — the live optics shader is far too heavy to run continuously on a
+    // mobile GPU. Desktop runs live but frame-capped to 30fps.
+    const staticOnly = reduced || isMobile;
     const quality = isMobile ? 0 : 1;
     let resScale = isMobile ? 0.58 : 0.62;
     const DPR_CAP = isMobile ? 1 : 1.5;
@@ -402,17 +406,18 @@ function WaterCoreCanvas() {
       g.uniform2f(uniforms.u_mouse, mx, my);
       g.uniform2f(uniforms.u_anchor, anchor.x, anchor.y);
       g.uniform1f(uniforms.u_radius, radius);
-      g.uniform1f(uniforms.u_reveal, reduced ? 1 : revealS);
+      g.uniform1f(uniforms.u_reveal, staticOnly ? 1 : revealS);
       g.uniform4fv(uniforms["u_ripples[0]"], rippleData);
       g.drawArrays(g.TRIANGLES, 0, 3);
     }
 
-    // Adaptive governor: resolution steps → static frame. Never jank.
-    let ema = 1 / 60;
+    // 30fps cap + adaptive governor: resolution steps → static frame. Never jank.
+    const FRAME_MIN = 1000 / 30;
+    let lastFrameTs = 0;
+    let ema = 1 / 30;
     let lastGov = performance.now();
     const govStart = lastGov;
     let staticFallback = false;
-    let lastDrawn = performance.now();
 
     const renderOnce = () => draw(1 / 60);
 
@@ -422,31 +427,33 @@ function WaterCoreCanvas() {
         raf = 0;
         return;
       } // resumes via observer
+      raf = requestAnimationFrame(frame);
+      if (now - lastFrameTs < FRAME_MIN) return; // hold ~30fps
+      const gap = Math.min((now - lastFrameTs) / 1000, 0.5);
+      lastFrameTs = now;
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       draw(dt);
-      const gap = Math.min((now - lastDrawn) / 1000, 0.25);
-      lastDrawn = now;
-      ema = ema * 0.8 + gap * 0.2;
+      ema = ema * 0.85 + gap * 0.15;
       if (now - govStart > 900 && now - lastGov > 400) {
         lastGov = now;
-        if (ema > 0.08 && resScale > 0.24) {
+        // Thresholds above the 33ms cap: only a genuinely slow GPU degrades.
+        if (ema > 0.11 && resScale > 0.24) {
           resScale = 0.24;
-          ema = 0.02;
-        } else if (ema > 0.028 && resScale > 0.24) {
+          ema = 1 / 30;
+        } else if (ema > 0.075 && resScale > 0.24) {
           resScale = Math.max(0.24, resScale * 0.7);
-          ema = 0.02;
-        } else if (ema > 0.06 && resScale <= 0.24) {
+          ema = 1 / 30;
+        } else if (ema > 0.09 && resScale <= 0.24) {
           staticFallback = true;
+          cancelAnimationFrame(raf);
           renderOnce();
-          return;
         }
       }
-      raf = requestAnimationFrame(frame);
     }
     const kick = () => {
-      if (!raf && !destroyed && !reduced && !staticFallback && inView && !document.hidden) {
-        last = lastDrawn = performance.now();
+      if (!raf && !destroyed && !staticOnly && !staticFallback && inView && !document.hidden) {
+        last = lastFrameTs = performance.now();
         raf = requestAnimationFrame(frame);
       }
     };
@@ -461,8 +468,10 @@ function WaterCoreCanvas() {
         // Scroll-linked reveal: the core rises and settles as more of the
         // section enters the viewport.
         revealTarget = e.isIntersecting ? Math.min(1, e.intersectionRatio * 1.6) : 0;
-        if (inView && reduced) renderOnce();
-        kick();
+        // Static devices (phones / reduced-motion): draw one fully-revealed
+        // frame the first time it scrolls in, then nothing.
+        if (inView && staticOnly) renderOnce();
+        else kick();
       },
       { rootMargin: "120px", threshold: [0, 0.15, 0.3, 0.45, 0.6, 0.75] },
     );
@@ -478,16 +487,16 @@ function WaterCoreCanvas() {
       const s = toScene(e.clientX, e.clientY);
       if (ripples.length >= MAX_RIPPLES) ripples.shift();
       ripples.push({ x: s.x, y: s.y, age: 0, amp: 1 });
-      if (reduced) renderOnce();
+      if (staticOnly) renderOnce();
     };
     const onVis = () => kick();
     const onResize = () => {
       layout();
-      if (reduced && inView) renderOnce();
+      if (staticOnly && inView) renderOnce();
     };
     const themeObs = new MutationObserver(() => {
       themeTarget = document.documentElement.classList.contains("light") ? 1 : 0;
-      if (reduced) {
+      if (staticOnly) {
         themeS = themeTarget;
         if (inView) renderOnce();
       }
@@ -500,8 +509,9 @@ function WaterCoreCanvas() {
     document.addEventListener("visibilitychange", onVis);
     addEventListener("resize", onResize);
 
-    if (reduced) renderOnce();
-    else kick();
+    if (staticOnly) {
+      if (inView) renderOnce();
+    } else kick();
 
     return () => {
       destroyed = true;

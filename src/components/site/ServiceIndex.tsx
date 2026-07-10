@@ -83,7 +83,7 @@ export function ServiceIndex() {
               const Icon = iconByName(cat.iconName);
               const isActive = i === active;
               return (
-                <motion.div
+                <motion.div id={`svc-${cat.slug}`}
                   key={cat.slug}
                   initial={{ opacity: 0, y: 18 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -293,6 +293,7 @@ function ServiceDeck({
       {categories.map((cat, i) => (
         <DeckCard
           key={cat.slug}
+          id={`svc-${cat.slug}`}
           cat={cat}
           i={i}
           total={categories.length}
@@ -306,6 +307,7 @@ function ServiceDeck({
 }
 
 function DeckCard({
+  id,
   cat,
   i,
   total,
@@ -313,6 +315,7 @@ function DeckCard({
   count,
   reduced,
 }: {
+  id?: string;
   cat: ServiceCategory;
   i: number;
   total: number;
@@ -330,7 +333,7 @@ function DeckCard({
     // Sticky wrapper: the card pins below the nav while its successors scroll
     // over it. Increasing offsets leave the buried cards' top edges peeking
     // out — the deck reads as physical layers.
-    <div className="sticky mb-6 last:mb-0" style={{ top: `calc(92px + ${i * 14}px)` }}>
+    <div id={id} className="sticky mb-6 last:mb-0" style={{ top: `calc(92px + ${i * 14}px)` }}>
       <motion.div
         initial={reduced ? { opacity: 0 } : { opacity: 0, y: 42, rotateX: 9 }}
         whileInView={{ opacity: 1, y: 0, rotateX: 0 }}

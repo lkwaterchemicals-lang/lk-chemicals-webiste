@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 
 type Props = {
   to?: string;
+  /** Router search params, e.g. { cat: "ro-chemicals" } */
+  search?: Record<string, string>;
   href?: string;
   onClick?: () => void;
   children: ReactNode;
@@ -15,6 +17,7 @@ type Props = {
 
 export function LiquidButton({
   to,
+  search,
   href,
   onClick,
   children,
@@ -29,10 +32,8 @@ export function LiquidButton({
   const variants = {
     primary:
       "text-ink bg-cyan-hi shadow-[0_10px_40px_-10px_var(--cyan-hi)] hover:shadow-[0_20px_60px_-10px_var(--cyan-hi)]",
-    leaf:
-      "text-ink bg-leaf shadow-[0_10px_40px_-10px_var(--leaf)] hover:shadow-[0_20px_60px_-10px_var(--leaf)]",
-    ghost:
-      "text-white border border-white/20 hover:border-cyan-hi hover:text-cyan-hi",
+    leaf: "text-ink bg-leaf shadow-[0_10px_40px_-10px_var(--leaf)] hover:shadow-[0_20px_60px_-10px_var(--leaf)]",
+    ghost: "text-white border border-white/20 hover:border-cyan-hi hover:text-cyan-hi",
   } as const;
 
   const inner = (
@@ -67,7 +68,7 @@ export function LiquidButton({
   }
   if (to) {
     return (
-      <Link to={to} onClick={onClick} className={cls}>
+      <Link to={to} search={search as never} onClick={onClick} className={cls}>
         {inner}
       </Link>
     );

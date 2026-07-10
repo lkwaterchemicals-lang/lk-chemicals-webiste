@@ -215,95 +215,95 @@ function ServiceDetail() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <span className="micro-label">{catName}</span>
           </div>
-          {/* Desktop keeps the display headline. Phones get the PHOTO first,
-              then a compact title with share — the same scan order as the
-              product page: image → facts → actions. */}
-          <h1 className="hidden lg:block display-xl mt-4 text-7xl grad-text max-w-4xl">
-            {service.name}
-          </h1>
-          <div className="hidden lg:flex mt-5 flex-wrap items-center gap-3">
-            <ShareButton name={service.name} image={images[0] ?? null} />
-          </div>
-          <p className="hidden lg:block mt-6 max-w-2xl text-lg text-white/70">
-            {service.description}
-          </p>
 
-          <div className="mt-4 lg:mt-10 grid lg:grid-cols-5 gap-6 lg:gap-10 items-start">
-            {/* Media */}
-            <div className="lg:col-span-2">
+          {/* Hero: copy and photo share the stage. Desktop puts the headline,
+              share and description beside the gallery (the old stacked layout
+              left a viewport of dead space to the right of the copy); phones
+              keep the buyer's scan order — photo first, then a compact title. */}
+          <div className="mt-4 lg:mt-8 grid gap-6 lg:grid-cols-12 lg:gap-12 items-center">
+            <div className="hidden lg:block lg:col-span-7">
+              <h1 className="display-xl text-6xl xl:text-7xl grad-text">{service.name}</h1>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <ShareButton name={service.name} image={images[0] ?? null} />
+              </div>
+              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/70">
+                {service.description}
+              </p>
+            </div>
+            <div className="lg:col-span-5">
               <MediaGallery
                 images={images}
                 name={service.name}
                 fallbackImage={cat?.image ?? null}
               />
             </div>
-
-            {/* Panels */}
-            <div className="lg:col-span-3 space-y-6">
-              <div className="lg:hidden">
-                <h1 className="display-xl text-2xl sm:text-3xl grad-text">{service.name}</h1>
-                <div className="mt-3 flex flex-wrap items-center gap-2.5">
-                  <ShareButton name={service.name} image={images[0] ?? null} />
-                </div>
-                <div className="mt-4">
-                  <ClampedText text={service.description} />
-                </div>
+            <div className="lg:hidden">
+              <h1 className="display-xl text-2xl sm:text-3xl grad-text">{service.name}</h1>
+              <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                <ShareButton name={service.name} image={images[0] ?? null} />
               </div>
-              <div className="grid md:grid-cols-2 gap-6">
-                {highlights.length > 0 && (
-                  <Panel title="What's included" className="md:col-span-2">
-                    <ul className="grid sm:grid-cols-2 gap-2">
-                      {highlights.map((h) => (
-                        <li key={h} className="flex gap-2 text-white/80 text-sm">
-                          <Check className="h-4 w-4 text-leaf shrink-0 mt-0.5" /> {h}
-                        </li>
-                      ))}
-                    </ul>
-                  </Panel>
-                )}
-
-                {process.length > 0 && (
-                  <Panel title="How it works" className="md:col-span-2">
-                    <ol className="space-y-4">
-                      {process.map((step, i) => (
-                        <li key={(step.title ?? "") + i} className="flex gap-4">
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-cyan-hi/15 text-cyan-hi text-sm font-bold tabular-nums">
-                            {String(i + 1).padStart(2, "0")}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="display-xl text-lg text-white">{step.title}</div>
-                            {step.body && <p className="mt-1 text-sm text-white/60">{step.body}</p>}
-                          </div>
-                        </li>
-                      ))}
-                    </ol>
-                  </Panel>
-                )}
-
-                {documents.length > 0 && (
-                  <Panel title="Downloads" className="md:col-span-2">
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      {documents.map((d, i) => (
-                        <a
-                          key={d.url + i}
-                          href={d.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="group flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-3 hover:border-cyan-hi transition-colors"
-                        >
-                          <span className="grid h-9 w-9 place-items-center rounded-lg bg-cyan-hi/15 text-cyan-hi shrink-0">
-                            <Download className="h-4 w-4" />
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block truncate text-sm text-white/90">{d.label}</span>
-                            {d.type && <span className="text-[11px] text-white/50">{d.type}</span>}
-                          </span>
-                        </a>
-                      ))}
-                    </div>
-                  </Panel>
-                )}
+              <div className="mt-4">
+                <ClampedText text={service.description} />
               </div>
+            </div>
+          </div>
+
+          {/* Facts — full-width panels under the hero */}
+          <div className="mt-8 lg:mt-12">
+            <div className="grid md:grid-cols-2 gap-6">
+              {highlights.length > 0 && (
+                <Panel title="What's included" className="md:col-span-2">
+                  <ul className="grid sm:grid-cols-2 gap-2">
+                    {highlights.map((h) => (
+                      <li key={h} className="flex gap-2 text-white/80 text-sm">
+                        <Check className="h-4 w-4 text-leaf shrink-0 mt-0.5" /> {h}
+                      </li>
+                    ))}
+                  </ul>
+                </Panel>
+              )}
+
+              {process.length > 0 && (
+                <Panel title="How it works" className="md:col-span-2">
+                  <ol className="space-y-4">
+                    {process.map((step, i) => (
+                      <li key={(step.title ?? "") + i} className="flex gap-4">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-cyan-hi/15 text-cyan-hi text-sm font-bold tabular-nums">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="display-xl text-lg text-white">{step.title}</div>
+                          {step.body && <p className="mt-1 text-sm text-white/60">{step.body}</p>}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </Panel>
+              )}
+
+              {documents.length > 0 && (
+                <Panel title="Downloads" className="md:col-span-2">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {documents.map((d, i) => (
+                      <a
+                        key={d.url + i}
+                        href={d.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-3 hover:border-cyan-hi transition-colors"
+                      >
+                        <span className="grid h-9 w-9 place-items-center rounded-lg bg-cyan-hi/15 text-cyan-hi shrink-0">
+                          <Download className="h-4 w-4" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm text-white/90">{d.label}</span>
+                          {d.type && <span className="text-[11px] text-white/50">{d.type}</span>}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </Panel>
+              )}
             </div>
           </div>
 

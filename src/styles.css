@@ -1017,6 +1017,119 @@
   text-shadow: none !important;
 }
 
+/* ---------- Gallery: Life-at-LK diamond mosaic ---------- */
+.mosaic-diamond {
+  transform: rotate(45deg);
+  overflow: hidden;
+  border-radius: 16%;
+  background: white;
+  border: 3px solid white;
+  box-shadow: 0 18px 44px -20px oklch(0.25 0.08 252 / 0.5);
+}
+.dark .mosaic-diamond {
+  background: var(--ink-2);
+  border-color: color-mix(in oklab, white 14%, transparent);
+  box-shadow: 0 18px 44px -18px oklch(0.05 0.03 250 / 0.85);
+}
+/* Counter-rotate the photo and over-scale it so the diamond stays filled. */
+.mosaic-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: rotate(-45deg) scale(1.45);
+}
+.mosaic-inner {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-45deg);
+}
+.mosaic-brand {
+  background: linear-gradient(135deg, var(--royal), oklch(0.45 0.15 232));
+  border-color: color-mix(in oklab, white 25%, transparent);
+  color: #fff;
+}
+.mosaic-badge {
+  background: linear-gradient(140deg, var(--cyan-hi), var(--leaf));
+  color: var(--ink);
+  border: 4px solid white;
+  box-shadow: 0 20px 50px -18px color-mix(in oklab, var(--cyan-hi) 70%, transparent);
+}
+.dark .mosaic-badge {
+  border-color: color-mix(in oklab, white 22%, transparent);
+}
+
+/* ---------- Nav mega-menu ----------
+   The dropdown must be far more opaque than the site's glass (it floats over
+   arbitrary page content), and it flips cleanly to a white card in light mode. */
+.nav-mega-panel {
+  background: color-mix(in oklab, var(--ink-2) 94%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid color-mix(in oklab, white 12%, transparent);
+  box-shadow: 0 30px 70px -28px oklch(0.05 0.03 250 / 0.9);
+  color: #fff;
+}
+.nav-mega-item:hover,
+.nav-mega-item:focus-visible {
+  background: color-mix(in oklab, var(--cyan-hi) 12%, transparent);
+}
+.nav-mega-icon {
+  background: color-mix(in oklab, var(--cyan-hi) 16%, transparent);
+  color: var(--cyan-hi);
+}
+.nav-mega-sub {
+  color: rgba(255, 255, 255, 0.55);
+}
+.nav-mega-all {
+  color: var(--cyan-hi);
+  border-top: 1px solid color-mix(in oklab, white 10%, transparent);
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+.nav-mega-all:hover {
+  background: color-mix(in oklab, var(--cyan-hi) 12%, transparent);
+}
+.light .nav-mega-panel {
+  background: color-mix(in oklab, white 96%, transparent);
+  border-color: var(--hairline);
+  box-shadow: 0 30px 70px -30px oklch(0.3 0.1 258 / 0.45);
+  color: var(--ink);
+}
+.light .nav-mega-item:hover,
+.light .nav-mega-item:focus-visible {
+  background: color-mix(in oklab, var(--cyan-deep) 8%, transparent);
+}
+.light .nav-mega-icon {
+  background: color-mix(in oklab, var(--cyan-deep) 10%, transparent);
+  color: var(--cyan-deep);
+}
+.light .nav-mega-sub {
+  color: color-mix(in oklab, var(--ink) 55%, transparent);
+}
+.light .nav-mega-all {
+  color: var(--cyan-deep);
+  border-top-color: var(--hairline);
+}
+
+/* ---------- Testimonials ---------- */
+/* Every third quote card flips to a solid brand gradient (see QuoteCard). */
+.quote-card-solid {
+  background: linear-gradient(135deg, var(--royal), oklch(0.5 0.16 232));
+  border: 1px solid color-mix(in oklab, white 16%, transparent);
+  box-shadow: 0 22px 50px -24px color-mix(in oklab, var(--royal) 70%, transparent);
+}
+/* Certification badges — brisk enough to read as motion on phones. */
+.marquee-certs {
+  animation: drift-x 26s linear infinite;
+}
+.marquee-certs:hover {
+  animation-play-state: paused;
+}
+@media (max-width: 767px) {
+  .marquee-certs {
+    animation-duration: 13s;
+  }
+}
+
 /* Infrastructure 3D auto-scroll carousel */
 .facility-track {
   animation: drift-x 32s linear infinite;

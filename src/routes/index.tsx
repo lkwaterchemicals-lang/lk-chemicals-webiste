@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useInView } from "motion/react";
-import { ArrowDown, Droplets, Star } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, Droplets, Quote, Star } from "lucide-react";
 import { useCategories, useTestimonials, useSiteSettings } from "@/lib/content";
 import { useHomeContent } from "@/lib/pages";
 import { iconByName } from "@/lib/icons";
@@ -127,7 +127,7 @@ function Hero() {
               to="/products"
               search={{ cat: cat.slug }}
               aria-label={`Browse ${cat.name}`}
-              className="absolute hero-chip rounded-full px-3.5 py-2 text-[10px] tracking-widest uppercase animate-float-slow whitespace-nowrap pointer-events-auto hover:brightness-125 transition"
+              className="absolute hero-chip rounded-full px-4 py-2 text-[10px] tracking-widest uppercase animate-float-slow whitespace-nowrap pointer-events-auto hover:brightness-125 transition inline-flex items-center justify-center"
               style={{ ...pos, animationDelay: `${i * 0.6}s` }}
             >
               <span className="hero-chip-n">{cat.number}</span>
@@ -270,7 +270,10 @@ function ChipMarquee({ categories }: { categories: import("@/data/products").Cat
           to="/products"
           search={{ cat: c.slug }}
           aria-label={`Browse ${c.name}`}
-          className="shrink-0 hero-chip rounded-full px-3.5 py-2 text-[10px] tracking-widest uppercase whitespace-nowrap"
+          // inline-flex + items-center: the coarse-pointer rule grows these
+          // links to a 44px target, and without flex centering the text sat
+          // pinned to the top edge of the pill.
+          className="shrink-0 hero-chip rounded-full px-4 py-2 text-[10px] tracking-widest uppercase whitespace-nowrap inline-flex items-center justify-center"
         >
           <span className="hero-chip-n">{c.number}</span>
           <span className="mx-1.5 opacity-40">·</span>
@@ -485,10 +488,12 @@ function WhatWeMakeHeading() {
   );
 }
 
-// Desktop: the section pins in the viewport while the card row scrolls
-// horizontally, driven by vertical scroll progress — a signature reveal
-// instead of a plain carousel. Mobile keeps a native swipe rail (below).
-function WhatWeMakePinned() {
+// One signature interaction at EVERY breakpoint: the section pins in the
+// viewport and the card rail glides horizontally, driven by the visitor's own
+// vertical scroll — phones included. Native scroll stays in charge (nothing is
+// hijacked; reverse scrolling rewinds), a progress line shows how much of the
+// rail remains, and the cards render at full fidelity.
+function WhatWeMake() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [distance, setDistance] = useState(0);
@@ -516,65 +521,51 @@ function WhatWeMakePinned() {
 
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
   const x = useTransform(scrollYProgress, [0, 1], [0, -distance]);
+  const progressX = useTransform(scrollYProgress, [0, 1], [0.06, 1]);
 
   return (
     <section
       ref={sectionRef}
-      className="hidden lg:block section-dark relative"
-      style={{ height: `calc(100vh + ${distance}px)` }}
+      className="section-dark relative"
+      style={{ height: `calc(100svh + ${distance}px)` }}
     >
-      <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden py-16">
+      <div className="sticky top-0 h-[100svh] flex flex-col justify-center overflow-hidden py-14 lg:py-16">
         <WhatWeMakeHeading />
-        <motion.div ref={trackRef} style={{ x }} className="mt-10 flex gap-5 pl-6 md:pl-8 w-max">
+        {/* Horizontal progress — tells the visitor this band travels sideways
+            and exactly how much of it is left. */}
+        <div className="mx-auto max-w-7xl px-6 md:px-8 w-full shrink-0">
+          <div className="mt-5 flex items-center gap-3 max-w-xs">
+            <div className="h-[3px] flex-1 rounded-full bg-white/10 overflow-hidden">
+              <motion.div
+                style={{ scaleX: progressX }}
+                className="h-full w-full origin-left rounded-full bg-gradient-to-r from-royal via-cyan-hi to-leaf"
+              />
+            </div>
+            <span className="micro-label !text-[9px] whitespace-nowrap opacity-70">
+              Scroll to explore
+            </span>
+          </div>
+        </div>
+        <motion.div
+          ref={trackRef}
+          style={{ x }}
+          className="mt-8 lg:mt-10 flex gap-4 lg:gap-5 pl-5 sm:pl-6 md:pl-8 w-max"
+        >
           {categories.slice(0, 5).map((c) => (
-            <div key={c.slug} className="w-[26vw] xl:w-[22vw] shrink-0">
+            <div
+              key={c.slug}
+              className="w-[80vw] max-w-[340px] sm:w-[52vw] md:w-[40vw] lg:w-[26vw] xl:w-[22vw] lg:max-w-none shrink-0"
+            >
               <CategoryCard c={c} />
             </div>
           ))}
-          <div className="w-[26vw] xl:w-[22vw] shrink-0">
+          <div className="w-[80vw] max-w-[340px] sm:w-[52vw] md:w-[40vw] lg:w-[26vw] xl:w-[22vw] lg:max-w-none shrink-0">
             <ViewAllCard />
           </div>
           <div className="shrink-0 w-1 lg:pr-6 md:pr-8" aria-hidden />
         </motion.div>
       </div>
     </section>
-  );
-}
-
-// Mobile / tablet: the SAME cards as desktop on a plain native horizontal
-// scroll rail. The old 3D coverflow fought the thumb, ran a rAF + transforms
-// on every card and read as a broken side-by-side stack on phones — a native
-// snap rail is faster, familiar and lets the cards render at full fidelity.
-function WhatWeMakeSwipe() {
-  const { data: categories } = useCategories();
-  return (
-    <section className="lg:hidden section-dark relative py-24 overflow-hidden">
-      <WhatWeMakeHeading />
-      <div className="mt-8 -mx-5 sm:-mx-6 md:-mx-8">
-        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-5 sm:px-6 md:px-8 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {categories.slice(0, 5).map((c) => (
-            <div
-              key={c.slug}
-              className="shrink-0 snap-start w-[78vw] max-w-[320px] sm:w-[52vw] md:w-[40vw]"
-            >
-              <CategoryCard c={c} />
-            </div>
-          ))}
-          <div className="shrink-0 snap-start w-[78vw] max-w-[320px] sm:w-[52vw] md:w-[40vw]">
-            <ViewAllCard />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function WhatWeMake() {
-  return (
-    <>
-      <WhatWeMakePinned />
-      <WhatWeMakeSwipe />
-    </>
   );
 }
 
@@ -762,88 +753,195 @@ function WhyLK() {
 
 /* =============== 07 PROOF =============== */
 
+// Accent tints rotate per card; every third card flips to a solid gradient so
+// the rail reads as a designed set, not a repeated template.
+const QUOTE_HUES = ["var(--cyan-hi)", "var(--leaf)", "var(--royal)"];
+
+function QuoteCard({ t, i }: { t: import("@/data/content").Testimonial; i: number }) {
+  const solid = i % 3 === 1;
+  const hue = QUOTE_HUES[i % QUOTE_HUES.length];
+  const stars = Math.min(5, Math.max(0, Number(t.rating ?? 0) || 0));
+  return (
+    <figure
+      className={
+        "relative flex h-full min-h-[260px] flex-col overflow-hidden rounded-3xl p-6 sm:p-7 " +
+        (solid ? "quote-card-solid" : "bento-tile")
+      }
+    >
+      {!solid && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(120% 90% at 90% -10%, color-mix(in oklab, ${hue} 18%, transparent), transparent 60%)`,
+          }}
+        />
+      )}
+      <Quote
+        aria-hidden
+        className={"h-6 w-6 shrink-0 " + (solid ? "text-white/70" : "text-cyan-hi")}
+      />
+      {stars > 0 && (
+        <span className="mt-3 flex gap-0.5" aria-label={`${stars} star rating`}>
+          {Array.from({ length: stars }).map((_, k) => (
+            <Star key={k} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+          ))}
+        </span>
+      )}
+      <blockquote
+        className={
+          "relative mt-3 flex-1 text-[15px] leading-relaxed font-medium " +
+          (solid ? "text-white" : "text-foreground")
+        }
+      >
+        “{t.q}”
+      </blockquote>
+      <figcaption className="relative mt-6 flex items-center gap-3">
+        {t.image ? (
+          <img
+            src={t.image}
+            alt=""
+            loading="lazy"
+            className="h-10 w-10 rounded-full object-cover border border-white/25"
+          />
+        ) : (
+          <span
+            className={
+              "grid h-10 w-10 place-items-center rounded-full font-display font-bold text-sm " +
+              (solid ? "bg-white/20 text-white" : "bg-cyan-hi/15 text-cyan-hi")
+            }
+          >
+            {(t.who ?? "?").trim().charAt(0).toUpperCase()}
+          </span>
+        )}
+        <div className="min-w-0">
+          <div
+            className={
+              "text-[11px] font-semibold tracking-[0.14em] uppercase truncate " +
+              (solid ? "text-white" : "text-foreground")
+            }
+          >
+            {t.who}
+          </div>
+          {t.company && (
+            <div className={"mt-0.5 text-xs truncate " + (solid ? "text-white/70" : "text-ink/60")}>
+              {t.company}
+            </div>
+          )}
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+
+// Testimonials as a swipeable card rail with arrow paging — every quote is a
+// tinted card (one card per view on phones, three on desktop) instead of one
+// blockquote on a timer nobody controls.
 function Proof() {
   const { data: quotes } = useTestimonials();
   const { data: c } = useHomeContent();
-  const [i, setI] = useState(0);
+  const railRef = useRef<HTMLUListElement>(null);
+  const [ends, setEnds] = useState({ start: true, end: false });
+
+  // Arrow enable/disable tracks the rail's real position (rAF-coalesced).
   useEffect(() => {
-    const id = setInterval(() => setI((x) => (x + 1) % quotes.length), 6000);
-    return () => clearInterval(id);
+    const rail = railRef.current;
+    if (!rail) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      setEnds({
+        start: rail.scrollLeft < 24,
+        end: rail.scrollLeft > rail.scrollWidth - rail.clientWidth - 24,
+      });
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    rail.addEventListener("scroll", onScroll, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(rail);
+    return () => {
+      cancelAnimationFrame(raf);
+      rail.removeEventListener("scroll", onScroll);
+      ro.disconnect();
+    };
   }, [quotes.length]);
+
+  const page = (dir: 1 | -1) => {
+    const rail = railRef.current;
+    const card = rail?.querySelector("li");
+    if (!rail || !card) return;
+    rail.scrollBy({ left: dir * (card.clientWidth + 16), behavior: "smooth" });
+  };
+
   const row = [...c.certs, ...c.certs];
   return (
-    <section className="section-dark py-28 relative overflow-hidden">
-      <div className="absolute inset-0 caustics opacity-30" />
+    <section className="section-light py-28 relative overflow-hidden">
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
-        <MicroLabel n="08">Proof</MicroLabel>
-        <div className="mt-8 min-h-[280px] md:min-h-[220px]">
-          <motion.blockquote
-            key={i}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="display-xl text-3xl md:text-5xl lg:text-6xl leading-tight grad-text max-w-5xl"
-          >
-            "{quotes[i % quotes.length].q}"
-          </motion.blockquote>
-          {(() => {
-            const t = quotes[i % quotes.length];
-            const stars = Math.min(5, Math.max(0, Number(t.rating ?? 0) || 0));
-            return (
-              <motion.div
-                key={"who-" + i}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.15 }}
-                className="mt-7 flex items-center gap-4"
-              >
-                {t.image ? (
-                  <img
-                    src={t.image}
-                    alt=""
-                    className="h-12 w-12 rounded-full object-cover border border-white/20 shadow-lg"
-                  />
-                ) : (
-                  <span className="grid h-12 w-12 place-items-center rounded-full bg-cyan-hi/15 text-cyan-hi font-display font-bold">
-                    {(t.who ?? "?").trim().charAt(0).toUpperCase()}
-                  </span>
-                )}
-                <div className="min-w-0">
-                  {stars > 0 && (
-                    <span className="flex gap-0.5 mb-1" aria-label={`${stars} star rating`}>
-                      {Array.from({ length: stars }).map((_, k) => (
-                        <Star key={k} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                      ))}
-                    </span>
-                  )}
-                  <div className="micro-label">{t.who}</div>
-                  {t.company && <div className="mt-0.5 text-xs text-white/50">{t.company}</div>}
-                </div>
-              </motion.div>
-            );
-          })()}
-          <div className="mt-8 flex gap-2">
-            {quotes.map((_, k) => (
-              <button
-                key={k}
-                aria-label={`Testimonial ${k + 1}`}
-                onClick={() => setI(k)}
-                className={
-                  "h-1.5 rounded-full transition-all " +
-                  (k === i ? "w-10 bg-cyan-hi" : "w-4 bg-white/20")
-                }
-              />
-            ))}
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="min-w-0">
+            <MicroLabel n="08" className="!text-royal">
+              Proof
+            </MicroLabel>
+            <h2
+              className="display-xl mt-3 max-w-2xl"
+              style={{ fontSize: "clamp(2rem, 7vw, 4rem)" }}
+            >
+              What our clients say <span className="grad-leaf-text">about us.</span>
+            </h2>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => page(-1)}
+              disabled={ends.start}
+              aria-label="Previous testimonials"
+              className="grid h-11 w-11 place-items-center rounded-full border border-ink/15 text-foreground transition-all hover:border-cyan-hi hover:text-cyan-hi disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => page(1)}
+              disabled={ends.end}
+              aria-label="Next testimonials"
+              className="grid h-11 w-11 place-items-center rounded-full bg-ink text-white transition-all hover:bg-cyan-hi hover:text-ink disabled:opacity-30 disabled:pointer-events-none"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
-      <div className="mt-16 overflow-hidden opacity-70">
-        <div className="flex gap-12 sm:gap-16 marquee-track marquee-slow">
+
+      {/* Full-bleed rail so cards peek at the viewport edge and invite a swipe */}
+      <ul
+        ref={railRef}
+        aria-label="Client testimonials"
+        className="mt-10 flex gap-4 overflow-x-auto snap-x snap-mandatory px-6 md:px-[max(2rem,calc((100vw-80rem)/2+2rem))] pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {quotes.map((t, i) => (
+          <li
+            key={(t.who ?? "") + i}
+            className="w-[85vw] max-w-[400px] sm:w-[46vw] lg:w-[31%] shrink-0 snap-start list-none"
+          >
+            <QuoteCard t={t} i={i} />
+          </li>
+        ))}
+      </ul>
+
+      {/* Certification strip — badge pills on a brisk marquee (pause on hover) */}
+      <div className="mt-14 overflow-hidden" aria-label="Certifications">
+        <div className="flex gap-3 w-max marquee-certs">
           {row.map((cert, k) => (
-            <div key={cert + k} className="shrink-0 flex items-center gap-3 text-white/60">
-              <Droplets className="h-4 w-4 text-cyan-hi" />
-              <span className="micro-label whitespace-nowrap">{cert}</span>
-            </div>
+            <span
+              key={cert + k}
+              className="bento-tile shrink-0 inline-flex items-center gap-2.5 rounded-full px-5 py-2.5"
+            >
+              <Droplets className="h-4 w-4 text-cyan-hi shrink-0" />
+              <span className="micro-label !text-[10px] whitespace-nowrap">{cert}</span>
+            </span>
           ))}
         </div>
       </div>

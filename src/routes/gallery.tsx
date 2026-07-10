@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Droplets, X } from "lucide-react";
 import { MicroLabel } from "@/components/site/GhostWord";
+import { LiquidButton } from "@/components/site/LiquidButton";
 import { useGalleryItems } from "@/lib/content";
 import { useGalleryContent } from "@/lib/pages";
 import { cleanCaption } from "@/lib/assets";
@@ -101,6 +102,8 @@ function GalleryPage() {
         </div>
       </section>
 
+      <LifeAtLK />
+
       <AnimatePresence>
         {open !== null && filtered[open] && (
           <motion.div
@@ -181,5 +184,139 @@ function GalleryPage() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+/* =============== LIFE AT LK — diamond mosaic =============== */
+
+// Diamond lattice slots (col, row) on a 13%-step grid; each diamond's bounding
+// box is 26% of the container, so neighbours kiss edge-to-edge. One slot is
+// reserved for the brand diamond; a circular motto badge floats over the
+// cluster's heart.
+const MOSAIC_SLOTS: [number, number][] = [
+  [2, 0],
+  [1, 1],
+  [3, 1],
+  [5, 1],
+  [0, 2],
+  [4, 2],
+  [1, 3],
+  [3, 3],
+  [5, 3],
+  [2, 4],
+  [4, 4],
+];
+
+function LifeAtLK() {
+  const { data: items } = useGalleryItems();
+  // A spread of photos across categories reads livelier than one album.
+  const photos = useMemo(() => {
+    const srcs = [...new Set(items.map((i) => i.src))];
+    return MOSAIC_SLOTS.map((_, k) => srcs[k % Math.max(1, srcs.length)]);
+  }, [items]);
+  if (photos.length === 0 || !photos[0]) return null;
+
+  return (
+    <section className="section-light relative overflow-hidden py-24 lg:py-32">
+      <div className="mx-auto max-w-7xl px-6 md:px-8 grid gap-14 lg:grid-cols-12 items-center">
+        {/* Copy */}
+        <div className="lg:col-span-5">
+          <MicroLabel n="02" className="!text-royal">
+            Plant insights
+          </MicroLabel>
+          <h2
+            className="display-xl mt-4 leading-[0.95]"
+            style={{ fontSize: "clamp(2.4rem, 7vw, 4.5rem)" }}
+          >
+            Life at LK.
+            <br />
+            <span className="grad-leaf-text">Every drop counts.</span>
+          </h2>
+          <p className="mt-6 max-w-md text-ink/70">
+            A working floor of chemists, engineers and field crews — batch tests at dawn, drums on
+            the dock by noon, a service van already on the road. LK is more than a plant; it's where
+            clean water begins.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <LiquidButton to="/careers">Join the team</LiquidButton>
+            <LiquidButton to="/contact" variant="ghost">
+              Visit the plant
+            </LiquidButton>
+          </div>
+        </div>
+
+        {/* Mosaic */}
+        <div className="lg:col-span-7">
+          <div className="relative mx-auto w-full max-w-[560px] aspect-[91/79]">
+            {/* Brand diamond */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-10%" }}
+              transition={{ type: "spring", stiffness: 220, damping: 22 }}
+              className="absolute"
+              style={{ left: "52%", top: "0%", width: "26%" }}
+            >
+              <div className="mosaic-diamond mosaic-brand aspect-square">
+                <div className="mosaic-inner grid place-items-center text-center">
+                  <div>
+                    <Droplets className="mx-auto h-6 w-6" aria-hidden />
+                    <div className="mt-1.5 text-[10px] font-bold tracking-[0.22em]">
+                      LK
+                      <br />
+                      CHEMICALS
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {MOSAIC_SLOTS.map(([c, r], k) => (
+              <motion.div
+                key={`${c}-${r}`}
+                initial={{ opacity: 0, scale: 0.6 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, margin: "-10%" }}
+                transition={{
+                  type: "spring",
+                  stiffness: 220,
+                  damping: 22,
+                  delay: (k % 6) * 0.06,
+                }}
+                className="absolute"
+                style={{ left: `${c * 13}%`, top: `${r * 13}%`, width: "26%" }}
+              >
+                <div className="mosaic-diamond aspect-square group">
+                  <img
+                    src={photos[k]}
+                    alt=""
+                    loading="lazy"
+                    className="mosaic-photo transition-transform duration-700 group-hover:scale-[1.55]"
+                  />
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Motto badge over the cluster's heart */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-10%" }}
+              transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.35 }}
+              className="absolute z-10"
+              style={{ left: "33.5%", top: "27%", width: "24%" }}
+            >
+              <div className="mosaic-badge aspect-square rounded-full grid place-items-center text-center">
+                <div className="leading-tight">
+                  <div className="text-[8px] font-semibold tracking-[0.3em]">TEST</div>
+                  <div className="display-xl text-sm sm:text-base tracking-wide">BLEND</div>
+                  <div className="text-[8px] font-semibold tracking-[0.3em]">DELIVER</div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

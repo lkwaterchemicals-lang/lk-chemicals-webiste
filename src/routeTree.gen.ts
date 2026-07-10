@@ -22,6 +22,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ServicesCategoryRouteImport } from './routes/services_.$category'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
+import { Route as AdminTeamRouteImport } from './routes/admin.team'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServiceCategoriesRouteImport } from './routes/admin.serviceCategories'
@@ -98,6 +99,11 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
 const AdminTestimonialsRoute = AdminTestimonialsRouteImport.update({
   id: '/testimonials',
   path: '/testimonials',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTeamRoute = AdminTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/admin/serviceCategories': typeof AdminServiceCategoriesRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/team': typeof AdminTeamRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/admin/serviceCategories': typeof AdminServiceCategoriesRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/team': typeof AdminTeamRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/admin/serviceCategories': typeof AdminServiceCategoriesRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/team': typeof AdminTeamRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
   '/products_/$slug': typeof ProductsSlugRoute
   '/services_/$category': typeof ServicesCategoryRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/admin/serviceCategories'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/team'
     | '/admin/testimonials'
     | '/products/$slug'
     | '/services/$category'
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/admin/serviceCategories'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/team'
     | '/admin/testimonials'
     | '/products/$slug'
     | '/services/$category'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/admin/serviceCategories'
     | '/admin/services'
     | '/admin/settings'
+    | '/admin/team'
     | '/admin/testimonials'
     | '/products_/$slug'
     | '/services_/$category'
@@ -433,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTestimonialsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/team': {
+      id: '/admin/team'
+      path: '/team'
+      fullPath: '/admin/team'
+      preLoaderRoute: typeof AdminTeamRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -531,6 +550,7 @@ interface AdminRouteChildren {
   AdminServiceCategoriesRoute: typeof AdminServiceCategoriesRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminTeamRoute: typeof AdminTeamRoute
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminContentPageRoute: typeof AdminContentPageRoute
@@ -547,6 +567,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminServiceCategoriesRoute: AdminServiceCategoriesRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminTeamRoute: AdminTeamRoute,
   AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminContentPageRoute: AdminContentPageRoute,

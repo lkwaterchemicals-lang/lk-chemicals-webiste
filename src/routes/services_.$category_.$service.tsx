@@ -2,17 +2,62 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { ArrowLeft, Check, ChevronDown, Download, Phone } from "lucide-react";
-import { useServiceCategories, useServices, useSiteSettings } from "@/lib/content";
-import { type Service } from "@/data/products";
+import {
+  useCategories,
+  useProducts,
+  useServiceCategories,
+  useServices,
+  useSiteSettings,
+} from "@/lib/content";
+import { type Product, type Service } from "@/data/products";
+import { fetchDocRest } from "@/lib/firestore-rest";
+import { absUrl, useLiveMeta } from "@/lib/site";
 import { MicroLabel } from "@/components/site/GhostWord";
-import { LiquidButton } from "@/components/site/LiquidButton";
+import {
+  ClampedText,
+  MediaGallery,
+  Panel,
+  ShareButton,
+  SuggestRail,
+  type SuggestItem,
+} from "@/components/site/Detail";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
 
 export const Route = createFileRoute("/services_/$category_/$service")({
-  head: () => ({ meta: [{ title: "Service — LK Chemicals" }] }),
+  // Services live only in Firestore — fetch on the server so crawlers and
+  // share sheets see the real title, description and photo in the SSR HTML.
+  loader: async ({ params }) => {
+    const service =
+      typeof document === "undefined"
+        ? ((await fetchDocRest("services", params.service)) as Service | null)
+        : null;
+    return { service, category: params.category, slug: params.service };
+  },
+  head: ({ loaderData }) => {
+    const s = loaderData?.service;
+    if (!s) return { meta: [{ title: "Service — LK Chemicals" }] };
+    const title = s.metaTitle || `${s.name} — LK Chemicals`;
+    const description = (s.metaDescription || s.description || "").slice(0, 155);
+    const image = absUrl(s.ogImage || s.image || "/og-image.png");
+    const url = absUrl(`/services/${loaderData.category}/${loaderData.slug}`);
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { property: "og:image", content: image },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:image", content: image },
+      ],
+    };
+  },
   component: ServiceDetail,
 });
 
@@ -29,11 +74,13 @@ function ServiceNotFound() {
 }
 
 function ServiceDetail() {
+  const { service: ssrService } = Route.useLoaderData();
   const { category, service: serviceSlug } = Route.useParams();
   const { data: services, isFetching } = useServices();
   const { data: categories } = useServiceCategories();
+  const { data: products } = useProducts();
+  const { data: productCategories } = useCategories();
   const { data: settings } = useSiteSettings();
-  const [activeImg, setActiveImg] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   // Phones swap the floating contact cluster for the fixed action dock while
@@ -45,7 +92,22 @@ function ServiceDetail() {
     };
   }, []);
 
-  const service: Service | null = services.find((s) => s.slug === serviceSlug) ?? null;
+  const service: Service | null =
+    services.find((s) => s.slug === serviceSlug) ?? ssrService ?? null;
+
+  // Keep the live head tags accurate during SPA navigation so browser share
+  // sheets pick up the real service photo and title.
+  useLiveMeta(
+    service
+      ? {
+          title: service.metaTitle || `${service.name} — LK Chemicals`,
+          description: (service.metaDescription || service.description || "").slice(0, 155),
+          image: service.ogImage || service.image || null,
+          url: `/services/${service.serviceCategory || category}/${service.slug}`,
+        }
+      : null,
+  );
+
   if (!service) {
     return isFetching ? <div className="min-h-[60vh] pt-40" /> : <ServiceNotFound />;
   }
@@ -60,7 +122,6 @@ function ServiceDetail() {
   const faqs = service.faqs ?? [];
   const documents = service.documents ?? [];
   const images = [service.image, ...(service.gallery ?? [])].filter(Boolean) as string[];
-  const mainImg = images[activeImg] ?? images[0] ?? cat?.image ?? null;
 
   // Related: explicit picks first, otherwise same-category siblings.
   const relatedSlugs = service.related ?? [];
@@ -71,6 +132,33 @@ function ServiceDetail() {
           (s) => s.serviceCategory === service.serviceCategory && s.slug !== service.slug,
         )
   ).slice(0, 4);
+
+  const relatedItems: SuggestItem[] = related.map((r) => ({
+    key: r.slug,
+    name: r.name,
+    image: r.image ?? categories.find((c) => c.slug === r.serviceCategory)?.image ?? null,
+    label: categories.find((c) => c.slug === r.serviceCategory)?.name ?? catName,
+    link: {
+      to: "/services/$category/$service",
+      params: { category: r.serviceCategory || catSlug, service: r.slug },
+    },
+  }));
+
+  // Cross-sell the formulary: featured products first, capped at four.
+  const pairedProducts: SuggestItem[] = [...products]
+    .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)))
+    .slice(0, 4)
+    .map((p: Product) => {
+      const pc = productCategories.find((c) => c.slug === p.category);
+      return {
+        key: p.slug,
+        name: p.name,
+        image: p.image ?? pc?.image ?? null,
+        label: pc?.name ?? "Product",
+        price: p.price,
+        link: { to: "/products/$slug", params: { slug: p.slug } },
+      };
+    });
 
   const msg = `Hi LK Chemicals, I'd like a service quote for ${service.name}.`;
 
@@ -127,104 +215,95 @@ function ServiceDetail() {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <span className="micro-label">{catName}</span>
           </div>
-          <h1 className="display-xl mt-4 text-5xl md:text-7xl grad-text max-w-4xl">
+          {/* Desktop keeps the display headline. Phones get the PHOTO first,
+              then a compact title with share — the same scan order as the
+              product page: image → facts → actions. */}
+          <h1 className="hidden lg:block display-xl mt-4 text-7xl grad-text max-w-4xl">
             {service.name}
           </h1>
-          <p className="mt-6 max-w-2xl text-lg text-white/70">{service.description}</p>
+          <div className="hidden lg:flex mt-5 flex-wrap items-center gap-3">
+            <ShareButton name={service.name} image={images[0] ?? null} />
+          </div>
+          <p className="hidden lg:block mt-6 max-w-2xl text-lg text-white/70">
+            {service.description}
+          </p>
 
-          <div className="mt-14 grid lg:grid-cols-5 gap-10 items-start">
+          <div className="mt-4 lg:mt-10 grid lg:grid-cols-5 gap-6 lg:gap-10 items-start">
             {/* Media */}
             <div className="lg:col-span-2">
-              <motion.div
-                whileHover={{ rotateY: 8, rotateX: -6, scale: 1.03 }}
-                transition={{ type: "spring", stiffness: 150, damping: 15 }}
-                style={{ transformStyle: "preserve-3d" }}
-                className="relative rounded-3xl overflow-hidden glass-dark"
-              >
-                {mainImg ? (
-                  <img src={mainImg} alt={service.name} className="h-72 w-full object-cover" />
-                ) : (
-                  <div className="h-72 w-full bg-gradient-to-br from-royal/40 via-ink to-ink" />
-                )}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent" />
-              </motion.div>
-              {images.length > 1 && (
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {images.map((src, i) => (
-                    <button
-                      key={src + i}
-                      type="button"
-                      onClick={() => setActiveImg(i)}
-                      aria-label={`View image ${i + 1}`}
-                      className={
-                        "h-16 w-16 shrink-0 overflow-hidden rounded-xl border transition-all " +
-                        (i === activeImg
-                          ? "border-cyan-hi"
-                          : "border-white/10 opacity-70 hover:opacity-100")
-                      }
-                    >
-                      <img src={src} alt="" className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
+              <MediaGallery
+                images={images}
+                name={service.name}
+                fallbackImage={cat?.image ?? null}
+              />
             </div>
 
             {/* Panels */}
-            <div className="lg:col-span-3 grid md:grid-cols-2 gap-6">
-              {highlights.length > 0 && (
-                <Panel title="What's included" className="md:col-span-2">
-                  <ul className="grid sm:grid-cols-2 gap-2">
-                    {highlights.map((h) => (
-                      <li key={h} className="flex gap-2 text-white/80 text-sm">
-                        <Check className="h-4 w-4 text-leaf shrink-0 mt-0.5" /> {h}
-                      </li>
-                    ))}
-                  </ul>
-                </Panel>
-              )}
+            <div className="lg:col-span-3 space-y-6">
+              <div className="lg:hidden">
+                <h1 className="display-xl text-2xl sm:text-3xl grad-text">{service.name}</h1>
+                <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                  <ShareButton name={service.name} image={images[0] ?? null} />
+                </div>
+                <div className="mt-4">
+                  <ClampedText text={service.description} />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-6">
+                {highlights.length > 0 && (
+                  <Panel title="What's included" className="md:col-span-2">
+                    <ul className="grid sm:grid-cols-2 gap-2">
+                      {highlights.map((h) => (
+                        <li key={h} className="flex gap-2 text-white/80 text-sm">
+                          <Check className="h-4 w-4 text-leaf shrink-0 mt-0.5" /> {h}
+                        </li>
+                      ))}
+                    </ul>
+                  </Panel>
+                )}
 
-              {process.length > 0 && (
-                <Panel title="How it works" className="md:col-span-2">
-                  <ol className="space-y-4">
-                    {process.map((step, i) => (
-                      <li key={(step.title ?? "") + i} className="flex gap-4">
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-cyan-hi/15 text-cyan-hi text-sm font-bold tabular-nums">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="display-xl text-lg text-white">{step.title}</div>
-                          {step.body && <p className="mt-1 text-sm text-white/60">{step.body}</p>}
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </Panel>
-              )}
+                {process.length > 0 && (
+                  <Panel title="How it works" className="md:col-span-2">
+                    <ol className="space-y-4">
+                      {process.map((step, i) => (
+                        <li key={(step.title ?? "") + i} className="flex gap-4">
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-cyan-hi/15 text-cyan-hi text-sm font-bold tabular-nums">
+                            {String(i + 1).padStart(2, "0")}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="display-xl text-lg text-white">{step.title}</div>
+                            {step.body && <p className="mt-1 text-sm text-white/60">{step.body}</p>}
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </Panel>
+                )}
 
-              {documents.length > 0 && (
-                <Panel title="Downloads" className="md:col-span-2">
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {documents.map((d, i) => (
-                      <a
-                        key={d.url + i}
-                        href={d.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-3 hover:border-cyan-hi transition-colors"
-                      >
-                        <span className="grid h-9 w-9 place-items-center rounded-lg bg-cyan-hi/15 text-cyan-hi shrink-0">
-                          <Download className="h-4 w-4" />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm text-white/90">{d.label}</span>
-                          {d.type && <span className="text-[11px] text-white/50">{d.type}</span>}
-                        </span>
-                      </a>
-                    ))}
-                  </div>
-                </Panel>
-              )}
+                {documents.length > 0 && (
+                  <Panel title="Downloads" className="md:col-span-2">
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {documents.map((d, i) => (
+                        <a
+                          key={d.url + i}
+                          href={d.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-3 hover:border-cyan-hi transition-colors"
+                        >
+                          <span className="grid h-9 w-9 place-items-center rounded-lg bg-cyan-hi/15 text-cyan-hi shrink-0">
+                            <Download className="h-4 w-4" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm text-white/90">{d.label}</span>
+                            {d.type && <span className="text-[11px] text-white/50">{d.type}</span>}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  </Panel>
+                )}
+              </div>
             </div>
           </div>
 
@@ -314,45 +393,23 @@ function ServiceDetail() {
         </div>
       </section>
 
-      {related.length > 0 && (
-        <section className="section-dark py-16 border-t border-white/10">
-          <div className="mx-auto max-w-7xl px-6 md:px-8">
-            <MicroLabel>More in {catName}</MicroLabel>
-            <div className="mt-6 grid md:grid-cols-4 gap-4">
-              {related.map((r) => (
-                <Link
-                  key={r.slug}
-                  to="/services/$category/$service"
-                  params={{ category: r.serviceCategory || catSlug, service: r.slug }}
-                  className="group rounded-2xl bg-white/[0.04] border border-white/10 p-5 hover-lift"
-                >
-                  <div className="micro-label">{catName}</div>
-                  <h3 className="display-xl text-lg text-white mt-2 group-hover:grad-text">
-                    {r.name}
-                  </h3>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* E-commerce cross-sell: sibling services, then the formulary. */}
+      <SuggestRail
+        eyebrow={`More in ${catName}`}
+        heading="You may also need."
+        items={relatedItems}
+        viewAll={{
+          label: `All ${catName} services`,
+          to: "/services/$category",
+          params: { category: catSlug },
+        }}
+      />
+      <SuggestRail
+        eyebrow="From the formulary"
+        heading="Chemicals that pair well."
+        items={pairedProducts}
+        viewAll={{ label: "View all products", to: "/products" }}
+      />
     </>
-  );
-}
-
-function Panel({
-  title,
-  children,
-  className = "",
-}: {
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={"rounded-3xl glass-dark p-6 " + className}>
-      <div className="micro-label mb-3">{title}</div>
-      {children}
-    </div>
   );
 }

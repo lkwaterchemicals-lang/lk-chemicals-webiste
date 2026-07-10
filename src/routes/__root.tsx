@@ -11,6 +11,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { absUrl } from "../lib/site";
 import { Nav } from "../components/site/Nav";
 import { Footer } from "../components/site/Footer";
 import { WaCluster } from "../components/site/WaCluster";
@@ -123,8 +124,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013.",
       },
-      { property: "og:image", content: "/og-image.png" },
-      { name: "twitter:image", content: "/og-image.png" },
+      // Crawlers require absolute og/twitter image URLs.
+      { property: "og:image", content: absUrl("/og-image.png") },
+      { name: "twitter:image", content: absUrl("/og-image.png") },
     ],
     links: [
       {

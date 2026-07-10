@@ -9,6 +9,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
+import { stabilizeDeep } from "@/lib/assets";
 import {
   globalContent,
   homeContent,
@@ -47,7 +48,9 @@ function usePageDoc<T extends object>(id: string, fallback: T) {
         if (!snap.exists()) return fallback;
         // Shallow merge: a stored field (including arrays) replaces the default;
         // anything the admin hasn't touched stays on the built-in value.
-        return { ...fallback, ...(snap.data() as Partial<T>) };
+        // stabilizeDeep heals docs saved with a since-rebuilt hashed asset URL
+        // (e.g. /assets/plant-XXXX.jpg) by remapping them to /content/*.
+        return stabilizeDeep({ ...fallback, ...(snap.data() as Partial<T>) });
       } catch (err) {
         console.warn(`[pages] falling back to built-in ${id}:`, err);
         return fallback;

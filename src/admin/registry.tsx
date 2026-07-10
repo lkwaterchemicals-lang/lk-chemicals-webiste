@@ -8,10 +8,16 @@ import {
   LayoutGrid,
   Package,
   Quote,
+  Users,
   Wrench,
 } from "lucide-react";
-import { staticGallery, staticTestimonials } from "@/data/content";
+import { staticGallery, staticTestimonials, staticTeam } from "@/data/content";
 import { ICON_NAMES } from "@/lib/icons";
+import { stableAssetUrl, stabilizeAssets } from "@/lib/assets";
+
+// Re-exported so existing imports keep working; the implementations moved to
+// src/lib/assets.ts where the public site shares them.
+export { stableAssetUrl, stabilizeAssets };
 
 export type Row = Record<string, unknown> & { __id: string };
 
@@ -75,24 +81,6 @@ export const slugify = (s: string) =>
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
-
-// Seeded docs must not store Vite's hashed asset URLs (they change every
-// build). The same images live at stable paths under /public/content, so
-// remap bundle URLs to "/content/x.jpg" before writing to Firestore.
-export function stableAssetUrl(url: unknown): unknown {
-  if (typeof url !== "string" || url.startsWith("http") || url.startsWith("/content/")) return url;
-  const base = url.split("?")[0].split("/").pop() ?? "";
-  const m = base.match(/^(.+?)(?:-(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{8})?\.(jpe?g|png|webp)$/i);
-  return m ? `/content/${m[1]}.${m[2].toLowerCase() === "jpeg" ? "jpg" : m[2].toLowerCase()}` : url;
-}
-
-export function stabilizeAssets(item: Record<string, unknown>): Record<string, unknown> {
-  const out = { ...item };
-  for (const key of ["image", "img", "src"]) {
-    if (key in out) out[key] = stableAssetUrl(out[key]);
-  }
-  return out;
-}
 
 // Reused across products, categories and services so every entity gets the
 // same SEO surface. `status` gates public visibility (draft/archived are hidden).
@@ -466,6 +454,65 @@ export const MODULES: ModuleDef[] = [
     ],
     seed: () => staticTestimonials.map((t) => ({ ...t })),
     publicPath: () => "/",
+  },
+  {
+    id: "team",
+    label: "Team",
+    singular: "team member",
+    icon: Users,
+    idField: "",
+    titleField: "name",
+    subtitleField: "role",
+    imageKey: "image",
+    order: "order",
+    reorderable: true,
+    fields: [
+      {
+        key: "name",
+        label: "Name",
+        type: "text",
+        required: true,
+        placeholder: "e.g. Shiva Krishna Kangadekar",
+      },
+      {
+        key: "role",
+        label: "Role / title",
+        type: "text",
+        required: true,
+        placeholder: "e.g. Head of Quality Control",
+      },
+      {
+        key: "founder",
+        label: "Founder spotlight",
+        type: "boolean",
+        hint: "Shows in the dedicated founder section on the About page",
+      },
+      {
+        key: "image",
+        label: "Photo",
+        type: "image",
+        hint: "Portrait crop works best — falls back to a monogram",
+      },
+      {
+        key: "quote",
+        label: "Quote",
+        type: "textarea",
+        hint: "Founder spotlight only — the big display line",
+      },
+      { key: "bio", label: "Bio", type: "textarea", hint: "A sentence or two" },
+      {
+        key: "linkedin",
+        label: "LinkedIn URL",
+        type: "text",
+        placeholder: "https://linkedin.com/in/…",
+      },
+      { key: "email", label: "Email", type: "text" },
+      { key: "phone", label: "Phone", type: "text", placeholder: "+91 …" },
+      { ...STATUS_FIELD },
+      { key: "order", label: "Display order", type: "text", hint: "Lower shows first (e.g. 10)" },
+    ],
+    seed: () => staticTeam.map((t) => ({ ...t })),
+    publicPath: () => "/about",
   },
   {
     id: "careers",

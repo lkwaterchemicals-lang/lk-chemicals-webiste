@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowUpRight, LayoutGrid, Search } from "lucide-react";
 import { useCategories, useProducts } from "@/lib/content";
 import { useProductsContent } from "@/lib/pages";
+import { imgFallback } from "@/lib/assets";
 import { MicroLabel } from "@/components/site/GhostWord";
 import resinImg from "@/assets/resin.jpg";
 
@@ -58,17 +59,21 @@ function ProductsPage() {
     if (cat) gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [cat]);
 
-  // Living placeholder: cycles through real product names so visitors see
-  // what the catalog actually holds before they type.
-  const [hintIdx, setHintIdx] = useState(0);
-  useEffect(() => {
-    if (products.length < 2) return;
-    const id = setInterval(() => setHintIdx((i) => (i + 1) % products.length), 2400);
-    return () => clearInterval(id);
-  }, [products.length]);
-  const searchHint = products.length
-    ? `Search "${products[hintIdx % products.length].name}"…`
-    : "Search antiscalant, biocide, descaler…";
+  // Living placeholder: types out real product names character by character
+  // so visitors watch the catalog introduce itself before they touch the field.
+  const hintWords = useMemo(
+    () =>
+      products.length >= 2
+        ? products.slice(0, 14).map((p) => p.name)
+        : [
+            "High Silica RO Antiscalant",
+            "Boiler oxygen scavenger",
+            "Cooling tower biocide",
+            "Membrane descaler",
+          ],
+    [products],
+  );
+  const typedHint = useTypewriter(hintWords);
 
   return (
     <>
@@ -77,6 +82,7 @@ function ProductsPage() {
         <img
           src={content.heroImage || resinImg}
           alt=""
+          onError={imgFallback(resinImg)}
           className="absolute inset-0 h-full w-full object-cover opacity-40 hero-lighten"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/40 to-ink hero-lighten-overlay" />
@@ -93,13 +99,26 @@ function ProductsPage() {
             {content.heroSubtitle}
           </p>
           <div className="mt-10 glass-dark rounded-full flex items-center px-5 py-3 max-w-xl">
-            <Search className="h-4 w-4 text-cyan-hi" />
-            <input
-              className="ml-3 flex-1 bg-transparent outline-none text-white placeholder:text-white/40 min-h-11 transition-all"
-              placeholder={searchHint}
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
+            <Search className="h-4 w-4 text-cyan-hi shrink-0" />
+            <div className="relative ml-3 flex-1 min-w-0">
+              <input
+                className="w-full bg-transparent outline-none text-white min-h-11"
+                aria-label="Search the product catalog"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+              {/* Animated hint lives in its own layer (placeholders can't
+                  carry a caret); it vanishes the moment the visitor types. */}
+              {q === "" && (
+                <span
+                  aria-hidden
+                  className="search-hint pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center text-white/45"
+                >
+                  <span className="truncate">Search “{typedHint}”</span>
+                  <span className="type-caret shrink-0" />
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -294,6 +313,67 @@ function ProductsPage() {
       )}
     </>
   );
+}
+
+/* ------------------------------------------------------ typewriter hint */
+
+// Types a word out, holds, deletes it and moves on — the classic storefront
+// search hint. Honours prefers-reduced-motion by rotating whole names calmly
+// instead of animating keystrokes.
+function useTypewriter(
+  words: string[],
+  { typeMs = 55, deleteMs = 26, holdMs = 1700, gapMs = 400 } = {},
+) {
+  const reduced = useReducedMotion();
+  const [text, setText] = useState(words[0] ?? "");
+  // One stable string dependency; the separator can't occur in product names.
+  const key = words.join("\n");
+
+  useEffect(() => {
+    const list = key.split("\n").filter(Boolean);
+    if (list.length === 0) return;
+    let i = 0;
+
+    if (reduced) {
+      setText(list[0]);
+      const id = setInterval(() => {
+        i = (i + 1) % list.length;
+        setText(list[i]);
+      }, 4000);
+      return () => clearInterval(id);
+    }
+
+    let pos = 0;
+    let deleting = false;
+    let timer = 0;
+    const tick = () => {
+      const word = list[i];
+      if (!deleting) {
+        pos++;
+        setText(word.slice(0, pos));
+        if (pos === word.length) {
+          deleting = true;
+          timer = window.setTimeout(tick, holdMs);
+          return;
+        }
+        timer = window.setTimeout(tick, typeMs);
+      } else {
+        pos--;
+        setText(word.slice(0, pos));
+        if (pos === 0) {
+          deleting = false;
+          i = (i + 1) % list.length;
+          timer = window.setTimeout(tick, gapMs);
+          return;
+        }
+        timer = window.setTimeout(tick, deleteMs);
+      }
+    };
+    timer = window.setTimeout(tick, gapMs);
+    return () => clearTimeout(timer);
+  }, [key, reduced, typeMs, deleteMs, holdMs, gapMs]);
+
+  return text;
 }
 
 function FilterChip({

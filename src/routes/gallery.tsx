@@ -5,6 +5,12 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { MicroLabel } from "@/components/site/GhostWord";
 import { useGalleryItems } from "@/lib/content";
 import { useGalleryContent } from "@/lib/pages";
+import { cleanCaption } from "@/lib/assets";
+
+// Uploads often arrive named "ChatGPT Image Jul 8 2026…" or "IMG_2041" —
+// never surface raw file names; fall back to the item's category.
+const captionOf = (it: { alt?: string; cat?: string }) =>
+  cleanCaption(it.alt, it.cat ? `${it.cat} · LK Chemicals` : "LK Chemicals");
 
 export const Route = createFileRoute("/gallery")({
   head: () => ({
@@ -83,7 +89,7 @@ function GalleryPage() {
               >
                 <img
                   src={it.src}
-                  alt={it.alt}
+                  alt={captionOf(it)}
                   loading="lazy"
                   className="w-full h-auto group-hover:scale-105 transition-transform duration-700"
                 />
@@ -143,7 +149,7 @@ function GalleryPage() {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] }}
               src={filtered[open].src}
-              alt={filtered[open].alt}
+              alt={captionOf(filtered[open])}
               drag={filtered.length > 1 ? "x" : false}
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.18}
@@ -163,7 +169,7 @@ function GalleryPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <span className="glass rounded-full px-4 py-2 text-xs text-white/85 max-w-[70vw] truncate">
-                {filtered[open].alt}
+                {captionOf(filtered[open])}
               </span>
               {filtered.length > 1 && (
                 <span className="glass rounded-full px-3 py-2 text-[11px] tabular-nums text-white/70">

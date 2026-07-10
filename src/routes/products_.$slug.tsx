@@ -1,10 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
-import { ArrowLeft, Check, Download, Phone, Share2 } from "lucide-react";
-import { findProduct, type Product } from "@/data/products";
-import { useCategories, useProducts, useSiteSettings } from "@/lib/content";
+import { useEffect } from "react";
+import { ArrowLeft, Check, Download, Phone } from "lucide-react";
+import { findProduct, type Product, type Service } from "@/data/products";
+import {
+  useCategories,
+  useProducts,
+  useServiceCategories,
+  useServices,
+  useSiteSettings,
+} from "@/lib/content";
+import { fetchDocRest } from "@/lib/firestore-rest";
+import { absUrl, useLiveMeta } from "@/lib/site";
 import { MicroLabel } from "@/components/site/GhostWord";
+import {
+  ClampedText,
+  MediaGallery,
+  Panel,
+  PriceChip,
+  ShareButton,
+  SuggestRail,
+  type SuggestItem,
+} from "@/components/site/Detail";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
@@ -13,19 +29,39 @@ import drumImg from "@/assets/drum.jpg";
 import resinImg from "@/assets/resin.jpg";
 
 export const Route = createFileRoute("/products_/$slug")({
-  // Built-in products resolve on the server for SSR + meta tags; admin-added
-  // products (Firestore-only) resolve client-side in the component below.
-  loader: ({ params }) => ({ product: findProduct(params.slug) ?? null, slug: params.slug }),
-  head: ({ loaderData }) => ({
-    meta: loaderData?.product
-      ? [
-          { title: `${loaderData.product.name} — LK Chemicals` },
-          { name: "description", content: loaderData.product.description.slice(0, 155) },
-          { property: "og:title", content: `${loaderData.product.name} — LK Chemicals` },
-          { property: "og:description", content: loaderData.product.description.slice(0, 155) },
-        ]
-      : [{ title: "Product — LK Chemicals" }],
-  }),
+  // Built-in products resolve instantly; admin-added (Firestore-only) products
+  // are fetched over REST on the server so crawlers and share sheets get the
+  // real title, description and photo in the SSR HTML. On the client the
+  // query cache resolves them instead — the loader stays instant.
+  loader: async ({ params }) => {
+    let product = findProduct(params.slug) ?? null;
+    if (!product && typeof document === "undefined") {
+      product = (await fetchDocRest("products", params.slug)) as Product | null;
+    }
+    return { product, slug: params.slug };
+  },
+  head: ({ loaderData }) => {
+    const p = loaderData?.product;
+    if (!p) return { meta: [{ title: "Product — LK Chemicals" }] };
+    const title = p.metaTitle || `${p.name} — LK Chemicals`;
+    const description = (p.metaDescription || p.description || "").slice(0, 155);
+    const image = absUrl(p.ogImage || p.image || "/og-image.png");
+    const url = absUrl(`/products/${loaderData.slug}`);
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "product" },
+        { property: "og:url", content: url },
+        { property: "og:image", content: image },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:image", content: image },
+      ],
+    };
+  },
   errorComponent: () => (
     <div className="min-h-[60vh] pt-40 text-center px-6">
       <h1 className="display-xl text-4xl">Couldn't load this product.</h1>
@@ -53,6 +89,8 @@ function ProductDetail() {
   const { product: staticProduct, slug } = Route.useLoaderData();
   const { data: products, isFetching } = useProducts();
   const { data: categories } = useCategories();
+  const { data: services } = useServices();
+  const { data: serviceCategories } = useServiceCategories();
   const { data: settings } = useSiteSettings();
 
   // While this page is open, phones swap the floating contact cluster for the
@@ -65,6 +103,20 @@ function ProductDetail() {
   }, []);
 
   const product: Product | null = staticProduct ?? products.find((p) => p.slug === slug) ?? null;
+
+  // Keep the live head tags (title, og:image…) accurate during SPA navigation
+  // so browser share sheets pick up the real product photo, not the fallback.
+  useLiveMeta(
+    product
+      ? {
+          title: product.metaTitle || `${product.name} — LK Chemicals`,
+          description: (product.metaDescription || product.description || "").slice(0, 155),
+          image: product.ogImage || product.image || null,
+          url: `/products/${product.slug}`,
+        }
+      : null,
+  );
+
   if (!product) {
     // Firestore may still be loading an admin-added product; only 404 once settled.
     return isFetching ? <div className="min-h-[60vh] pt-40" /> : <ProductNotFound />;
@@ -94,6 +146,36 @@ function ProductDetail() {
       ? (relatedSlugs.map((s) => products.find((p) => p.slug === s)).filter(Boolean) as Product[])
       : products.filter((p) => p.category === product.category && p.slug !== product.slug)
   ).slice(0, 4);
+
+  const relatedItems: SuggestItem[] = related.map((r) => {
+    const rc = categories.find((c) => c.slug === r.category);
+    return {
+      key: r.slug,
+      name: r.name,
+      image: r.image ?? rc?.image ?? null,
+      label: rc?.name ?? cat.name,
+      price: r.price,
+      link: { to: "/products/$slug", params: { slug: r.slug } },
+    };
+  });
+
+  // Cross-sell the service arm the way a storefront pairs accessories:
+  // featured services first, capped at four.
+  const pairedServices: SuggestItem[] = [...services]
+    .filter((s: Service) => s.serviceCategory)
+    .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)))
+    .slice(0, 4)
+    .map((s) => ({
+      key: s.slug,
+      name: s.name,
+      image: s.image ?? serviceCategories.find((c) => c.slug === s.serviceCategory)?.image ?? null,
+      label: serviceCategories.find((c) => c.slug === s.serviceCategory)?.name ?? "Service",
+      link: {
+        to: "/services/$category/$service",
+        params: { category: s.serviceCategory, service: s.slug },
+      },
+    }));
+
   const msg = `Hi LK Chemicals, I'd like a quote for ${product.name}.`;
 
   // Structured data for search engines (rendered client-side).
@@ -157,22 +239,27 @@ function ProductDetail() {
           </h1>
           <div className="hidden lg:flex mt-5 flex-wrap items-center gap-3">
             {product.price && <PriceChip price={product.price} />}
-            <ShareButton name={product.name} />
+            <ShareButton name={product.name} image={images[0] ?? null} />
           </div>
 
           <div className="mt-4 lg:mt-10 grid lg:grid-cols-5 gap-6 lg:gap-10 items-start">
             <div className="lg:col-span-2">
-              <ProductGallery images={images} catImage={cat.image} name={product.name} />
+              <MediaGallery
+                images={images}
+                name={product.name}
+                fallbackImage={cat.image}
+                fallbackOverlay={drumImg}
+              />
             </div>
             <div className="lg:col-span-3 space-y-6">
               <div className="lg:hidden">
                 <h1 className="display-xl text-2xl sm:text-3xl grad-text">{product.name}</h1>
                 <div className="mt-3 flex flex-wrap items-center gap-2.5">
                   {product.price && <PriceChip price={product.price} />}
-                  <ShareButton name={product.name} />
+                  <ShareButton name={product.name} image={images[0] ?? null} />
                 </div>
               </div>
-              <ProductDescription text={product.description} />
+              <ClampedText text={product.description} />
               <div className="grid md:grid-cols-2 gap-6">
                 {features.length > 0 && (
                   <Panel title="Features">
@@ -315,266 +402,19 @@ function ProductDetail() {
         </div>
       </section>
 
-      {related.length > 0 && (
-        <section className="section-dark py-16 border-t border-white/10">
-          <div className="mx-auto max-w-7xl px-6 md:px-8">
-            <MicroLabel>Related in {cat.name}</MicroLabel>
-            <div className="mt-6 grid md:grid-cols-4 gap-4">
-              {related.map((r) => (
-                <Link
-                  key={r.slug}
-                  to="/products/$slug"
-                  params={{ slug: r.slug }}
-                  className="group rounded-2xl bg-white/[0.04] border border-white/10 p-5 hover-lift"
-                >
-                  <div className="micro-label">{cat.number}</div>
-                  <h3 className="display-xl text-lg text-white mt-2 group-hover:grad-text">
-                    {r.name}
-                  </h3>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* E-commerce cross-sell: sibling products, then the service arm. */}
+      <SuggestRail
+        eyebrow={`Related · ${cat.name}`}
+        heading="You may also like."
+        items={relatedItems}
+        viewAll={{ label: "View all products", to: "/products", search: { cat: cat.slug } }}
+      />
+      <SuggestRail
+        eyebrow="Field operations"
+        heading="Pair it with a service."
+        items={pairedServices}
+        viewAll={{ label: "All services", to: "/services" }}
+      />
     </>
-  );
-}
-
-function Panel({
-  title,
-  children,
-  className = "",
-}: {
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={"rounded-3xl glass-dark p-6 " + className}>
-      <div className="micro-label mb-3">{title}</div>
-      {children}
-    </div>
-  );
-}
-
-/* ----------------------------------------------------------- price & share */
-
-function PriceChip({ price }: { price: string }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-leaf/30 bg-leaf/15 px-4 py-2 text-sm font-semibold text-leaf">
-      {price}
-    </span>
-  );
-}
-
-function ShareButton({ name }: { name: string }) {
-  const [copied, setCopied] = useState(false);
-  const share = async () => {
-    const url = typeof location !== "undefined" ? location.href : "";
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: `${name} — LK Chemicals`, url });
-        return;
-      }
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Visitor cancelled the share sheet — nothing to do.
-    }
-  };
-  return (
-    <button
-      type="button"
-      onClick={share}
-      aria-label="Share this product"
-      className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs text-white/80 transition-colors hover:border-cyan-hi hover:text-white"
-    >
-      <Share2 className="h-3.5 w-3.5" /> {copied ? "Link copied!" : "Share"}
-    </button>
-  );
-}
-
-/* ------------------------------------------------------- description clamp */
-
-// Long copy buries the product on phones — clamp it behind a read-more there,
-// show it in full on desktop.
-function ProductDescription({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-  const long = text.length > 180;
-  return (
-    <div>
-      <p
-        className={
-          "text-base lg:text-lg text-white/70 " +
-          (!open && long ? "line-clamp-3 lg:line-clamp-none" : "")
-        }
-      >
-        {text}
-      </p>
-      {long && (
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="lg:hidden mt-1.5 text-sm font-medium text-cyan-hi"
-        >
-          {open ? "Read less" : "Read more"}
-        </button>
-      )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------ image stage */
-
-// Directional cinematic transition: the incoming photo slides and folds in
-// from the side you're heading toward, the outgoing one falls away.
-const stageVariants: Variants = {
-  enter: (d: number) => ({ x: d * 72, opacity: 0, scale: 1.05, rotateY: d * 10 }),
-  center: {
-    x: 0,
-    opacity: 1,
-    scale: 1,
-    rotateY: 0,
-    transition: { type: "spring", stiffness: 220, damping: 27 },
-  },
-  exit: (d: number) => ({
-    x: d * -72,
-    opacity: 0,
-    scale: 0.97,
-    rotateY: d * -8,
-    transition: { duration: 0.28, ease: "easeIn" },
-  }),
-};
-
-// Animated product gallery — crossfading Ken-Burns stage with swipe support
-// on touch devices, hover tilt on desktop, and a polite auto-play that stops
-// the moment the visitor takes over. Falls back to the category photo when a
-// product has no images of its own.
-function ProductGallery({
-  images,
-  catImage,
-  name,
-}: {
-  images: string[];
-  catImage: string;
-  name: string;
-}) {
-  const reduced = useReducedMotion();
-  const [active, setActive] = useState(0);
-  const [dir, setDir] = useState(1);
-  const lastUser = useRef(0);
-  const many = images.length > 1;
-
-  const go = (i: number, user = false) => {
-    if (user) lastUser.current = Date.now();
-    const next = ((i % images.length) + images.length) % images.length;
-    setDir(next > active || (active === images.length - 1 && next === 0) ? 1 : -1);
-    setActive(next);
-  };
-
-  // Auto-advance keeps the stage alive on phones (no hover there), but never
-  // fights the user: any touch/click pauses it for a while.
-  useEffect(() => {
-    if (reduced || !many) return;
-    const id = setInterval(() => {
-      if (document.hidden || Date.now() - lastUser.current < 9000) return;
-      setDir(1);
-      setActive((a) => (a + 1) % images.length);
-    }, 5000);
-    return () => clearInterval(id);
-  }, [images.length, many, reduced]);
-
-  const src = images[active] ?? images[0] ?? null;
-
-  return (
-    <div style={{ perspective: 1000 }}>
-      <motion.div
-        whileHover={reduced ? undefined : { rotateY: 6, rotateX: -4, scale: 1.02 }}
-        transition={{ type: "spring", stiffness: 150, damping: 16 }}
-        style={{ transformStyle: "preserve-3d" }}
-        className="relative h-72 rounded-3xl overflow-hidden glass-dark"
-      >
-        <AnimatePresence initial={false} custom={dir}>
-          {src ? (
-            <motion.div
-              key={src + active}
-              custom={dir}
-              variants={reduced ? undefined : stageVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              drag={many ? "x" : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.16}
-              onDragStart={() => (lastUser.current = Date.now())}
-              onDragEnd={(_, info) => {
-                lastUser.current = Date.now();
-                if (info.offset.x < -56 || info.velocity.x < -420) go(active + 1, true);
-                else if (info.offset.x > 56 || info.velocity.x > 420) go(active - 1, true);
-              }}
-              className={"absolute inset-0 " + (many ? "cursor-grab active:cursor-grabbing" : "")}
-            >
-              <motion.img
-                src={src}
-                alt={name}
-                draggable={false}
-                animate={reduced ? undefined : { scale: [1, 1.07] }}
-                transition={
-                  reduced
-                    ? undefined
-                    : { duration: 9, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }
-                }
-                className="h-full w-full object-cover"
-              />
-            </motion.div>
-          ) : (
-            <div key="fallback" className="absolute inset-0">
-              <img src={catImage} alt="" className="h-full w-full object-cover" />
-              <img
-                src={drumImg}
-                alt={name}
-                className="absolute inset-0 h-full w-full object-contain p-8 mix-blend-screen"
-              />
-            </div>
-          )}
-        </AnimatePresence>
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent" />
-        {many && (
-          <div className="pointer-events-none absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
-            {images.map((_, i) => (
-              <span
-                key={i}
-                className={
-                  "h-1.5 rounded-full transition-all duration-300 " +
-                  (i === active ? "w-6 bg-cyan-hi" : "w-1.5 bg-white/40")
-                }
-              />
-            ))}
-          </div>
-        )}
-      </motion.div>
-      {many && (
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {images.map((s, i) => (
-            <motion.button
-              key={s + i}
-              type="button"
-              onClick={() => go(i, true)}
-              aria-label={`View image ${i + 1}`}
-              whileTap={{ scale: 0.92 }}
-              animate={{ scale: i === active ? 1.06 : 1 }}
-              className={
-                "h-16 w-16 shrink-0 overflow-hidden rounded-xl border transition-all " +
-                (i === active ? "border-cyan-hi" : "border-white/10 opacity-70 hover:opacity-100")
-              }
-            >
-              <img src={s} alt="" className="h-full w-full object-cover" />
-            </motion.button>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }

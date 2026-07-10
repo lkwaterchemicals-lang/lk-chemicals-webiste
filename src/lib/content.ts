@@ -15,9 +15,11 @@ import { type Category, type Product, type ServiceCategory, type Service } from 
 import {
   staticGallery,
   staticTestimonials,
+  staticTeam,
   staticSettings,
   type GalleryItem,
   type Testimonial,
+  type TeamMember,
   type SiteSettings,
 } from "@/data/content";
 
@@ -131,6 +133,20 @@ export function useCareers() {
         );
     },
     initialData: [] as CareerOpening[],
+    ...common,
+  });
+}
+
+export function useTeam() {
+  return useQuery({
+    queryKey: ["content", "team"],
+    queryFn: async () => {
+      const rows = await fetchCollection<TeamMember>("team", staticTeam);
+      return rows
+        .filter(isLive)
+        .sort((a, b) => orderNum(a) - orderNum(b) || String(a.name).localeCompare(String(b.name)));
+    },
+    initialData: staticTeam,
     ...common,
   });
 }

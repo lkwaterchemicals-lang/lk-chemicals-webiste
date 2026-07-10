@@ -1,11 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "motion/react";
+import { Linkedin, Mail, Phone } from "lucide-react";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
 import { Waterline } from "@/components/site/Waterline";
 import { Coverflow3D } from "@/components/site/Coverflow3D";
 import { useAboutContent } from "@/lib/pages";
-import type { ValueItem, Facility } from "@/data/site";
+import { useTeam } from "@/lib/content";
+import { imgFallback } from "@/lib/assets";
+import { aboutContent, type ValueItem, type Facility } from "@/data/site";
+import type { TeamMember } from "@/data/content";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -35,6 +39,7 @@ function AboutPage() {
         <img
           src={c.heroImage}
           alt=""
+          onError={imgFallback(aboutContent.heroImage)}
           className="absolute inset-0 h-full w-full object-cover opacity-40 hero-lighten"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-ink/60 via-ink/40 to-ink hero-lighten-overlay" />
@@ -158,6 +163,10 @@ function AboutPage() {
         </div>
       </section>
 
+      {/* Founder spotlight + team — both fully admin-managed (Content → Team) */}
+      <FounderSection />
+      <TeamSection heading={c.teamHeading} body={c.teamBody} />
+
       <section className="section-dark py-24 text-center">
         <div className="mx-auto max-w-3xl px-6 md:px-8">
           <h2 className="display-xl grad-text" style={{ fontSize: "clamp(2rem, 6vw, 4rem)" }}>
@@ -172,6 +181,178 @@ function AboutPage() {
         </div>
       </section>
     </>
+  );
+}
+
+/* =============== FOUNDER & TEAM =============== */
+
+const initials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w.charAt(0).toUpperCase())
+    .join("");
+
+function ContactRow({ member, className = "" }: { member: TeamMember; className?: string }) {
+  const links = [
+    member.linkedin && {
+      href: member.linkedin,
+      icon: Linkedin,
+      label: `${member.name} on LinkedIn`,
+    },
+    member.email && { href: `mailto:${member.email}`, icon: Mail, label: `Email ${member.name}` },
+    member.phone && {
+      href: `tel:${member.phone.replace(/\s+/g, "")}`,
+      icon: Phone,
+      label: `Call ${member.name}`,
+    },
+  ].filter(Boolean) as { href: string; icon: typeof Mail; label: string }[];
+  if (links.length === 0) return null;
+  return (
+    <div className={"flex flex-wrap items-center gap-2.5 " + className}>
+      {links.map((l) => (
+        <a
+          key={l.href}
+          href={l.href}
+          target={l.href.startsWith("http") ? "_blank" : undefined}
+          rel={l.href.startsWith("http") ? "noreferrer" : undefined}
+          aria-label={l.label}
+          className="grid h-11 w-11 place-items-center rounded-full bg-cyan-hi/12 border border-cyan-hi/25 text-cyan-hi transition-all hover:bg-cyan-hi hover:text-ink hover:scale-105"
+        >
+          <l.icon className="h-4 w-4" />
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function Portrait({ member, big = false }: { member: TeamMember; big?: boolean }) {
+  return member.image ? (
+    <img
+      src={member.image}
+      alt={member.name}
+      loading="lazy"
+      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+    />
+  ) : (
+    <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-royal/45 via-ink-2 to-ink">
+      <span aria-hidden className={"display-xl grad-text " + (big ? "text-8xl" : "text-5xl")}>
+        {initials(member.name)}
+      </span>
+    </div>
+  );
+}
+
+// The founder gets a cinematic spotlight of their own: portrait card on one
+// side, their words on the other. Renders only when a member is flagged
+// "Founder spotlight" in the dashboard.
+function FounderSection() {
+  const { data: team } = useTeam();
+  const founder = team.find((m) => m.founder);
+  if (!founder) return null;
+  return (
+    <section className="section-dark py-28 relative overflow-hidden">
+      <GhostWord className="absolute top-0 left-1/2 -translate-x-1/2 text-[20vw]">
+        FOUNDER
+      </GhostWord>
+      <div className="absolute inset-0 caustics opacity-25" />
+      <div className="relative mx-auto max-w-7xl px-6 md:px-8">
+        <MicroLabel n="05">Founder</MicroLabel>
+        <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-10%" }}
+            transition={{ duration: 0.7 }}
+            className="lg:col-span-5"
+          >
+            <div className="group relative mx-auto max-w-sm lg:max-w-none aspect-[4/5] rounded-[2rem] overflow-hidden glass-dark hover-lift">
+              <Portrait member={founder} big />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+              <div className="absolute bottom-0 inset-x-0 p-6">
+                <div className="display-xl text-2xl sm:text-3xl text-on-media">{founder.name}</div>
+                <div className="mt-1.5 micro-label">{founder.role}</div>
+              </div>
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-10%" }}
+            transition={{ duration: 0.7, delay: 0.12 }}
+            className="lg:col-span-7"
+          >
+            {founder.quote && (
+              <blockquote
+                className="display-xl grad-text leading-[1.04]"
+                style={{ fontSize: "clamp(1.75rem, 4.5vw, 3.4rem)" }}
+              >
+                “{founder.quote}”
+              </blockquote>
+            )}
+            {founder.bio && (
+              <p className="mt-6 max-w-2xl text-base md:text-lg text-white/70">{founder.bio}</p>
+            )}
+            <ContactRow member={founder} className="mt-8" />
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TeamCard({ m, i }: { m: TeamMember; i: number }) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-8%" }}
+      transition={{ delay: (i % 4) * 0.06, duration: 0.55 }}
+      className="group bento-tile rounded-3xl overflow-hidden hover-lift flex flex-col"
+    >
+      <div className="relative aspect-[4/5] overflow-hidden">
+        <Portrait member={m} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+        <div className="absolute bottom-0 inset-x-0 p-4">
+          <h3 className="display-xl text-lg leading-tight text-on-media">{m.name}</h3>
+          <div className="mt-1 text-[10px] tracking-[0.18em] uppercase text-on-media-soft">
+            {m.role}
+          </div>
+        </div>
+      </div>
+      {(m.bio || m.linkedin || m.email || m.phone) && (
+        <div className="flex flex-1 flex-col gap-3 p-4">
+          {m.bio && <p className="text-xs leading-relaxed text-ink/70 line-clamp-3">{m.bio}</p>}
+          <ContactRow member={m} className="mt-auto !gap-2 [&>a]:h-9 [&>a]:w-9" />
+        </div>
+      )}
+    </motion.article>
+  );
+}
+
+function TeamSection({ heading, body }: { heading: string; body: string }) {
+  const { data: team } = useTeam();
+  const members = team.filter((m) => !m.founder);
+  if (members.length === 0) return null;
+  return (
+    <section className="section-light py-28 relative overflow-hidden">
+      <GhostWord className="absolute top-0 left-1/2 -translate-x-1/2 text-[20vw]">TEAM</GhostWord>
+      <div className="relative mx-auto max-w-7xl px-6 md:px-8">
+        <MicroLabel n="06" className="!text-royal">
+          The team
+        </MicroLabel>
+        <h2 className="display-xl mt-3" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>
+          {heading}
+        </h2>
+        {body && <p className="mt-4 max-w-2xl text-ink/70">{body}</p>}
+        <div className="mt-12 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          {members.map((m, i) => (
+            <TeamCard key={m.name + i} m={m} i={i} />
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

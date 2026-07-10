@@ -42,6 +42,20 @@ export type Testimonial = {
   image?: string; // optional headshot / logo
 };
 
+export type TeamMember = {
+  name: string;
+  role: string;
+  bio?: string;
+  quote?: string; // founder spotlight display line
+  image?: string;
+  founder?: boolean;
+  linkedin?: string;
+  email?: string;
+  phone?: string;
+  order?: string;
+  status?: string;
+};
+
 export type SiteSettings = {
   phone: string;
   phone2?: string;
@@ -90,6 +104,17 @@ export const staticGallery: GalleryItem[] = [
   { src: bSoftener, alt: "MS & FRP softener plant", cat: "Services" },
   { src: bTubeScale, alt: "Condenser tube sheet — before and after descaling", cat: "Services" },
   { src: bEtpBeakers, alt: "ETP jar testing", cat: "Laboratory", wide: true },
+];
+
+export const staticTeam: TeamMember[] = [
+  {
+    name: "Shiva Krishna Kangadekar",
+    role: "Founder & Director",
+    founder: true,
+    quote: "Every drum leaves with a batch certificate and a phone number that answers.",
+    bio: "Shiva Krishna started LK Chemicals in 2013 with one plant, one bore well and one problem to solve. More than a decade on he still leads every formulation review — and still picks up the phone himself.",
+    order: "01",
+  },
 ];
 
 export const staticTestimonials: Testimonial[] = [

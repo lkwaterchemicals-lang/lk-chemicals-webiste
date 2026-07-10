@@ -3,12 +3,31 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Database, Image as ImageIcon, LayoutGrid, List, Pencil, Search, Trash2, UploadCloud } from "lucide-react";
+import {
+  Database,
+  Image as ImageIcon,
+  LayoutGrid,
+  List,
+  Pencil,
+  Search,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
 import { uploadToCloudinary } from "@/integrations/cloudinary";
+import { cleanCaption } from "@/lib/assets";
 import { deleteRows, saveRow, seedModule, useCol, useInvalidate } from "@/admin/api";
 import { EditorDrawer } from "@/admin/editor";
 import { moduleById, type Row } from "@/admin/registry";
-import { Badge, Btn, Confirm, Empty, FirestoreError, IconBtn, PageHeader, SkeletonRows } from "@/admin/ui";
+import {
+  Badge,
+  Btn,
+  Confirm,
+  Empty,
+  FirestoreError,
+  IconBtn,
+  PageHeader,
+  SkeletonRows,
+} from "@/admin/ui";
 
 export const Route = createFileRoute("/admin/gallery")({
   head: () => ({ meta: [{ title: "Media — LK Admin" }] }),
@@ -35,7 +54,12 @@ function MediaAdmin() {
     let out = rows;
     if (cat) out = out.filter((r) => r.cat === cat);
     const needle = q.trim().toLowerCase();
-    if (needle) out = out.filter((r) => String(r.alt ?? "").toLowerCase().includes(needle));
+    if (needle)
+      out = out.filter((r) =>
+        String(r.alt ?? "")
+          .toLowerCase()
+          .includes(needle),
+      );
     return out;
   }, [rows, cat, q]);
 
@@ -49,7 +73,9 @@ function MediaAdmin() {
         const res = await uploadToCloudinary(f);
         await saveRow(def, {
           src: res.secure_url,
-          alt: f.name.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " "),
+          // Camera/AI file names ("ChatGPT Image Jul 8…", "IMG_2041") make
+          // terrible public captions — fall back to a category caption.
+          alt: cleanCaption(f.name, `${cat || "Products"} photo`),
           cat: cat || "Products",
         });
       } catch (e) {
@@ -115,10 +141,22 @@ function MediaAdmin() {
                 Seed built-in data
               </Btn>
             )}
-            <Btn variant="primary" icon={UploadCloud} busy={uploading !== null} onClick={() => fileRef.current?.click()}>
+            <Btn
+              variant="primary"
+              icon={UploadCloud}
+              busy={uploading !== null}
+              onClick={() => fileRef.current?.click()}
+            >
               {uploading ? `Uploading ${uploading}` : "Upload images"}
             </Btn>
-            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => void uploadFiles(e.target.files)} />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => void uploadFiles(e.target.files)}
+            />
           </>
         }
       />
@@ -126,28 +164,61 @@ function MediaAdmin() {
       {/* Filters */}
       <div className="a-card flex flex-wrap items-center gap-2 px-4 py-3">
         <div className="relative flex-1 min-w-[160px] max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" style={{ color: "var(--a-text3)" }} />
-          <input className="a-input !pl-8" placeholder="Search captions…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search media" />
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2"
+            style={{ color: "var(--a-text3)" }}
+          />
+          <input
+            className="a-input !pl-8"
+            placeholder="Search captions…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            aria-label="Search media"
+          />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <button type="button" onClick={() => setCat("")} className={`a-badge ${cat === "" ? "a-badge-accent" : "a-badge-neutral"} !cursor-pointer !py-1.5`}>
+          <button
+            type="button"
+            onClick={() => setCat("")}
+            className={`a-badge ${cat === "" ? "a-badge-accent" : "a-badge-neutral"} !cursor-pointer !py-1.5`}
+          >
             All
           </button>
           {CATS.map((c) => (
-            <button key={c} type="button" onClick={() => setCat(c === cat ? "" : c)} className={`a-badge ${cat === c ? "a-badge-accent" : "a-badge-neutral"} !cursor-pointer !py-1.5`}>
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCat(c === cat ? "" : c)}
+              className={`a-badge ${cat === c ? "a-badge-accent" : "a-badge-neutral"} !cursor-pointer !py-1.5`}
+            >
               {c}
             </button>
           ))}
         </div>
         <div className="ml-auto flex items-center gap-1">
-          <IconBtn label="Grid view" icon={LayoutGrid} size="sm" variant={view === "grid" ? "ghost" : "bare"} onClick={() => setView("grid")} />
-          <IconBtn label="List view" icon={List} size="sm" variant={view === "list" ? "ghost" : "bare"} onClick={() => setView("list")} />
+          <IconBtn
+            label="Grid view"
+            icon={LayoutGrid}
+            size="sm"
+            variant={view === "grid" ? "ghost" : "bare"}
+            onClick={() => setView("grid")}
+          />
+          <IconBtn
+            label="List view"
+            icon={List}
+            size="sm"
+            variant={view === "list" ? "ghost" : "bare"}
+            onClick={() => setView("list")}
+          />
         </div>
       </div>
 
       {/* Drop hint overlay */}
       {dragOver && (
-        <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center" style={{ background: "var(--a-overlay)" }}>
+        <div
+          className="pointer-events-none fixed inset-0 z-50 grid place-items-center"
+          style={{ background: "var(--a-overlay)" }}
+        >
           <div className="a-card a-pop flex items-center gap-3 px-8 py-6">
             <UploadCloud className="h-6 w-6" style={{ color: "var(--a-accent)" }} />
             <span className="text-sm font-semibold">Drop to upload</span>
@@ -159,20 +230,33 @@ function MediaAdmin() {
       {error != null ? (
         <FirestoreError error={error} />
       ) : isLoading ? (
-        <div className="a-card"><SkeletonRows n={4} h={80} /></div>
+        <div className="a-card">
+          <SkeletonRows n={4} h={80} />
+        </div>
       ) : filtered.length === 0 ? (
         <div className="a-card">
           <Empty
             icon={ImageIcon}
             title={q || cat ? "No matches" : "No media yet"}
-            body={q || cat ? "Try a different filter." : "Upload images or seed the built-in gallery to get started."}
+            body={
+              q || cat
+                ? "Try a different filter."
+                : "Upload images or seed the built-in gallery to get started."
+            }
           />
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filtered.map((r, i) => (
-            <figure key={r.__id} className="a-card a-card-hover a-rise group overflow-hidden" style={{ animationDelay: `${(i % 10) * 30}ms` }}>
-              <div className="relative aspect-[4/3] overflow-hidden" style={{ background: "var(--a-surface2)" }}>
+            <figure
+              key={r.__id}
+              className="a-card a-card-hover a-rise group overflow-hidden"
+              style={{ animationDelay: `${(i % 10) * 30}ms` }}
+            >
+              <div
+                className="relative aspect-[4/3] overflow-hidden"
+                style={{ background: "var(--a-surface2)" }}
+              >
                 <img
                   src={String(r.src ?? "")}
                   alt={String(r.alt ?? "")}
@@ -200,7 +284,9 @@ function MediaAdmin() {
               </div>
               <figcaption className="flex items-center justify-between gap-2 px-3 py-2">
                 <span className="truncate text-[11px] font-medium">{String(r.alt ?? "")}</span>
-                <Badge tone="neutral" className="!text-[9px] shrink-0">{String(r.cat ?? "")}</Badge>
+                <Badge tone="neutral" className="!text-[9px] shrink-0">
+                  {String(r.cat ?? "")}
+                </Badge>
               </figcaption>
             </figure>
           ))}
@@ -208,8 +294,16 @@ function MediaAdmin() {
       ) : (
         <div className="a-card divide-y overflow-hidden" style={{ borderColor: "var(--a-border)" }}>
           {filtered.map((r) => (
-            <div key={r.__id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--a-hover)]">
-              <img src={String(r.src ?? "")} alt="" loading="lazy" className="h-11 w-16 rounded-lg object-cover shrink-0" />
+            <div
+              key={r.__id}
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--a-hover)]"
+            >
+              <img
+                src={String(r.src ?? "")}
+                alt=""
+                loading="lazy"
+                className="h-11 w-16 rounded-lg object-cover shrink-0"
+              />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[13px] font-medium">{String(r.alt ?? "")}</div>
                 <div className="text-[11px]" style={{ color: "var(--a-text3)" }}>

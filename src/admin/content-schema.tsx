@@ -317,6 +317,19 @@ export const PAGE_SCHEMAS: PageSchema[] = [
         ],
       },
       {
+        title: "Team",
+        fields: [
+          { key: "teamHeading", label: "Heading", type: "text", full: true },
+          {
+            key: "teamBody",
+            label: "Intro",
+            type: "textarea",
+            hint: "Team members themselves are managed under Content → Team",
+            full: true,
+          },
+        ],
+      },
+      {
         title: "Closing call-to-action",
         fields: [
           { key: "ctaHeading", label: "Heading", type: "text", full: true },

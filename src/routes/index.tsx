@@ -5,7 +5,8 @@ import { ArrowDown, Droplets, Star } from "lucide-react";
 import { useCategories, useTestimonials, useSiteSettings } from "@/lib/content";
 import { useHomeContent } from "@/lib/pages";
 import { iconByName } from "@/lib/icons";
-import type { WhyItem } from "@/data/site";
+import { imgFallback } from "@/lib/assets";
+import { homeContent, type WhyItem } from "@/data/site";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { Waterline } from "@/components/site/Waterline";
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
@@ -84,6 +85,7 @@ function Hero() {
         src={c.heroImage}
         alt=""
         aria-hidden
+        onError={imgFallback(homeContent.heroImage)}
         style={{ y, scale, x: mouse.x * -30, translateY: `calc(${mouse.y * -30}px + 0%)` }}
         className="absolute inset-0 h-full w-full object-cover object-[68%_center] md:object-center opacity-70 hero-lighten"
       />
@@ -478,16 +480,25 @@ function WhatWeMakePinned() {
   const [distance, setDistance] = useState(0);
   const { data: categories } = useCategories();
 
+  // The cards arrive from Firestore after mount, so the track grows without a
+  // window resize ever firing — observe the track itself (and re-measure when
+  // the category count changes) or the rail pins with zero travel and the
+  // cards just sit there.
   useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
     const measure = () => {
-      if (trackRef.current) {
-        setDistance(Math.max(0, trackRef.current.scrollWidth - window.innerWidth));
-      }
+      setDistance(Math.max(0, track.scrollWidth - window.innerWidth));
     };
     measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(track);
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [categories.length]);
 
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
   const x = useTransform(scrollYProgress, [0, 1], [0, -distance]);
@@ -691,10 +702,6 @@ function WhyLK() {
   const items = c.whyItems;
   return (
     <section className="section-light py-28 relative overflow-hidden">
-      {/* Centred on phones — right-anchored it cropped at the viewport edge */}
-      <GhostWord className="absolute bottom-2 max-md:left-1/2 max-md:-translate-x-1/2 md:right-0 text-[22vw]">
-        PURITY
-      </GhostWord>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
         <MicroLabel n="07" className="!text-royal">
           Why LK
@@ -746,6 +753,12 @@ function WhyLK() {
           })}
         </div>
       </div>
+      {/* Decorative watermark: in normal flow below the grid on phones (it
+          used to sit behind the last card and read as a cropped glitch);
+          bottom-right anchored only where there's clear space. */}
+      <GhostWord className="max-md:mt-10 max-md:text-center md:absolute md:bottom-2 md:right-0 text-[22vw]">
+        PURITY
+      </GhostWord>
     </section>
   );
 }

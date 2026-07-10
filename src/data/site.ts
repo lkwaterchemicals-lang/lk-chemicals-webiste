@@ -83,6 +83,8 @@ export type AboutContent = {
   visionText: string;
   facilities: Facility[];
   values: ValueItem[];
+  teamHeading: string;
+  teamBody: string;
   ctaHeading: string;
   ctaBody: string;
 };
@@ -316,6 +318,9 @@ export const aboutContent: AboutContent = {
     { title: "Consistency", body: "Batch #4501 is identical to #0001.", img: resin },
     { title: "Partnership", body: "We show up when the plant is down.", img: ct },
   ],
+  teamHeading: "The people behind the chemistry.",
+  teamBody:
+    "Chemists in the lab, engineers on the road and a founder who still answers the phone — meet the crew that keeps a hundred plants running at spec.",
   ctaHeading: "Want to see it for yourself?",
   ctaBody: "Schedule a plant visit or an on-site water survey.",
 };

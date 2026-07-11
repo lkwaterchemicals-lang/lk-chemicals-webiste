@@ -19,6 +19,8 @@ import { ScrollProgress } from "../components/site/ScrollProgress";
 import { SmoothScroll } from "../components/site/SmoothScroll";
 import { WaterCanvas } from "../components/site/WaterCanvas";
 import { BackToTop } from "../components/site/BackToTop";
+import { BootVeil } from "../components/site/BootVeil";
+import { PageFx } from "../components/site/PageFx";
 
 function NotFoundComponent() {
   return (
@@ -217,7 +219,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('lk-theme');if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('lk-theme');if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}try{if(sessionStorage.getItem('lk-boot')){document.documentElement.classList.add('lk-seen');}}catch(e){}})();`,
           }}
         />
       </head>
@@ -246,6 +248,8 @@ function RootComponent() {
         <Outlet />
       ) : (
         <>
+          <BootVeil />
+          <PageFx />
           <SmoothScroll />
           <WaterCanvas />
           <div className="site-shell">

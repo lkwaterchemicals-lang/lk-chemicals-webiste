@@ -5,7 +5,15 @@
 // (labelled file uploads) and MultiRefInput (multi-select of other records).
 // All uploads go through Cloudinary's `auto` endpoint so any file type works.
 import { useRef, useState } from "react";
-import { ArrowDown, ArrowUp, File as FileIcon, Plus, Trash2, UploadCloud } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  File as FileIcon,
+  Link2,
+  Plus,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
 import { toast } from "sonner";
 import { uploadToCloudinary } from "@/integrations/cloudinary";
 import type { FieldDef } from "./registry";
@@ -13,6 +21,9 @@ import { Btn, Field, SelectWrap } from "./ui";
 
 /* ------------------------------------------------------------ image field */
 
+// Once an image is set only the preview shows — the raw URL stays hidden
+// behind an explicit "Edit URL" action so it can't be mangled by an
+// accidental keystroke. Empty state still offers upload OR paste-a-URL.
 export function ImageField({
   value,
   onChange,
@@ -22,6 +33,7 @@ export function ImageField({
 }) {
   const [progress, setProgress] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [editUrl, setEditUrl] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const pick = async (file: File | undefined | null) => {
@@ -30,6 +42,7 @@ export function ImageField({
     try {
       const res = await uploadToCloudinary(file, setProgress);
       onChange(res.secure_url);
+      setEditUrl(false);
       toast.success("Uploaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
@@ -43,7 +56,7 @@ export function ImageField({
       <div
         role="button"
         tabIndex={0}
-        aria-label="Upload image"
+        aria-label={value ? "Replace image" : "Upload image"}
         // This dropzone sits inside the <label> that `Field` renders. A plain
         // click would fire our handler AND the label's default action, which
         // forwards a second click to its first labelable descendant — this
@@ -79,7 +92,7 @@ export function ImageField({
         {value ? (
           <>
             <img src={value} alt="" className="h-40 w-full object-cover" />
-            <div className="absolute inset-0 grid place-items-center bg-black/45 opacity-0 hover:opacity-100 transition-opacity">
+            <div className="absolute inset-0 grid place-items-center bg-black/45 opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity">
               <span className="a-btn a-btn-ghost a-btn-sm !bg-white/90 !text-black">
                 <UploadCloud className="h-3.5 w-3.5" /> Replace
               </span>
@@ -115,25 +128,51 @@ export function ImageField({
         className="hidden"
         onChange={(e) => pick(e.target.files?.[0])}
       />
-      <div className="mt-2 flex items-center gap-2">
-        <input
-          className="a-input !py-1.5 !text-xs"
-          placeholder="…or paste an image URL"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        {value && (
+
+      {!value || editUrl ? (
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            className="a-input !py-1.5 !text-xs"
+            placeholder={value ? "Image URL" : "…or paste an image URL"}
+            value={value}
+            autoFocus={editUrl}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                setEditUrl(false);
+              }
+            }}
+          />
+          {value && (
+            <Btn size="sm" className="shrink-0" onClick={() => setEditUrl(false)}>
+              Done
+            </Btn>
+          )}
+        </div>
+      ) : (
+        <div className="mt-2 flex items-center gap-1.5">
+          <Btn size="sm" icon={UploadCloud} onClick={() => fileRef.current?.click()}>
+            Replace
+          </Btn>
+          <Btn size="sm" icon={Link2} onClick={() => setEditUrl(true)}>
+            Edit URL
+          </Btn>
           <button
             type="button"
-            className="a-btn a-btn-bare a-btn-sm a-iconbtn shrink-0"
+            className="a-btn a-btn-bare a-btn-sm a-iconbtn ml-auto shrink-0"
             aria-label="Remove image"
             title="Remove image"
-            onClick={() => onChange("")}
+            onClick={() => {
+              onChange("");
+              setEditUrl(false);
+            }}
+            style={{ color: "var(--a-danger)" }}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

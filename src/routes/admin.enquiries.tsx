@@ -173,13 +173,13 @@ function EnquiriesAdmin() {
         title="Enquiries"
         sub="Every form submission from the public site, newest first."
         actions={
-          <div className="a-card flex items-center gap-1 p-1">
+          <div className="a-pills a-card p-1">
             {STATUSES.map((s) => (
               <button
                 key={s.id}
                 type="button"
                 onClick={() => setTab(s.id)}
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+                className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
                 style={
                   tab === s.id
                     ? { background: "var(--a-accent-soft)", color: "var(--a-accent)" }

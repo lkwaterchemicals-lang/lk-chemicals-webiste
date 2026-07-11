@@ -110,6 +110,8 @@ export type ContactContent = {
   heroHeading: string;
   heroBody: string;
   coordinates: string;
+  /** Google Maps embed — the Share → "Embed a map" URL (or full iframe HTML). */
+  mapEmbed: string;
 };
 
 /* --------------------------------------------------------------- defaults */
@@ -354,4 +356,5 @@ export const contactContent: ContactContent = {
   heroBody:
     "Shiva Krishna picks up the phone himself. Or send a note — we reply within a business day.",
   coordinates: "17.4948° N · 78.5719° E",
+  mapEmbed: "",
 };

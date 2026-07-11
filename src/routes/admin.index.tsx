@@ -237,13 +237,22 @@ function DashboardPage() {
         <Card
           title="Lead flow — last 30 days"
           action={
-            <Link
-              to="/admin/enquiries"
-              className="text-xs font-medium inline-flex items-center gap-1"
-              style={{ color: "var(--a-accent)" }}
-            >
-              Open inbox <ArrowRight className="h-3 w-3" />
-            </Link>
+            <span className="flex items-center gap-3">
+              <Link
+                to="/admin/analytics"
+                className="text-xs font-medium inline-flex items-center gap-1"
+                style={{ color: "var(--a-accent)" }}
+              >
+                Insights <ArrowRight className="h-3 w-3" />
+              </Link>
+              <Link
+                to="/admin/enquiries"
+                className="text-xs font-medium inline-flex items-center gap-1"
+                style={{ color: "var(--a-accent)" }}
+              >
+                Open inbox <ArrowRight className="h-3 w-3" />
+              </Link>
+            </span>
           }
         >
           <div className="h-56">

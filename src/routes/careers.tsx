@@ -1,11 +1,15 @@
 // Careers — join-the-crew page. Openings are fully admin-managed (the
 // `careers` module in the dashboard); the page renders published roles with
-// apply-by-email and WhatsApp, and a speculative CTA when nothing is open.
+// an in-page application form (saved to `applications`, reviewed in the
+// admin), WhatsApp as the fast lane, and a speculative CTA when nothing is
+// open.
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowUpRight,
   Briefcase,
+  CheckCircle2,
   Clock,
   FlaskConical,
   GraduationCap,
@@ -16,8 +20,9 @@ import {
 } from "lucide-react";
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
 import { LiquidButton } from "@/components/site/LiquidButton";
+import { ApplyDialog } from "@/components/site/ApplyDialog";
 import { waLink } from "@/components/site/WaCluster";
-import { useCareers, useSiteSettings, type CareerOpening } from "@/lib/content";
+import { useCareers, type CareerOpening } from "@/lib/content";
 
 export const Route = createFileRoute("/careers")({
   head: () => ({
@@ -63,14 +68,9 @@ const PERKS = [
 
 function CareersPage() {
   const { data: openings } = useCareers();
-  const { data: s } = useSiteSettings();
-
-  const applyMail = (job?: CareerOpening) =>
-    `mailto:${s.email}?subject=${encodeURIComponent(
-      job ? `Application — ${job.title}` : "Job application — LK Chemicals",
-    )}&body=${encodeURIComponent(
-      "Hi LK Chemicals,\n\nI'd like to apply. My resume is attached.\n\nName:\nPhone:\nCurrent role:\n",
-    )}`;
+  // The apply dialog target: a specific opening, "general" for a speculative
+  // application, or null when closed.
+  const [applyFor, setApplyFor] = useState<CareerOpening | "general" | null>(null);
 
   return (
     <>
@@ -142,7 +142,7 @@ function CareersPage() {
                 right seat opens.
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <LiquidButton href={applyMail()} variant="primary">
+                <LiquidButton onClick={() => setApplyFor("general")} variant="primary">
                   Send your resume
                 </LiquidButton>
                 <LiquidButton
@@ -197,18 +197,32 @@ function CareersPage() {
                       ))}
                     </ul>
                   )}
+                  {(job.requirements ?? []).length > 0 && (
+                    <div className="relative mt-4">
+                      <div className="micro-label">What we look for</div>
+                      <ul className="mt-2 space-y-1.5 text-sm text-white/60">
+                        {(job.requirements ?? []).slice(0, 4).map((r) => (
+                          <li key={r} className="flex gap-2">
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-leaf" />
+                            {r}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="relative mt-6 flex flex-wrap items-center gap-3 pt-2">
-                    <a
-                      href={applyMail(job)}
-                      className="inline-flex items-center gap-2 rounded-full bg-cyan-hi px-5 py-2.5 text-sm font-medium text-ink shadow-[0_10px_30px_-10px_var(--cyan-hi)] transition-all hover:brightness-110"
+                    <button
+                      type="button"
+                      onClick={() => setApplyFor(job)}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full bg-cyan-hi px-5 py-2.5 text-sm font-medium text-ink shadow-[0_10px_30px_-10px_var(--cyan-hi)] transition-all hover:brightness-110"
                     >
                       <Send className="h-4 w-4" /> Apply now
-                    </a>
+                    </button>
                     <a
                       href={waLink(`Hi LK Chemicals, I'd like to apply for ${job.title}.`)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm text-white/80 transition-colors hover:border-cyan-hi hover:text-white"
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm text-white/80 transition-colors hover:border-cyan-hi hover:text-white"
                     >
                       WhatsApp <ArrowUpRight className="h-4 w-4" />
                     </a>
@@ -221,14 +235,24 @@ function CareersPage() {
           {openings.length > 0 && (
             <p className="mt-10 text-sm text-white/50">
               Didn't find your role?{" "}
-              <a href={applyMail()} className="text-cyan-hi underline underline-offset-4">
+              <button
+                type="button"
+                onClick={() => setApplyFor("general")}
+                className="text-cyan-hi underline underline-offset-4 hover:text-white transition-colors"
+              >
                 Send us your resume anyway
-              </a>{" "}
+              </button>{" "}
               — good people get remembered.
             </p>
           )}
         </div>
       </section>
+
+      <ApplyDialog
+        open={applyFor !== null}
+        job={applyFor === "general" ? null : applyFor}
+        onClose={() => setApplyFor(null)}
+      />
     </>
   );
 }

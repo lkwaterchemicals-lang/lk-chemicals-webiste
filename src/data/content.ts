@@ -32,6 +32,8 @@ export type GalleryItem = {
   cat: string;
   tall?: boolean;
   wide?: boolean;
+  /** Optional — YouTube link or uploaded video URL; `src` is the poster. */
+  video?: string;
 };
 
 export type Testimonial = {
@@ -39,7 +41,8 @@ export type Testimonial = {
   who: string;
   company?: string;
   rating?: string; // "3"–"5" — optional gold stars
-  image?: string; // optional headshot / logo
+  image?: string; // legacy single headshot / logo (older records)
+  images?: string[]; // one or more photos / logos
 };
 
 export type TeamMember = {

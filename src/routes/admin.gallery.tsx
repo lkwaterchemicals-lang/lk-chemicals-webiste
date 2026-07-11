@@ -1,7 +1,10 @@
-// Media library — grid/list views, multi-file drag & drop upload straight to
-// Cloudinary, category filters, edit drawer, delete with undo.
+// Gallery — the one place for everything the public gallery shows: grid/list
+// views, multi-file image & video drag-drop upload straight to Cloudinary,
+// YouTube links, category filters, edit drawer, delete with undo, and the
+// gallery page heading (inline, instead of a separate content page).
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
+import { doc, setDoc } from "firebase/firestore/lite";
 import { toast } from "sonner";
 import {
   Database,
@@ -9,13 +12,19 @@ import {
   LayoutGrid,
   List,
   Pencil,
+  Play,
   Search,
   Trash2,
+  Type,
   UploadCloud,
+  Youtube,
 } from "lucide-react";
+import { db } from "@/integrations/firebase/client";
 import { uploadToCloudinary } from "@/integrations/cloudinary";
 import { cleanCaption } from "@/lib/assets";
-import { deleteRows, saveRow, seedModule, useCol, useInvalidate } from "@/admin/api";
+import { cloudinaryPoster, videoInfo, youTubeId, youTubeThumb } from "@/lib/media";
+import { useGalleryContent } from "@/lib/pages";
+import { deleteRows, logActivity, saveRow, seedModule, useCol, useInvalidate } from "@/admin/api";
 import { EditorDrawer } from "@/admin/editor";
 import { moduleById, type Row } from "@/admin/registry";
 import {
@@ -23,21 +32,24 @@ import {
   Btn,
   Confirm,
   Empty,
+  Field,
   FirestoreError,
   IconBtn,
+  Modal,
   PageHeader,
+  SelectWrap,
   SkeletonRows,
 } from "@/admin/ui";
 
 export const Route = createFileRoute("/admin/gallery")({
-  head: () => ({ meta: [{ title: "Media — LK Admin" }] }),
-  component: MediaAdmin,
+  head: () => ({ meta: [{ title: "Gallery — LK Admin" }] }),
+  component: GalleryAdmin,
 });
 
 const def = moduleById("gallery");
 const CATS = ["Factory", "Laboratory", "Products", "Services", "Team"];
 
-function MediaAdmin() {
+function GalleryAdmin() {
   const { data: rows = [], isLoading, error } = useCol("gallery");
   const invalidate = useInvalidate();
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -48,6 +60,7 @@ function MediaAdmin() {
   const [uploading, setUploading] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [ytOpen, setYtOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
@@ -65,17 +78,25 @@ function MediaAdmin() {
 
   const uploadFiles = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
-    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const list = Array.from(files).filter(
+      (f) => f.type.startsWith("image/") || f.type.startsWith("video/"),
+    );
+    if (list.length === 0) {
+      toast.error("Only image or video files can go in the gallery.");
+      return;
+    }
     for (let i = 0; i < list.length; i++) {
       const f = list[i];
       setUploading(list.length > 1 ? `${i + 1}/${list.length} — ${f.name}` : f.name);
       try {
         const res = await uploadToCloudinary(f);
+        const isVideo = f.type.startsWith("video/") || res.resource_type === "video";
         await saveRow(def, {
-          src: res.secure_url,
-          // Camera/AI file names ("ChatGPT Image Jul 8…", "IMG_2041") make
-          // terrible public captions — fall back to a category caption.
-          alt: cleanCaption(f.name, `${cat || "Products"} photo`),
+          // Videos store their playback URL and show Cloudinary's first
+          // frame as the poster; photos keep src only.
+          src: isVideo ? (cloudinaryPoster(res.secure_url) ?? res.secure_url) : res.secure_url,
+          video: isVideo ? res.secure_url : "",
+          alt: cleanCaption(f.name, `${cat || "Products"} ${isVideo ? "video" : "photo"}`),
           cat: cat || "Products",
         });
       } catch (e) {
@@ -84,7 +105,7 @@ function MediaAdmin() {
     }
     setUploading(null);
     invalidate("gallery");
-    toast.success(list.length > 1 ? `${list.length} images uploaded` : "Image uploaded");
+    toast.success(list.length > 1 ? `${list.length} files uploaded` : "Uploaded");
   };
 
   const doDelete = async (row: Row) => {
@@ -119,10 +140,11 @@ function MediaAdmin() {
       }}
     >
       <PageHeader
-        title="Media"
-        sub={`${rows.length} items in the public gallery · drop images anywhere on this page to upload`}
+        title="Gallery"
+        sub={`${rows.length} items on the public gallery · drop images or videos anywhere on this page to upload`}
         actions={
           <>
+            <HeadingEditor />
             {rows.length === 0 && !isLoading && error == null && (
               <Btn
                 icon={Database}
@@ -141,18 +163,21 @@ function MediaAdmin() {
                 Seed built-in data
               </Btn>
             )}
+            <Btn icon={Youtube} onClick={() => setYtOpen(true)}>
+              Add YouTube video
+            </Btn>
             <Btn
               variant="primary"
               icon={UploadCloud}
               busy={uploading !== null}
               onClick={() => fileRef.current?.click()}
             >
-              {uploading ? `Uploading ${uploading}` : "Upload images"}
+              {uploading ? `Uploading ${uploading}` : "Upload"}
             </Btn>
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               multiple
               className="hidden"
               onChange={(e) => void uploadFiles(e.target.files)}
@@ -173,7 +198,7 @@ function MediaAdmin() {
             placeholder="Search captions…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            aria-label="Search media"
+            aria-label="Search gallery"
           />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -241,7 +266,7 @@ function MediaAdmin() {
             body={
               q || cat
                 ? "Try a different filter."
-                : "Upload images or seed the built-in gallery to get started."
+                : "Upload images or videos, add a YouTube link, or seed the built-in gallery."
             }
           />
         </div>
@@ -263,7 +288,12 @@ function MediaAdmin() {
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
                 />
-                <div className="absolute inset-x-0 top-0 flex justify-end gap-1 p-2 opacity-0 transition-opacity group-hover:opacity-100">
+                {videoInfo(typeof r.video === "string" ? r.video : "") && (
+                  <span className="absolute bottom-2 left-2 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white">
+                    <Play className="h-3.5 w-3.5 fill-current" />
+                  </span>
+                )}
+                <div className="absolute inset-x-0 top-0 flex justify-end gap-1 p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                   <button
                     type="button"
                     aria-label="Edit"
@@ -298,16 +328,24 @@ function MediaAdmin() {
               key={r.__id}
               className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--a-hover)]"
             >
-              <img
-                src={String(r.src ?? "")}
-                alt=""
-                loading="lazy"
-                className="h-11 w-16 rounded-lg object-cover shrink-0"
-              />
+              <div className="relative shrink-0">
+                <img
+                  src={String(r.src ?? "")}
+                  alt=""
+                  loading="lazy"
+                  className="h-11 w-16 rounded-lg object-cover"
+                />
+                {videoInfo(typeof r.video === "string" ? r.video : "") && (
+                  <span className="absolute inset-0 grid place-items-center rounded-lg bg-black/35 text-white">
+                    <Play className="h-3.5 w-3.5 fill-current" />
+                  </span>
+                )}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[13px] font-medium">{String(r.alt ?? "")}</div>
                 <div className="text-[11px]" style={{ color: "var(--a-text3)" }}>
                   {String(r.cat ?? "")}
+                  {r.video ? " · video" : ""}
                   {r.wide ? " · wide" : ""}
                   {r.tall ? " · tall" : ""}
                 </div>
@@ -325,9 +363,23 @@ function MediaAdmin() {
         initial={editing}
         onClose={() => setEditing(null)}
         onSave={async (values) => {
+          // A YouTube link with no explicit thumbnail gets one automatically.
+          const yt = youTubeId(String(values.video ?? ""));
+          if (yt && !String(values.src ?? "").trim()) values.src = youTubeThumb(yt);
           await saveRow(def, values, (editing?.__id as string) || undefined);
           invalidate("gallery");
           toast.success("Saved");
+        }}
+      />
+
+      <YouTubeModal
+        open={ytOpen}
+        onClose={() => setYtOpen(false)}
+        defaultCat={cat || "Factory"}
+        onAdd={async (values) => {
+          await saveRow(def, values);
+          invalidate("gallery");
+          toast.success("Video added to the gallery");
         }}
       />
 
@@ -341,5 +393,169 @@ function MediaAdmin() {
         body="It disappears from the public gallery immediately. You can undo from the toast."
       />
     </div>
+  );
+}
+
+/* ------------------------------------------------- YouTube link modal */
+
+function YouTubeModal({
+  open,
+  onClose,
+  defaultCat,
+  onAdd,
+}: {
+  open: boolean;
+  onClose: () => void;
+  defaultCat: string;
+  onAdd: (values: Record<string, unknown>) => Promise<void>;
+}) {
+  const [url, setUrl] = useState("");
+  const [caption, setCaption] = useState("");
+  const [cat, setCat] = useState(defaultCat);
+  const [busy, setBusy] = useState(false);
+  const id = youTubeId(url);
+
+  const close = () => {
+    setUrl("");
+    setCaption("");
+    onClose();
+  };
+
+  const add = async () => {
+    if (!id) {
+      toast.error("That doesn't look like a YouTube link.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await onAdd({
+        src: youTubeThumb(id),
+        video: url.trim(),
+        alt: caption.trim() || "Video",
+        cat: cat || "Factory",
+      });
+      close();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't add the video");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={close}
+      title="Add a YouTube video"
+      footer={
+        <>
+          <Btn onClick={close}>Cancel</Btn>
+          <Btn variant="primary" busy={busy} disabled={!id} onClick={add}>
+            Add video
+          </Btn>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Field label="YouTube link" required hint="watch, share or Shorts link">
+          <input
+            className="a-input"
+            placeholder="https://youtube.com/watch?v=…"
+            value={url}
+            autoFocus
+            onChange={(e) => setUrl(e.target.value)}
+          />
+        </Field>
+        {id && (
+          <img
+            src={youTubeThumb(id)}
+            alt=""
+            className="w-full rounded-xl object-cover"
+            style={{ border: "1px solid var(--a-border)" }}
+          />
+        )}
+        <Field label="Caption">
+          <input
+            className="a-input"
+            placeholder="e.g. Plant walkthrough"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+          />
+        </Field>
+        <Field label="Category">
+          <SelectWrap>
+            <select className="a-select" value={cat} onChange={(e) => setCat(e.target.value)}>
+              {CATS.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </SelectWrap>
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
+/* ------------------------------------- inline gallery page heading editor */
+
+function HeadingEditor() {
+  const { data: c } = useGalleryContent();
+  const invalidate = useInvalidate();
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const heading = value ?? c.heroHeading;
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      await setDoc(doc(db, "pages", "gallery"), { heroHeading: heading.trim() }, { merge: true });
+      void logActivity("updated", "pages", "Gallery page heading");
+      invalidate("gallery");
+      toast.success("Heading saved — live on the site");
+      setOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't save the heading");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <Btn icon={Type} onClick={() => setOpen(true)}>
+        Page heading
+      </Btn>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Gallery page heading"
+        footer={
+          <>
+            <Btn onClick={() => setOpen(false)}>Cancel</Btn>
+            <Btn variant="primary" busy={busy} onClick={save}>
+              Save
+            </Btn>
+          </>
+        }
+      >
+        <Field label="Heading" hint="The big line at the top of the public gallery">
+          <input
+            className="a-input"
+            value={heading}
+            autoFocus
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void save();
+              }
+            }}
+          />
+        </Field>
+      </Modal>
+    </>
   );
 }

@@ -3,11 +3,11 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { signOut, type User } from "firebase/auth";
 import { Command } from "cmdk";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 import {
   Activity,
-  ChevronsLeft,
+  BarChart3,
   ExternalLink,
   FileText,
   Inbox,
@@ -24,8 +24,9 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { auth } from "@/integrations/firebase/auth";
 import logoUrl from "@/assets/lk-logo.png";
-import { MODULES, moduleById } from "./registry";
-import { useCol, useEnquiries } from "./api";
+import { PAGE_SCHEMAS } from "./content-schema";
+import { MODULES, moduleById, type Row } from "./registry";
+import { useApplications, useCol, useEnquiries } from "./api";
 import type { AdminTheme } from "./theme";
 import { IconBtn } from "./ui";
 
@@ -49,7 +50,9 @@ function useNav(): NavSection[] {
   const team = useCol("team").data?.length;
   const careers = useCol("careers").data?.length;
   const enquiries = useEnquiries().data;
+  const applications = useApplications().data;
   const newEnq = enquiries?.filter((e) => !e.status || e.status === "new").length ?? 0;
+  const newApps = applications?.filter((a) => !a.status || a.status === "new").length ?? 0;
 
   return [
     {
@@ -63,6 +66,7 @@ function useNav(): NavSection[] {
           key: "e",
           badge: newEnq || undefined,
         },
+        { to: "/admin/analytics", label: "Insights", icon: BarChart3, key: "i" },
         { to: "/admin/activity", label: "Activity", icon: Activity, key: "a" },
       ],
     },
@@ -110,7 +114,7 @@ function useNav(): NavSection[] {
         { to: "/admin/content", label: "Website pages", icon: FileText, key: "w" },
         {
           to: "/admin/gallery",
-          label: "Media",
+          label: "Gallery",
           icon: moduleById("gallery").icon,
           key: "m",
           count: gallery,
@@ -135,6 +139,7 @@ function useNav(): NavSection[] {
           icon: moduleById("careers").icon,
           key: "j",
           count: careers,
+          badge: newApps || undefined,
         },
       ],
     },
@@ -232,6 +237,111 @@ function Brand({ compact }: { compact?: boolean }) {
 
 /* ---------------------------------------------------------------- palette */
 
+type RecordHit = {
+  id: string;
+  title: string;
+  sub: string;
+  /** everything the fuzzy filter may match against */
+  haystack: string;
+  icon: LucideIcon;
+  moduleLabel: string;
+  to: string;
+  q: string;
+  /** extra search params merged into the navigation (e.g. tab) */
+  extra?: Record<string, string>;
+};
+
+// Builds the global search index: every record of every module plus every
+// enquiry — so typing any fragment (even one letter) surfaces live data.
+function useRecordIndex(): RecordHit[] {
+  const products = useCol("products").data;
+  const categories = useCol("categories").data;
+  const serviceCategories = useCol("serviceCategories").data;
+  const services = useCol("services").data;
+  const gallery = useCol("gallery").data;
+  const testimonials = useCol("testimonials").data;
+  const team = useCol("team").data;
+  const careers = useCol("careers").data;
+  const enquiries = useEnquiries().data;
+  const applications = useApplications().data;
+
+  return useMemo(() => {
+    const hits: RecordHit[] = [];
+    const byModule: [string, Row[] | undefined][] = [
+      ["products", products],
+      ["categories", categories],
+      ["serviceCategories", serviceCategories],
+      ["services", services],
+      ["gallery", gallery],
+      ["testimonials", testimonials],
+      ["team", team],
+      ["careers", careers],
+    ];
+    for (const [id, rows] of byModule) {
+      const def = moduleById(id);
+      for (const r of rows ?? []) {
+        const title = String(r[def.titleField] ?? r.__id);
+        const sub = def.subtitleField ? String(r[def.subtitleField] ?? "") : "";
+        hits.push({
+          id: `${id}:${r.__id}`,
+          title,
+          sub,
+          haystack:
+            `${title} ${sub} ${r.__id} ${String(r.description ?? "")} ${String(r.q ?? "")}`.slice(
+              0,
+              300,
+            ),
+          icon: def.icon,
+          moduleLabel: def.label,
+          to: `/admin/${id}`,
+          q: title,
+        });
+      }
+    }
+    for (const e of enquiries ?? []) {
+      const title = String(e.name ?? "Enquiry");
+      hits.push({
+        id: `enquiries:${e.__id}`,
+        title,
+        sub: String(e.requirement ?? "").slice(0, 80),
+        haystack: `${title} ${e.company ?? ""} ${e.phone ?? ""} ${e.email ?? ""} ${String(
+          e.requirement ?? "",
+        ).slice(0, 200)}`,
+        icon: Inbox,
+        moduleLabel: "Enquiries",
+        to: "/admin/enquiries",
+        q: title,
+      });
+    }
+    for (const a of applications ?? []) {
+      const title = String(a.name ?? "Applicant");
+      hits.push({
+        id: `applications:${a.__id}`,
+        title,
+        sub: `applied — ${String(a.jobTitle ?? "")}`,
+        haystack: `${title} ${a.phone ?? ""} ${a.email ?? ""} ${a.jobTitle ?? ""}`,
+        icon: moduleById("careers").icon,
+        moduleLabel: "Applications",
+        to: "/admin/careers",
+        q: title,
+        extra: { tab: "applications" },
+      });
+    }
+    return hits;
+  }, [
+    products,
+    categories,
+    serviceCategories,
+    services,
+    gallery,
+    testimonials,
+    team,
+    careers,
+    enquiries,
+    applications,
+  ]);
+}
+
 function CommandPalette({
   open,
   onClose,
@@ -243,10 +353,7 @@ function CommandPalette({
 }) {
   const navigate = useNavigate();
   const sections = useNav();
-  const products = useCol("products").data ?? [];
-  const services = useCol("services").data ?? [];
-  const ProductIcon = moduleById("products").icon;
-  const ServiceIcon = moduleById("services").icon;
+  const records = useRecordIndex();
 
   if (!open) return null;
 
@@ -257,7 +364,7 @@ function CommandPalette({
 
   return (
     <div className="a-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="mx-auto mt-[12vh] w-full max-w-lg px-4">
+      <div className="mx-auto mt-[8vh] sm:mt-[12vh] w-full max-w-xl px-3 sm:px-4">
         <Command
           label="Command palette"
           className="a-card a-cmdk a-pop overflow-hidden"
@@ -270,13 +377,19 @@ function CommandPalette({
             <Search className="h-4 w-4 shrink-0" style={{ color: "var(--a-text3)" }} />
             <Command.Input
               autoFocus
-              placeholder="Search modules, records, actions…"
-              className="w-full bg-transparent py-3.5 text-sm outline-none"
-              style={{ color: "var(--a-text)" }}
+              placeholder="Search records, modules, actions…"
+              className="a-cmdk-input min-w-0 flex-1"
             />
-            <span className="a-kbd shrink-0">esc</span>
+            <button
+              type="button"
+              className="a-kbd shrink-0 cursor-pointer"
+              onClick={onClose}
+              aria-label="Close search"
+            >
+              esc
+            </button>
           </div>
-          <Command.List className="max-h-[46vh] overflow-y-auto p-2">
+          <Command.List className="max-h-[min(60vh,420px)] overflow-y-auto overflow-x-hidden p-2">
             <Command.Empty
               className="py-8 text-center text-[13px]"
               style={{ color: "var(--a-text3)" }}
@@ -292,13 +405,60 @@ function CommandPalette({
                     value={`go ${it.label}`}
                     onSelect={() => go(() => navigate({ to: it.to }))}
                   >
-                    <it.icon className="h-4 w-4" /> {it.label}
-                    <span className="ml-auto flex items-center gap-1">
+                    <it.icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{it.label}</span>
+                    <span className="ml-auto hidden sm:flex items-center gap-1">
                       <span className="a-kbd">g</span>
                       <span className="a-kbd">{it.key}</span>
                     </span>
                   </Command.Item>
                 ))}
+            </Command.Group>
+            {records.length > 0 && (
+              <Command.Group heading="Records">
+                {records.map((r) => (
+                  <Command.Item
+                    key={r.id}
+                    // The id suffix keeps every value unique for cmdk even
+                    // when two records share the same visible text.
+                    value={`${r.haystack} ${r.id}`}
+                    keywords={[r.moduleLabel]}
+                    onSelect={() =>
+                      go(() => navigate({ to: r.to, search: { q: r.q, ...r.extra } as never }))
+                    }
+                  >
+                    <r.icon className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {r.title}
+                      {r.sub && (
+                        <span className="ml-1.5 text-[11px]" style={{ color: "var(--a-text3)" }}>
+                          {r.sub}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className="ml-auto shrink-0 text-[10px] uppercase tracking-wider"
+                      style={{ color: "var(--a-text3)" }}
+                    >
+                      {r.moduleLabel}
+                    </span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
+            <Command.Group heading="Website pages">
+              {PAGE_SCHEMAS.map((p) => (
+                <Command.Item
+                  key={p.id}
+                  value={`page ${p.label} ${p.description}`}
+                  onSelect={() =>
+                    go(() => navigate({ to: "/admin/content/$page", params: { page: p.id } }))
+                  }
+                >
+                  <p.icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{p.label} page</span>
+                </Command.Item>
+              ))}
             </Command.Group>
             <Command.Group heading="Create">
               {MODULES.map((m) => (
@@ -309,60 +469,22 @@ function CommandPalette({
                     go(() => navigate({ to: `/admin/${m.id}`, search: { new: "1" } as never }))
                   }
                 >
-                  <Plus className="h-4 w-4" /> New {m.singular}
+                  <Plus className="h-4 w-4 shrink-0" /> New {m.singular}
                 </Command.Item>
               ))}
             </Command.Group>
-            {(products.length > 0 || services.length > 0) && (
-              <Command.Group heading="Records">
-                {products.slice(0, 40).map((p) => (
-                  <Command.Item
-                    key={p.__id}
-                    value={`product ${String(p.name ?? p.__id)}`}
-                    onSelect={() =>
-                      go(() =>
-                        navigate({
-                          to: "/admin/products",
-                          search: { q: String(p.name ?? "") } as never,
-                        }),
-                      )
-                    }
-                  >
-                    <ProductIcon className="h-4 w-4" />
-                    <span className="truncate">{String(p.name ?? p.__id)}</span>
-                  </Command.Item>
-                ))}
-                {services.slice(0, 20).map((s) => (
-                  <Command.Item
-                    key={s.__id}
-                    value={`service ${String(s.name ?? s.__id)}`}
-                    onSelect={() =>
-                      go(() =>
-                        navigate({
-                          to: "/admin/services",
-                          search: { q: String(s.name ?? "") } as never,
-                        }),
-                      )
-                    }
-                  >
-                    <ServiceIcon className="h-4 w-4" />
-                    <span className="truncate">{String(s.name ?? s.__id)}</span>
-                  </Command.Item>
-                ))}
-              </Command.Group>
-            )}
             <Command.Group heading="General">
               <Command.Item value="toggle theme dark light" onSelect={() => go(toggleTheme)}>
-                <Sun className="h-4 w-4" /> Toggle theme
+                <Sun className="h-4 w-4 shrink-0" /> Toggle theme
               </Command.Item>
               <Command.Item
                 value="view public site"
                 onSelect={() => go(() => window.open("/", "_blank"))}
               >
-                <ExternalLink className="h-4 w-4" /> View public site
+                <ExternalLink className="h-4 w-4 shrink-0" /> View public site
               </Command.Item>
               <Command.Item value="sign out log out" onSelect={() => go(() => signOut(auth))}>
-                <LogOut className="h-4 w-4" /> Sign out
+                <LogOut className="h-4 w-4 shrink-0" /> Sign out
               </Command.Item>
             </Command.Group>
           </Command.List>
@@ -401,6 +523,13 @@ export function AdminShell({
       localStorage.setItem("adm-side", c ? "0" : "1");
       return !c;
     });
+  };
+
+  // ONE menu button for every screen size: on desktop it collapses/expands
+  // the sidebar rail, on phones/tablets it opens the drawer.
+  const onMenu = () => {
+    if (matchMedia("(min-width: 1024px)").matches) toggleCollapsed();
+    else setMobileOpen(true);
   };
 
   // Global shortcuts: ⌘K palette, g-then-key navigation.
@@ -451,30 +580,12 @@ export function AdminShell({
         className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen transition-[width] duration-200 ${collapsed ? "w-[68px]" : "w-60"}`}
         style={{ borderRight: "1px solid var(--a-border)", background: "var(--a-surface)" }}
       >
-        <div
-          className={`flex items-center py-4 ${collapsed ? "justify-center px-2" : "justify-between px-4"}`}
-        >
+        <div className={`flex items-center py-4 ${collapsed ? "justify-center px-2" : "px-4"}`}>
           <Brand compact={collapsed} />
-          {!collapsed && (
-            <IconBtn
-              label="Collapse sidebar"
-              icon={ChevronsLeft}
-              size="sm"
-              onClick={toggleCollapsed}
-            />
-          )}
         </div>
         <div className="flex-1 overflow-y-auto">
           <SideNav sections={sections} collapsed={collapsed} />
         </div>
-        {collapsed && (
-          <div
-            className="grid place-items-center py-3"
-            style={{ borderTop: "1px solid var(--a-border)" }}
-          >
-            <IconBtn label="Expand sidebar" icon={Menu} size="sm" onClick={toggleCollapsed} />
-          </div>
-        )}
       </aside>
 
       {/* Mobile drawer */}
@@ -513,12 +624,7 @@ export function AdminShell({
             borderBottom: "1px solid var(--a-border)",
           }}
         >
-          <IconBtn
-            label="Open menu"
-            icon={Menu}
-            className="lg:hidden"
-            onClick={() => setMobileOpen(true)}
-          />
+          <IconBtn label="Toggle menu" icon={Menu} onClick={onMenu} />
           <span className="lg:hidden">
             <Brand compact />
           </span>

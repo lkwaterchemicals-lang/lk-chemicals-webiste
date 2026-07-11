@@ -362,6 +362,72 @@
   padding: 0.75rem 0.75rem 0.3rem;
 }
 
+/* The palette input must stay a quiet, borderless bar that fits its row —
+   !important shields it from the public site's `.light form input` rules. */
+.adm .a-cmdk-input,
+.adm .a-cmdk input[cmdk-input] {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0.875rem 0 !important;
+  font-size: 0.875rem;
+  color: var(--a-text) !important;
+  width: 100%;
+  min-width: 0;
+}
+.adm .a-cmdk-input::placeholder { color: var(--a-text3) !important; }
+
+/* ---- public-style leak guard ------------------------------------------
+   styles.css themes `.light form input` etc. with !important for the public
+   site; the admin lives in the same document, so re-assert the admin skin on
+   anything inside .adm that those selectors can reach. */
+.adm form input:not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.adm form textarea,
+.adm form select {
+  background: var(--a-surface) !important;
+  border: 1px solid var(--a-border) !important;
+  border-radius: var(--a-r) !important;
+  padding: 0.575rem 0.75rem !important;
+  color: var(--a-text) !important;
+  box-shadow: var(--a-shadow-sm) !important;
+}
+.adm form input:focus,
+.adm form textarea:focus,
+.adm form select:focus {
+  border-color: var(--a-accent) !important;
+  box-shadow: 0 0 0 3px var(--a-accent-soft) !important;
+  background: var(--a-surface) !important;
+}
+.adm form input::placeholder,
+.adm form textarea::placeholder { color: var(--a-text3) !important; }
+
+/* ---- small-screen ergonomics ------------------------------------------ */
+
+/* iOS Safari zooms the page when a focused control is under 16px. */
+@media (pointer: coarse) {
+  .adm .a-input, .adm .a-select, .adm .a-textarea, .adm .a-cmdk-input {
+    font-size: 1rem !important;
+  }
+}
+
+/* Drawer/modal footers clear the home-indicator on notched phones. */
+.adm .a-slide-right > footer,
+.adm .a-slide-left { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+
+/* Horizontal pill rows (status tabs, filters) scroll instead of wrapping off
+   screen on narrow phones. */
+.a-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.a-pills::-webkit-scrollbar { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .adm *, .adm *::before, .adm *::after {
     animation-duration: 0.01ms !important;

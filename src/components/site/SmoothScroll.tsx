@@ -10,13 +10,19 @@
 //     frames cheap.
 //   · Anchor links (#enquire etc.) glide with a -96px offset so targets land
 //     below the fixed nav.
-//   · The router's instant scroll restoration still works: Lenis adopts
-//     external jumps from its native-scroll listener.
 //   · Fully disabled for prefers-reduced-motion.
+//   · On every navigation the router repositions the window instantly (top of
+//     page for a new visit, the stored offset for back/forward). If a wheel
+//     glide is still in flight at that moment, Lenis's easing would drag the
+//     page back toward the old position — so after each render we adopt the
+//     router's position as Lenis's new resting state.
 import { useEffect } from "react";
+import { useRouter } from "@tanstack/react-router";
 import Lenis from "lenis";
 
 export function SmoothScroll() {
+  const router = useRouter();
+
   useEffect(() => {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -35,11 +41,18 @@ export function SmoothScroll() {
       raf = requestAnimationFrame(loop);
     });
 
+    // Runs after the router's own onRendered scroll handler (it subscribed
+    // first), so window.scrollY is already where the navigation wants us.
+    const unsubscribe = router.subscribe("onRendered", () => {
+      lenis.scrollTo(window.scrollY, { immediate: true, force: true });
+    });
+
     return () => {
+      unsubscribe();
       cancelAnimationFrame(raf);
       lenis.destroy();
     };
-  }, []);
+  }, [router]);
 
   return null;
 }

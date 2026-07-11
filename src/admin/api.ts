@@ -183,6 +183,45 @@ export async function seedModule(def: ModuleDef): Promise<number> {
   return items.length;
 }
 
+/* ------------------------------------------------------------ applications */
+
+export type ApplicationStatus = "new" | "shortlisted" | "hired" | "rejected";
+
+export function useApplications() {
+  return useQuery({
+    queryKey: ["admin", "applications"],
+    queryFn: async (): Promise<Row[]> => {
+      const snap = await getDocs(
+        query(collection(db, "applications"), orderBy("createdAt", "desc")),
+      );
+      return snap.docs.map((d) => ({ __id: d.id, ...d.data() }) as Row);
+    },
+    retry: 1,
+    staleTime: 15_000,
+  });
+}
+
+export async function setApplicationStatus(id: string, status: ApplicationStatus, name: string) {
+  await setDoc(doc(db, "applications", id), { status }, { merge: true });
+  void logActivity("status", "applications", `${name} → ${status}`);
+}
+
+export async function deleteApplications(rows: Row[]): Promise<() => Promise<void>> {
+  const copies = rows.map((r) => ({ id: r.__id, data: stripMeta(r) }));
+  await Promise.all(rows.map((r) => deleteDoc(doc(db, "applications", r.__id))));
+  void logActivity(
+    "deleted",
+    "applications",
+    rows
+      .map((r) => String(r.name ?? r.__id))
+      .join(", ")
+      .slice(0, 120),
+  );
+  return async () => {
+    await Promise.all(copies.map((c) => setDoc(doc(db, "applications", c.id), c.data)));
+  };
+}
+
 /* -------------------------------------------------------------- enquiries */
 
 export type EnquiryStatus = "new" | "contacted" | "closed";

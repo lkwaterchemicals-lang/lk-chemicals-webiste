@@ -35,7 +35,7 @@ export const Route = createFileRoute("/")({
     // The hero photo is the LCP element (painted as a CSS background, which
     // browsers discover late) — preload it at high priority so first paint
     // doesn't wait a full network round-trip.
-    links: [{ rel: "preload", as: "image", href: homeContent.heroImage, fetchpriority: "high" }],
+    links: [{ rel: "preload", as: "image", href: homeContent.heroImage, fetchPriority: "high" }],
   }),
   component: HomePage,
 });
@@ -843,23 +843,39 @@ function QuoteCard({ t, i }: { t: import("@/data/content").Testimonial; i: numbe
         “{t.q}”
       </blockquote>
       <figcaption className="relative mt-6 flex items-center gap-3">
-        {t.image ? (
-          <img
-            src={t.image}
-            alt=""
-            loading="lazy"
-            className="h-10 w-10 rounded-full object-cover border border-white/25"
-          />
-        ) : (
-          <span
-            className={
-              "grid h-10 w-10 place-items-center rounded-full font-display font-bold text-sm " +
-              (solid ? "bg-white/20 text-white" : "bg-cyan-hi/15 text-cyan-hi")
-            }
-          >
-            {(t.who ?? "?").trim().charAt(0).toUpperCase()}
-          </span>
-        )}
+        {(() => {
+          // Newer records carry an `images` list; older ones a single `image`.
+          const photos = (t.images?.filter(Boolean) ?? []).length
+            ? t.images!.filter(Boolean)
+            : t.image
+              ? [t.image]
+              : [];
+          if (photos.length === 0)
+            return (
+              <span
+                className={
+                  "grid h-10 w-10 place-items-center rounded-full font-display font-bold text-sm " +
+                  (solid ? "bg-white/20 text-white" : "bg-cyan-hi/15 text-cyan-hi")
+                }
+              >
+                {(t.who ?? "?").trim().charAt(0).toUpperCase()}
+              </span>
+            );
+          return (
+            <span className="flex shrink-0 -space-x-3">
+              {photos.slice(0, 3).map((src, k) => (
+                <img
+                  key={src + k}
+                  src={src}
+                  alt=""
+                  loading="lazy"
+                  className="h-10 w-10 rounded-full object-cover border-2 border-white/40 bg-white/10"
+                  style={{ zIndex: 3 - k }}
+                />
+              ))}
+            </span>
+          );
+        })()}
         <div className="min-w-0">
           <div
             className={

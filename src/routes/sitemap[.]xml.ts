@@ -30,6 +30,11 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/gallery", changefreq: "monthly", priority: "0.6" },
           { path: "/careers", changefreq: "monthly", priority: "0.6" },
           { path: "/contact", changefreq: "yearly", priority: "0.7" },
+          { path: "/privacy-policy", changefreq: "yearly", priority: "0.3" },
+          { path: "/terms-and-conditions", changefreq: "yearly", priority: "0.3" },
+          { path: "/shipping-policy", changefreq: "yearly", priority: "0.3" },
+          { path: "/refund-policy", changefreq: "yearly", priority: "0.3" },
+          { path: "/warranty-policy", changefreq: "yearly", priority: "0.3" },
           ...products
             .filter((p) => p.slug ?? p.__id)
             .map((p) => ({

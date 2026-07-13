@@ -16,6 +16,8 @@ import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { waLink } from "@/components/site/WaCluster";
 import { WaterCore } from "@/components/site/WaterCore";
 
+import { InfiniteReviewCarousel } from "@/components/site/InfiniteReviewCarousel";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -343,7 +345,7 @@ function WhoWeAre() {
         <MicroLabel n="02" className="!text-royal">
           {c.whoLabel}
         </MicroLabel>
-        <div className="mt-8 grid gap-16 lg:grid-cols-12 items-start">
+        <div className="mt-8 grid gap-12 lg:gap-16 lg:grid-cols-12 items-start">
           <div className="lg:col-span-7">
             <h2
               className="display-xl leading-[0.95]"
@@ -351,16 +353,22 @@ function WhoWeAre() {
             >
               {c.whoHeadingLead} <span className="grad-leaf-text">{c.whoHeadingAccent}</span>
             </h2>
-            <p className="mt-8 max-w-xl text-lg text-ink/70">{c.whoBody}</p>
-            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            <p className="mt-8 max-w-xl text-lg text-ink/70 dark:text-white/70">{c.whoBody}</p>
+            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
               {c.stats.map((s) => (
                 <div key={s.label}>
-                  <div className="display-xl text-4xl sm:text-5xl md:text-6xl">
+                  <div className="display-xl text-3xl sm:text-4xl md:text-5xl relative">
                     <span className="grad-leaf-text">
-                      <Counter to={Number(s.value) || 0} suffix={s.suffix} />
+                      <Counter to={parseInt(String(s.value).replace(/\D/g, ""), 10) || 0} suffix={s.suffix} />
+                    </span>
+                    {/* Debug overlay to see what the CMS is actually returning */}
+                    <span className="absolute top-0 right-0 text-[9px] text-red-500 opacity-50 font-mono">
+                      val:'{String(s.value)}'
                     </span>
                   </div>
-                  <div className="mt-2 micro-label !text-ink/50">{s.label}</div>
+                  <div className="mt-2 micro-label opacity-60 text-[10px] sm:text-[11px] leading-tight">
+                    {s.label}
+                  </div>
                 </div>
               ))}
             </div>
@@ -797,131 +805,14 @@ function WhyLK() {
   );
 }
 
-/* =============== 07 PROOF =============== */
 
-// Accent tints rotate per card; every third card flips to a solid gradient so
-// the rail reads as a designed set, not a repeated template.
-const QUOTE_HUES = ["var(--cyan-hi)", "var(--leaf)", "var(--royal)"];
-
-function QuoteCard({ t, i }: { t: import("@/data/content").Testimonial; i: number }) {
-  const solid = i % 3 === 1;
-  const hue = QUOTE_HUES[i % QUOTE_HUES.length];
-  const stars = Math.min(5, Math.max(0, Number(t.rating ?? 0) || 0));
-  return (
-    <figure
-      className={
-        "relative flex h-full min-h-[260px] flex-col overflow-hidden rounded-3xl p-6 sm:p-7 " +
-        (solid ? "quote-card-solid" : "bento-tile")
-      }
-    >
-      {!solid && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: `radial-gradient(120% 90% at 90% -10%, color-mix(in oklab, ${hue} 18%, transparent), transparent 60%)`,
-          }}
-        />
-      )}
-      <Quote
-        aria-hidden
-        className={"h-6 w-6 shrink-0 " + (solid ? "text-white/70" : "text-cyan-hi")}
-      />
-      {stars > 0 && (
-        <span className="mt-3 flex gap-0.5" aria-label={`${stars} star rating`}>
-          {Array.from({ length: stars }).map((_, k) => (
-            <Star key={k} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-          ))}
-        </span>
-      )}
-      <blockquote
-        className={
-          "relative mt-3 flex-1 text-[15px] leading-relaxed font-medium " +
-          (solid ? "text-white" : "text-foreground")
-        }
-      >
-        “{t.q}”
-      </blockquote>
-      <figcaption className="relative mt-6 flex items-center gap-3">
-        {t.image ? (
-          <img
-            src={t.image}
-            alt=""
-            loading="lazy"
-            className="h-10 w-10 rounded-full object-cover border border-white/25"
-          />
-        ) : (
-          <span
-            className={
-              "grid h-10 w-10 place-items-center rounded-full font-display font-bold text-sm " +
-              (solid ? "bg-white/20 text-white" : "bg-cyan-hi/15 text-cyan-hi")
-            }
-          >
-            {(t.who ?? "?").trim().charAt(0).toUpperCase()}
-          </span>
-        )}
-        <div className="min-w-0">
-          <div
-            className={
-              "text-[11px] font-semibold tracking-[0.14em] uppercase truncate " +
-              (solid ? "text-white" : "text-foreground")
-            }
-          >
-            {t.who}
-          </div>
-          {t.company && (
-            <div className={"mt-0.5 text-xs truncate " + (solid ? "text-white/70" : "text-ink/60")}>
-              {t.company}
-            </div>
-          )}
-        </div>
-      </figcaption>
-    </figure>
-  );
-}
 
 // Testimonials as a swipeable card rail with arrow paging — every quote is a
 // tinted card (one card per view on phones, three on desktop) instead of one
 // blockquote on a timer nobody controls.
 function Proof() {
-  const { data: quotes } = useTestimonials();
   const { data: c } = useHomeContent();
-  const railRef = useRef<HTMLUListElement>(null);
-  const [ends, setEnds] = useState({ start: true, end: false });
-
-  // Arrow enable/disable tracks the rail's real position (rAF-coalesced).
-  useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      setEnds({
-        start: rail.scrollLeft < 24,
-        end: rail.scrollLeft > rail.scrollWidth - rail.clientWidth - 24,
-      });
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
-    update();
-    rail.addEventListener("scroll", onScroll, { passive: true });
-    const ro = new ResizeObserver(update);
-    ro.observe(rail);
-    return () => {
-      cancelAnimationFrame(raf);
-      rail.removeEventListener("scroll", onScroll);
-      ro.disconnect();
-    };
-  }, [quotes.length]);
-
-  const page = (dir: 1 | -1) => {
-    const rail = railRef.current;
-    const card = rail?.querySelector("li");
-    if (!rail || !card) return;
-    rail.scrollBy({ left: dir * (card.clientWidth + 16), behavior: "smooth" });
-  };
-
+  
   const row = [...c.certs, ...c.certs];
   return (
     <section className="section-light py-28 relative overflow-hidden">
@@ -938,44 +829,12 @@ function Proof() {
               What our clients say <span className="grad-leaf-text">about us.</span>
             </h2>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => page(-1)}
-              disabled={ends.start}
-              aria-label="Previous testimonials"
-              className="grid h-11 w-11 place-items-center rounded-full border border-ink/15 text-foreground transition-all hover:border-cyan-hi hover:text-cyan-hi disabled:opacity-30 disabled:pointer-events-none"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => page(1)}
-              disabled={ends.end}
-              aria-label="Next testimonials"
-              className="grid h-11 w-11 place-items-center rounded-full bg-ink text-white transition-all hover:bg-cyan-hi hover:text-ink disabled:opacity-30 disabled:pointer-events-none"
-            >
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Full-bleed rail so cards peek at the viewport edge and invite a swipe */}
-      <ul
-        ref={railRef}
-        aria-label="Client testimonials"
-        className="mt-10 flex gap-4 overflow-x-auto snap-x snap-mandatory px-6 md:px-[max(2rem,calc((100vw-80rem)/2+2rem))] pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {quotes.map((t, i) => (
-          <li
-            key={(t.who ?? "") + i}
-            className="w-[85vw] max-w-[400px] sm:w-[46vw] lg:w-[31%] shrink-0 snap-start list-none"
-          >
-            <QuoteCard t={t} i={i} />
-          </li>
-        ))}
-      </ul>
+      <div className="mt-10">
+        <InfiniteReviewCarousel />
+      </div>
 
       {/* Certification strip — badge pills on a brisk marquee (pause on hover) */}
       <div className="mt-14 overflow-hidden" aria-label="Certifications">

@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, Droplets, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Droplets, Play, X } from "lucide-react";
 import { MicroLabel } from "@/components/site/GhostWord";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { useGalleryItems } from "@/lib/content";
 import { useGalleryContent } from "@/lib/pages";
 import { cleanCaption } from "@/lib/assets";
+import { videoInfo, youTubeEmbed } from "@/lib/media";
 
 // Uploads often arrive named "ChatGPT Image Jul 8 2026…" or "IMG_2041" —
 // never surface raw file names; fall back to the item's category.
@@ -95,6 +96,13 @@ function GalleryPage() {
                   className="w-full h-auto group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                {videoInfo(it.video) && (
+                  <span className="absolute inset-0 grid place-items-center">
+                    <span className="grid h-14 w-14 place-items-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                      <Play className="h-6 w-6 fill-current translate-x-0.5" />
+                    </span>
+                  </span>
+                )}
                 <div className="absolute bottom-3 left-4 micro-label text-cyan-hi">{it.cat}</div>
               </motion.button>
             ))}
@@ -146,25 +154,64 @@ function GalleryPage() {
               </>
             )}
 
-            <motion.img
-              key={filtered[open].src}
-              initial={{ scale: 0.92, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] }}
-              src={filtered[open].src}
-              alt={captionOf(filtered[open])}
-              drag={filtered.length > 1 ? "x" : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.18}
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -56 || info.velocity.x < -420)
-                  setOpen((open + 1) % filtered.length);
-                else if (info.offset.x > 56 || info.velocity.x > 420)
-                  setOpen((open + filtered.length - 1) % filtered.length);
-              }}
-              className="max-h-[76vh] max-w-full rounded-3xl object-contain shadow-2xl cursor-grab active:cursor-grabbing"
-              onClick={(e) => e.stopPropagation()}
-            />
+            {(() => {
+              const video = videoInfo(filtered[open].video);
+              if (video) {
+                return (
+                  <motion.div
+                    key={filtered[open].src + "-video"}
+                    initial={{ scale: 0.92, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] }}
+                    className="w-full max-w-4xl overflow-hidden rounded-3xl shadow-2xl bg-black"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="relative aspect-video">
+                      {video.kind === "youtube" ? (
+                        <iframe
+                          title={captionOf(filtered[open])}
+                          src={youTubeEmbed(video.id, true)}
+                          className="absolute inset-0 h-full w-full"
+                          style={{ border: 0 }}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <video
+                          src={video.url}
+                          poster={filtered[open].src}
+                          className="absolute inset-0 h-full w-full object-contain"
+                          controls
+                          autoPlay
+                          playsInline
+                        />
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              }
+              return (
+                <motion.img
+                  key={filtered[open].src}
+                  initial={{ scale: 0.92, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] }}
+                  src={filtered[open].src}
+                  alt={captionOf(filtered[open])}
+                  drag={filtered.length > 1 ? "x" : false}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.18}
+                  onDragEnd={(_, info) => {
+                    if (info.offset.x < -56 || info.velocity.x < -420)
+                      setOpen((open + 1) % filtered.length);
+                    else if (info.offset.x > 56 || info.velocity.x > 420)
+                      setOpen((open + filtered.length - 1) % filtered.length);
+                  }}
+                  className="max-h-[76vh] max-w-full rounded-3xl object-contain shadow-2xl cursor-grab active:cursor-grabbing"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              );
+            })()}
 
             {/* Caption + counter */}
             <div

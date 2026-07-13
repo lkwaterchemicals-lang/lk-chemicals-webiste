@@ -9,6 +9,7 @@ import { waLink } from "@/components/site/WaCluster";
 import { Waterline } from "@/components/site/Waterline";
 import { useSiteSettings } from "@/lib/content";
 import { useContactContent } from "@/lib/pages";
+import { extractMapEmbedSrc } from "@/lib/media";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -256,7 +257,10 @@ function SignatureMap() {
   const q = encodeURIComponent(s.mapQuery);
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${q}`;
   const viewUrl = `https://www.google.com/maps/search/?api=1&query=${q}`;
-  const embedUrl = `https://www.google.com/maps?q=${q}&output=embed`;
+  // Admin-pasted "Embed a map" URL wins (exact pin, chosen zoom); otherwise
+  // fall back to a search-query embed built from the settings address.
+  const embedUrl =
+    extractMapEmbedSrc(c.mapEmbed) ?? `https://www.google.com/maps?q=${q}&output=embed`;
   return (
     <section className="section-dark pb-24">
       <div className="mx-auto max-w-7xl px-6 md:px-8">

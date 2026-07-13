@@ -37,7 +37,7 @@ export const Route = createFileRoute("/")({
     // The hero photo is the LCP element (painted as a CSS background, which
     // browsers discover late) — preload it at high priority so first paint
     // doesn't wait a full network round-trip.
-    links: [{ rel: "preload", as: "image", href: homeContent.heroImage, fetchpriority: "high" }],
+    links: [{ rel: "preload", as: "image", href: homeContent.heroImage, fetchPriority: "high" }],
   }),
   component: HomePage,
 });
@@ -806,6 +806,105 @@ function WhyLK() {
 }
 
 
+<<<<<<< HEAD
+=======
+// Accent tints rotate per card; every third card flips to a solid gradient so
+// the rail reads as a designed set, not a repeated template.
+const QUOTE_HUES = ["var(--cyan-hi)", "var(--leaf)", "var(--royal)"];
+
+function QuoteCard({ t, i }: { t: import("@/data/content").Testimonial; i: number }) {
+  const solid = i % 3 === 1;
+  const hue = QUOTE_HUES[i % QUOTE_HUES.length];
+  const stars = Math.min(5, Math.max(0, Number(t.rating ?? 0) || 0));
+  return (
+    <figure
+      className={
+        "relative flex h-full min-h-[260px] flex-col overflow-hidden rounded-3xl p-6 sm:p-7 " +
+        (solid ? "quote-card-solid" : "bento-tile")
+      }
+    >
+      {!solid && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(120% 90% at 90% -10%, color-mix(in oklab, ${hue} 18%, transparent), transparent 60%)`,
+          }}
+        />
+      )}
+      <Quote
+        aria-hidden
+        className={"h-6 w-6 shrink-0 " + (solid ? "text-white/70" : "text-cyan-hi")}
+      />
+      {stars > 0 && (
+        <span className="mt-3 flex gap-0.5" aria-label={`${stars} star rating`}>
+          {Array.from({ length: stars }).map((_, k) => (
+            <Star key={k} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+          ))}
+        </span>
+      )}
+      <blockquote
+        className={
+          "relative mt-3 flex-1 text-[15px] leading-relaxed font-medium " +
+          (solid ? "text-white" : "text-foreground")
+        }
+      >
+        “{t.q}”
+      </blockquote>
+      <figcaption className="relative mt-6 flex items-center gap-3">
+        {(() => {
+          // Newer records carry an `images` list; older ones a single `image`.
+          const photos = (t.images?.filter(Boolean) ?? []).length
+            ? t.images!.filter(Boolean)
+            : t.image
+              ? [t.image]
+              : [];
+          if (photos.length === 0)
+            return (
+              <span
+                className={
+                  "grid h-10 w-10 place-items-center rounded-full font-display font-bold text-sm " +
+                  (solid ? "bg-white/20 text-white" : "bg-cyan-hi/15 text-cyan-hi")
+                }
+              >
+                {(t.who ?? "?").trim().charAt(0).toUpperCase()}
+              </span>
+            );
+          return (
+            <span className="flex shrink-0 -space-x-3">
+              {photos.slice(0, 3).map((src, k) => (
+                <img
+                  key={src + k}
+                  src={src}
+                  alt=""
+                  loading="lazy"
+                  className="h-10 w-10 rounded-full object-cover border-2 border-white/40 bg-white/10"
+                  style={{ zIndex: 3 - k }}
+                />
+              ))}
+            </span>
+          );
+        })()}
+        <div className="min-w-0">
+          <div
+            className={
+              "text-[11px] font-semibold tracking-[0.14em] uppercase truncate " +
+              (solid ? "text-white" : "text-foreground")
+            }
+          >
+            {t.who}
+          </div>
+          {t.company && (
+            <div className={"mt-0.5 text-xs truncate " + (solid ? "text-white/70" : "text-ink/60")}>
+              {t.company}
+            </div>
+          )}
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+>>>>>>> ae98cde67e2937bfbc667783cb848127361be17e
 
 // Testimonials as a swipeable card rail with arrow paging — every quote is a
 // tinted card (one card per view on phones, three on desktop) instead of one

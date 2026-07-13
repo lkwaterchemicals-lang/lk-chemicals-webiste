@@ -392,7 +392,7 @@ export const MODULES: ModuleDef[] = [
   },
   {
     id: "gallery",
-    label: "Media",
+    label: "Gallery",
     singular: "media item",
     icon: ImageIcon,
     idField: "",
@@ -400,7 +400,20 @@ export const MODULES: ModuleDef[] = [
     subtitleField: "cat",
     imageKey: "src",
     fields: [
-      { key: "src", label: "Image", type: "image", required: true },
+      {
+        key: "src",
+        label: "Image / thumbnail",
+        type: "image",
+        required: true,
+        hint: "For videos this is the cover frame",
+      },
+      {
+        key: "video",
+        label: "Video URL",
+        type: "text",
+        hint: "Optional — YouTube link or uploaded video; leave blank for a photo",
+        placeholder: "https://youtube.com/watch?v=…",
+      },
       { key: "alt", label: "Caption / alt text", type: "text", required: true },
       {
         key: "cat",
@@ -446,10 +459,10 @@ export const MODULES: ModuleDef[] = [
         hint: "Optional — shows gold stars with the quote",
       },
       {
-        key: "image",
-        label: "Photo / logo",
-        type: "image",
-        hint: "Optional headshot or company logo",
+        key: "images",
+        label: "Photos / logos",
+        type: "gallery",
+        hint: "Optional — add one or more (headshot, company logo…)",
       },
     ],
     seed: () => staticTestimonials.map((t) => ({ ...t })),
@@ -532,13 +545,9 @@ export const MODULES: ModuleDef[] = [
         required: true,
         placeholder: "e.g. Field Service Engineer",
       },
-      {
-        key: "slug",
-        label: "Slug",
-        type: "text",
-        hint: "URL id — auto-generated from the title",
-        slugOf: "title",
-      },
+      // No slug field on purpose: the record id is derived from the title in
+      // saveRow and openings have no per-opening public URL — showing a raw
+      // "URL id" here only confused admins.
       { key: "department", label: "Department", type: "text", placeholder: "Field Operations" },
       { key: "location", label: "Location", type: "text", placeholder: "Hyderabad · On-site" },
       {
@@ -574,7 +583,11 @@ export function rowTitle(def: ModuleDef, row: Row): string {
 
 export function rowImage(def: ModuleDef, row: Row): string | null {
   const v = def.imageKey ? row[def.imageKey] : null;
-  return typeof v === "string" && v ? v : null;
+  if (typeof v === "string" && v) return v;
+  // Multi-image records (e.g. testimonials' `images` gallery) show the first.
+  const list = row.images;
+  if (Array.isArray(list) && typeof list[0] === "string" && list[0]) return list[0];
+  return null;
 }
 
 export function timeAgo(d: Date | null): string {

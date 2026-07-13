@@ -3,7 +3,7 @@
 // this and saves each page as a `pages/<id>` Firestore document. Field keys map
 // 1:1 to the shapes in src/data/site.ts (which provide the built-in defaults).
 import type { LucideIcon } from "lucide-react";
-import { Globe, Home, Info, Wrench, Package, Image as ImageIcon, Phone } from "lucide-react";
+import { Globe, Home, Info, Wrench, Package, Phone } from "lucide-react";
 import { ICON_NAMES } from "@/lib/icons";
 import {
   globalContent,
@@ -11,7 +11,6 @@ import {
   aboutContent,
   servicesContent,
   productsContent,
-  galleryContent,
   contactContent,
 } from "@/data/site";
 
@@ -395,23 +394,12 @@ export const PAGE_SCHEMAS: PageSchema[] = [
       },
     ],
   },
-  {
-    id: "gallery",
-    label: "Gallery",
-    description: "Gallery page hero (media items live under Content → Media).",
-    icon: ImageIcon,
-    fallback: galleryContent as unknown as Record<string, unknown>,
-    sections: [
-      {
-        title: "Hero",
-        fields: [{ key: "heroHeading", label: "Heading", type: "text", full: true }],
-      },
-    ],
-  },
+  // The Gallery page has no schema entry on purpose: its hero heading is
+  // edited inline on the Gallery admin page, next to the media it belongs to.
   {
     id: "contact",
     label: "Contact",
-    description: "Contact page hero and map caption (phone, email & address live under Settings).",
+    description: "Contact page hero and map (phone, email & address live under Settings).",
     icon: Phone,
     fallback: contactContent as unknown as Record<string, unknown>,
     sections: [
@@ -424,7 +412,23 @@ export const PAGE_SCHEMAS: PageSchema[] = [
       },
       {
         title: "Map",
-        fields: [{ key: "coordinates", label: "Coordinates heading", type: "text", full: true }],
+        fields: [
+          {
+            key: "mapEmbed",
+            label: "Google Maps embed",
+            type: "textarea",
+            hint: "Google Maps → Share → “Embed a map” → copy — paste the whole <iframe> or just its URL",
+            placeholder: '<iframe src="https://www.google.com/maps/embed?pb=…"> or the URL itself',
+            full: true,
+          },
+          {
+            key: "coordinates",
+            label: "Map heading",
+            type: "text",
+            hint: "Big display line above the map",
+            full: true,
+          },
+        ],
       },
     ],
   },

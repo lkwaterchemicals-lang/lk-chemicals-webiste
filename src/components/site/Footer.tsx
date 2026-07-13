@@ -6,6 +6,7 @@ import { WhatsAppIcon } from "./WhatsApp";
 import { waLink } from "./WaCluster";
 import { useCategories, useServiceCategories, useSiteSettings } from "@/lib/content";
 import { useGlobalContent, useHomeContent } from "@/lib/pages";
+import { POLICIES } from "@/data/policies";
 
 // "Phase-2" vs "Phase-II" etc. — treat cosmetic variants of the same address
 // as duplicates so it never renders twice.
@@ -213,7 +214,20 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
+        {/* Legal & policies */}
+        <div className="mt-12 pt-6 border-t border-white/10 flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 text-xs">
+          {POLICIES.map((p) => (
+            <Link
+              key={p.slug}
+              to={p.path}
+              className="text-white/50 hover:text-cyan-hi transition-colors"
+            >
+              {p.navLabel}
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
           <p>
             © {new Date().getFullYear()} {g.brandName} All rights reserved.
           </p>

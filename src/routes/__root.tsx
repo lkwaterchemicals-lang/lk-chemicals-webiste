@@ -20,6 +20,8 @@ import { ScrollProgress } from "../components/site/ScrollProgress";
 import { SmoothScroll } from "../components/site/SmoothScroll";
 import { WaterCanvas } from "../components/site/WaterCanvas";
 import { BackToTop } from "../components/site/BackToTop";
+import { BootVeil } from "../components/site/BootVeil";
+import { PageFx } from "../components/site/PageFx";
 
 function NotFoundComponent() {
   return (
@@ -78,6 +80,59 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       </div>
     </div>
   );
+}
+
+// On reload the router restores the window offset synchronously, but
+// Firestore-backed sections stream in afterwards — the page can still be
+// shorter than the stored offset at that moment, so the browser clamps the
+// scroll and the visitor lands mid-page instead of where they were. Until the
+// user interacts (or a short window elapses), keep re-applying the stored
+// position as the document grows.
+function InitialScrollRestore() {
+  useEffect(() => {
+    let target: number | null = null;
+    try {
+      const cache = JSON.parse(
+        sessionStorage.getItem("tsr-scroll-restoration-v1_3") || "{}",
+      ) as Record<string, { window?: { scrollY?: number } }>;
+      const stateKey = (history.state as { __TSR_key?: string } | null)?.__TSR_key;
+      const href = location.pathname + location.search + location.hash;
+      const entry = (stateKey && cache[stateKey]) || cache[href];
+      const y = entry?.window?.scrollY;
+      if (typeof y === "number" && y > 0) target = y;
+    } catch {
+      /* sessionStorage unavailable — nothing to restore */
+    }
+    if (target === null) return;
+
+    const cleanupFns: (() => void)[] = [];
+    const cleanup = () => cleanupFns.splice(0).forEach((fn) => fn());
+    const stop = () => {
+      target = null;
+      cleanup();
+    };
+    const apply = () => {
+      if (target === null) return;
+      const fits = document.documentElement.scrollHeight >= target + window.innerHeight;
+      if (fits && Math.abs(window.scrollY - target) > 2) {
+        window.scrollTo({ top: target, behavior: "instant" });
+      }
+    };
+
+    const ro = new ResizeObserver(apply);
+    ro.observe(document.documentElement);
+    cleanupFns.push(() => ro.disconnect());
+    // Any real user input means they've taken over — never yank the page.
+    for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"] as const) {
+      addEventListener(ev, stop, { passive: true });
+      cleanupFns.push(() => removeEventListener(ev, stop));
+    }
+    const timer = setTimeout(stop, 3500);
+    cleanupFns.push(() => clearTimeout(timer));
+    apply();
+    return cleanup;
+  }, []);
+  return null;
 }
 
 // Analytics & Search Console are activated purely by env config — set
@@ -262,7 +317,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('lk-theme');if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('lk-theme');if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}try{if(sessionStorage.getItem('lk-boot')){document.documentElement.classList.add('lk-seen');}}catch(e){}})();`,
           }}
         />
       </head>
@@ -297,10 +352,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <InitialScrollRestore />
       {isAdmin ? (
         <Outlet />
       ) : (
         <>
+          <BootVeil />
+          <PageFx />
           <SmoothScroll />
           <WaterCanvas />
           <div className="site-shell">

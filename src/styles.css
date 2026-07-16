@@ -1,5 +1,8 @@
-@import "tailwindcss" source(none);
+@import "tailwindcss";
+<<<<<<< HEAD
 @source "../src";
+=======
+>>>>>>> ae98cde67e2937bfbc667783cb848127361be17e
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -1360,4 +1363,645 @@ header nav.bg-transparent {
   -webkit-background-clip: text !important;
   background-clip: text !important;
   color: transparent !important;
+}
+
+/* ================================================================
+   LK BOOT VEIL & PAGE TRANSITIONS — the brand loading experience.
+   Living water rises over the company logo and reveals it in full
+   colour while sonar ripples breathe behind it; the veil then
+   drains upward with a curved water edge, revealing the page
+   mid-motion. GPU-only properties (transform / opacity)
+   everywhere; two dedicated atmospheres: deep-water night (dark)
+   and glacial morning (light). Driven by BootVeil.tsx / PageFx.tsx.
+   ================================================================ */
+
+.lk-boot {
+  /* --- deep-water night (default / .dark) --- */
+  --lkb-bg1: #04070e;
+  --lkb-bg2: #091322;
+  --lkb-edge: #0c1e31;
+  --lkb-glow: oklch(0.82 0.16 210 / 0.14);
+  --lkb-blob: oklch(0.62 0.17 232 / 0.1);
+  --lkb-w2: #23a3cb;
+  --lkb-w3: #0d5c88;
+  --lkb-ring: rgba(148, 222, 246, 0.35);
+  --lkb-bub: rgba(23, 158, 202, 0.55);
+  --lkb-text: oklch(0.97 0.01 235);
+  --lkb-sub: rgba(222, 240, 250, 0.5);
+  --lkb-tile-edge: rgba(160, 224, 248, 0.26);
+  --lkb-tile-shadow:
+    0 24px 70px -22px rgba(23, 158, 202, 0.45),
+    0 6px 22px -10px rgba(0, 0, 0, 0.55);
+
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  pointer-events: auto;
+  /* Swallow wheel/touch so the page can't scroll beneath the veil — pure CSS,
+     so it works before hydration and never collapses the scrollbar gutter
+     (an overflow lock on <html> made the layout pop by a scrollbar width). */
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
+  /* No-JS / hydration-failure failsafe: the veil dissolves on its own so it
+     can never trap the page. JS normally unmounts it long before this fires.
+     (Encoded as a long duration, not a delay — the global reduced-motion
+     kill-switch collapses durations to ~0, hiding the veil instantly.) */
+  animation: lkb-failsafe 8s linear both;
+}
+@keyframes lkb-failsafe {
+  0%,
+  88% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+html.light .lk-boot {
+  /* --- glacial morning (light) — designed, not inverted --- */
+  --lkb-bg1: #fcfeff;
+  --lkb-bg2: #eef7fc;
+  --lkb-edge: #ddeef8;
+  --lkb-glow: rgba(255, 255, 255, 0.9);
+  --lkb-blob: oklch(0.62 0.17 232 / 0.08);
+  --lkb-w2: #3ab4de;
+  --lkb-w3: #0f7fae;
+  --lkb-ring: rgba(24, 116, 160, 0.22);
+  --lkb-bub: rgba(15, 127, 174, 0.5);
+  --lkb-text: oklch(0.22 0.06 258);
+  --lkb-sub: oklch(0.22 0.06 258 / 0.55);
+  --lkb-tile-edge: oklch(0.22 0.06 258 / 0.1);
+  --lkb-tile-shadow: 0 28px 70px -28px rgba(15, 92, 136, 0.4);
+}
+
+.lk-boot[data-phase="exit"] {
+  pointer-events: none;
+}
+.lk-boot[data-phase="done"] {
+  display: none;
+}
+
+/* --- the sheet: opaque surface that later lifts off ---------------- */
+.lk-boot-sheet {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  background: linear-gradient(180deg, var(--lkb-bg1) 0%, var(--lkb-bg2) 58%, var(--lkb-edge) 100%);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+.lk-boot[data-phase="exit"] .lk-boot-sheet {
+  transform: translate3d(0, -115%, 0);
+  transition: transform 1s cubic-bezier(0.72, 0, 0.16, 1) 0.24s;
+}
+.lk-boot-edge {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: clamp(44px, 9vh, 110px);
+  display: block;
+}
+.lk-boot-edge path {
+  fill: var(--lkb-edge);
+}
+
+/* --- atmosphere: light well + slow water-shadow blobs -------------- */
+.lk-boot-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(42% 34% at 50% 44%, var(--lkb-glow), transparent 70%);
+  opacity: 1;
+  transition: opacity 0.45s ease;
+}
+.lk-boot-blob {
+  position: absolute;
+  width: 46vmax;
+  height: 46vmax;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--lkb-blob), transparent 72%);
+  will-change: transform;
+}
+.lk-boot-blob-a {
+  left: -12vmax;
+  top: -10vmax;
+  animation: lkb-blob-a 17s ease-in-out infinite alternate;
+}
+.lk-boot-blob-b {
+  right: -14vmax;
+  bottom: -12vmax;
+  animation: lkb-blob-b 21s ease-in-out infinite alternate;
+}
+@keyframes lkb-blob-a {
+  to {
+    transform: translate3d(9vmax, 6vmax, 0) scale(1.12);
+  }
+}
+@keyframes lkb-blob-b {
+  to {
+    transform: translate3d(-8vmax, -7vmax, 0) scale(0.94);
+  }
+}
+.lk-boot[data-phase="exit"] .lk-boot-glow,
+.lk-boot[data-phase="exit"] .lk-boot-blob {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+/* --- centered stack (parallax target) ------------------------------ */
+.lk-boot-core {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lk-boot[data-phase="exit"] .lk-boot-core {
+  opacity: 0;
+  transform: translate3d(0, -16px, 0) scale(1.04);
+  transition:
+    opacity 0.5s ease 0.1s,
+    transform 0.7s cubic-bezier(0.5, 0, 0.2, 1) 0.1s;
+}
+
+/* --- sonar ripples behind the droplet ------------------------------ */
+.lk-ripples {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: clamp(210px, 44vw, 330px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.lk-ripples i {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--lkb-ring);
+  opacity: 0;
+  transform: scale(0.34);
+  animation: lkb-ring 2.7s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  will-change: transform, opacity;
+}
+.lk-ripples i:nth-child(2) {
+  animation-delay: 0.9s;
+}
+.lk-ripples i:nth-child(3) {
+  animation-delay: 1.8s;
+}
+@keyframes lkb-ring {
+  0% {
+    transform: scale(0.34);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.42);
+    opacity: 0;
+  }
+}
+.lk-boot[data-phase="exit"] .lk-ripples {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+/* --- the brand mark: porcelain tile + logo revealed by rising water --
+   The real company logo sits on a porcelain tile (the logo is drawn for
+   white surfaces, so the tile keeps it true in both themes). A ghost of
+   the mark shows first; living water — wavy crest, tint, bubbles —
+   rises and reveals the full-colour logo beneath the waterline. On exit
+   the vessel tops up to 100% as the veil drains: the brand "completes"
+   the moment the site appears. Transform/opacity animations only. */
+.lk-boot-mark {
+  position: relative;
+  width: clamp(108px, 24vw, 148px);
+  aspect-ratio: 1;
+  border-radius: 26%;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 0%, #f2fafd 100%);
+  border: 1px solid var(--lkb-tile-edge);
+  box-shadow: var(--lkb-tile-shadow);
+  animation: lkb-pop 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes lkb-pop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lk-boot-logo {
+  /* Explicit box — replaced elements keep their intrinsic size under `inset`
+     alone, which let the logo overflow the tile. */
+  position: absolute;
+  top: 13%;
+  left: 13%;
+  width: 74%;
+  height: 74%;
+  object-fit: contain;
+}
+.lk-boot-ghost {
+  filter: grayscale(1);
+  opacity: 0.28;
+}
+
+/* Fill window (clips) + counter-translated inner (keeps the logo still):
+   the pair moves in mirrored percentages so the vivid logo stays perfectly
+   registered over the ghost while the window's top edge is the waterline.
+   The crest rides its own unclipped track with the same choreography. */
+.lk-boot-fill,
+.lk-boot-crest-track {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(0, 100%, 0);
+  animation:
+    lkb-fill 1.5s cubic-bezier(0.3, 0.85, 0.3, 1) 0.2s both,
+    lkb-bob 3s ease-in-out 1.9s infinite;
+  will-change: transform;
+}
+.lk-boot-fill {
+  overflow: hidden;
+}
+.lk-boot-crest-track {
+  pointer-events: none;
+}
+.lk-boot-fill-inner {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(0, -100%, 0);
+  animation:
+    lkb-fill-inner 1.5s cubic-bezier(0.3, 0.85, 0.3, 1) 0.2s both,
+    lkb-bob-inner 3s ease-in-out 1.9s infinite;
+  will-change: transform;
+}
+@keyframes lkb-fill {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 26%, 0);
+  }
+}
+@keyframes lkb-fill-inner {
+  from {
+    transform: translate3d(0, -100%, 0);
+  }
+  to {
+    transform: translate3d(0, -26%, 0);
+  }
+}
+@keyframes lkb-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 26%, 0);
+  }
+  50% {
+    transform: translate3d(0, 23.5%, 0);
+  }
+}
+@keyframes lkb-bob-inner {
+  0%,
+  100% {
+    transform: translate3d(0, -26%, 0);
+  }
+  50% {
+    transform: translate3d(0, -23.5%, 0);
+  }
+}
+/* Exit keeps lkb-fill in the list (dropping it would snap the transform back
+   to the empty base state) and layers lkb-topup over it — its implicit
+   from-keyframe reads the underlying fill value, so the vessel tops up
+   smoothly from wherever the waterline is. */
+.lk-boot[data-phase="exit"] .lk-boot-fill,
+.lk-boot[data-phase="exit"] .lk-boot-crest-track {
+  animation:
+    lkb-fill 1.5s cubic-bezier(0.3, 0.85, 0.3, 1) 0.2s both,
+    lkb-topup 0.55s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+.lk-boot[data-phase="exit"] .lk-boot-fill-inner {
+  animation:
+    lkb-fill-inner 1.5s cubic-bezier(0.3, 0.85, 0.3, 1) 0.2s both,
+    lkb-topup 0.55s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+@keyframes lkb-topup {
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* translucent water over the revealed logo (tile space; waterline ≈ 26%) */
+.lk-boot-tint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(35, 163, 203, 0.26) 24%,
+    rgba(35, 163, 203, 0.12) 48%,
+    rgba(13, 92, 136, 0.08) 100%
+  );
+}
+
+/* wave crest riding the waterline — fixed pixel geometry so the two drift
+   loops (multiples of the 30px wave period) repeat seamlessly */
+.lk-boot-crest {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 380px;
+  height: 12px;
+  margin-left: -190px;
+  transform: translateY(-50%);
+}
+.lk-wave {
+  will-change: transform;
+}
+.lk-wave-a {
+  fill: var(--lkb-w2);
+  opacity: 0.85;
+  animation: lkb-drift-a 3.4s linear infinite;
+}
+.lk-wave-b {
+  fill: var(--lkb-w3);
+  opacity: 0.5;
+  animation: lkb-drift-b 5.6s linear infinite;
+}
+@keyframes lkb-drift-a {
+  to {
+    transform: translate3d(-60px, 0, 0);
+  }
+}
+@keyframes lkb-drift-b {
+  from {
+    transform: translate3d(-60px, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+.lk-boot[data-phase="exit"] .lk-boot-crest {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* bubbles: born deep, fading out just under the crest */
+.lk-bub {
+  position: absolute;
+  bottom: 7%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--lkb-bub);
+  opacity: 0;
+  animation: lkb-bub 2.6s ease-in infinite;
+  will-change: transform, opacity;
+}
+.lk-bub-1 {
+  left: 28%;
+  animation-delay: 0.9s;
+}
+.lk-bub-2 {
+  left: 41%;
+  width: 4px;
+  height: 4px;
+  animation-delay: 1.5s;
+  animation-duration: 3.1s;
+}
+.lk-bub-3 {
+  left: 55%;
+  animation-delay: 2s;
+}
+.lk-bub-4 {
+  left: 66%;
+  width: 3.5px;
+  height: 3.5px;
+  animation-delay: 2.5s;
+  animation-duration: 2.2s;
+}
+.lk-bub-5 {
+  left: 76%;
+  width: 6px;
+  height: 6px;
+  animation-delay: 1.2s;
+  animation-duration: 3.4s;
+}
+@keyframes lkb-bub {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  20% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(3px, -64px, 0);
+  }
+}
+
+/* --- wordmark ------------------------------------------------------- */
+.lk-boot-word {
+  margin-top: clamp(20px, 4vh, 34px);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+.lk-boot-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.95rem, 2.6vw, 1.25rem);
+  letter-spacing: 0.22em;
+  color: var(--lkb-text);
+  animation: lkb-word 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+@keyframes lkb-word {
+  from {
+    opacity: 0;
+    letter-spacing: 0.36em;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.22em;
+    transform: none;
+  }
+}
+/* meniscus line — a waterline, not a progress bar */
+.lk-boot-line {
+  width: 64px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lkb-ring), transparent);
+  transform: scaleX(0);
+  animation:
+    lkb-line 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both,
+    lkb-line-breathe 2.4s ease-in-out 1.4s infinite;
+}
+@keyframes lkb-line {
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes lkb-line-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scaleX(0.78);
+  }
+}
+.lk-boot-sub {
+  font-size: clamp(0.56rem, 1.6vw, 0.66rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  color: var(--lkb-sub);
+  animation: lkb-sub 0.9s ease 0.62s both;
+}
+@keyframes lkb-sub {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- quick variant: reloads within the session — same idea, tighter beat.
+   `lk-seen` is stamped on <html> by the inline head script before first
+   paint, so SSR HTML and hydration always agree. */
+.lk-seen .lk-boot .lk-boot-mark {
+  animation-duration: 0.4s;
+}
+.lk-seen .lk-boot .lk-boot-fill,
+.lk-seen .lk-boot .lk-boot-crest-track {
+  animation:
+    lkb-fill 0.7s cubic-bezier(0.3, 0.85, 0.3, 1) 0.05s both,
+    lkb-bob 3s ease-in-out 0.8s infinite;
+}
+.lk-seen .lk-boot .lk-boot-fill-inner {
+  animation:
+    lkb-fill-inner 0.7s cubic-bezier(0.3, 0.85, 0.3, 1) 0.05s both,
+    lkb-bob-inner 3s ease-in-out 0.8s infinite;
+}
+.lk-seen .lk-boot .lk-boot-brand {
+  animation-delay: 0.08s;
+  animation-duration: 0.5s;
+}
+.lk-seen .lk-boot .lk-boot-line {
+  animation-delay: 0.16s, 0.8s;
+}
+.lk-seen .lk-boot .lk-boot-sub {
+  animation-delay: 0.2s;
+  animation-duration: 0.5s;
+}
+/* Exit beats must outrank the quick base rules above (same specificity as the
+   plain exit selectors, but the quick block sits later in the file). Same
+   layering trick: keep the quick fill, top up over it. */
+.lk-seen .lk-boot[data-phase="exit"] .lk-boot-fill,
+.lk-seen .lk-boot[data-phase="exit"] .lk-boot-crest-track {
+  animation:
+    lkb-fill 0.7s cubic-bezier(0.3, 0.85, 0.3, 1) 0.05s both,
+    lkb-topup 0.45s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+.lk-seen .lk-boot[data-phase="exit"] .lk-boot-fill-inner {
+  animation:
+    lkb-fill-inner 0.7s cubic-bezier(0.3, 0.85, 0.3, 1) 0.05s both,
+    lkb-topup 0.45s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+.lk-seen .lk-boot[data-phase="exit"] .lk-boot-sheet {
+  transition-duration: 0.85s;
+  transition-delay: 0.15s;
+}
+
+/* ================================================================
+   NAVIGATION — water wash + page entrance
+   ================================================================ */
+
+/* soft band of light that sweeps down the viewport on route change */
+#lk-wash {
+  --lkw-tint: rgba(120, 214, 245, 0.05);
+  --lkw-crest: rgba(160, 228, 250, 0.1);
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+}
+html.light #lk-wash {
+  --lkw-tint: rgba(56, 152, 199, 0.045);
+  --lkw-crest: rgba(255, 255, 255, 0.35);
+}
+#lk-wash.lk-wash-run {
+  opacity: 1;
+}
+#lk-wash i {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  top: 0;
+  height: 44%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--lkw-tint) 42%,
+    var(--lkw-crest) 76%,
+    transparent
+  );
+  transform: translate3d(0, -130%, 0);
+  will-change: transform;
+}
+#lk-wash.lk-wash-run i {
+  animation: lkw-sweep 0.8s cubic-bezier(0.6, 0.05, 0.28, 0.99) both;
+}
+@keyframes lkw-sweep {
+  to {
+    transform: translate3d(0, 330%, 0);
+  }
+}
+
+/* the incoming page rises gently into place */
+.site-shell main.lk-page-enter {
+  animation: lk-page-in 0.62s cubic-bezier(0.22, 0.9, 0.26, 1) both;
+}
+@keyframes lk-page-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Reduced motion: no ceremony at all — content, instantly. (The global
+   kill-switch already collapses durations; this removes even the flash.) */
+@media (prefers-reduced-motion: reduce) {
+  .lk-boot,
+  #lk-wash {
+    display: none !important;
+  }
+  .site-shell main.lk-page-enter {
+    animation: none;
+  }
 }

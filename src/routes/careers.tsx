@@ -93,6 +93,20 @@ function CareersPage() {
             a Hyderabad team where the chemistry, the service vans and the phone that answers are
             all ours.
           </p>
+          <div className="mt-10 flex flex-wrap items-center gap-4 sm:gap-6">
+            <LiquidButton onClick={() => document.getElementById("openings")?.scrollIntoView({ behavior: "smooth" })} variant="primary">
+              View open roles
+            </LiquidButton>
+            <a
+              href={applyMail()}
+              className="group inline-flex items-center gap-3 text-sm font-medium text-white/80 transition-colors hover:text-white"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-full border border-white/20 transition-all group-hover:bg-white group-hover:text-ink">
+                <Send className="h-4 w-4" />
+              </span>
+              <span>Send general application</span>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -127,7 +141,7 @@ function CareersPage() {
       </section>
 
       {/* Openings */}
-      <section className="section-dark py-24 relative overflow-hidden">
+      <section id="openings" className="section-dark py-24 relative overflow-hidden">
         <div className="relative mx-auto max-w-7xl px-6 md:px-8">
           <MicroLabel n="02">Open positions</MicroLabel>
           <h2 className="display-xl mt-3 grad-text" style={{ fontSize: "clamp(2rem, 6vw, 4rem)" }}>

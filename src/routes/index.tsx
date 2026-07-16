@@ -806,8 +806,6 @@ function WhyLK() {
 }
 
 
-<<<<<<< HEAD
-=======
 // Accent tints rotate per card; every third card flips to a solid gradient so
 // the rail reads as a designed set, not a repeated template.
 const QUOTE_HUES = ["var(--cyan-hi)", "var(--leaf)", "var(--royal)"];
@@ -904,7 +902,6 @@ function QuoteCard({ t, i }: { t: import("@/data/content").Testimonial; i: numbe
     </figure>
   );
 }
->>>>>>> ae98cde67e2937bfbc667783cb848127361be17e
 
 // Testimonials as a swipeable card rail with arrow paging — every quote is a
 // tinted card (one card per view on phones, three on desktop) instead of one

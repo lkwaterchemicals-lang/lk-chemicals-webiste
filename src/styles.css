@@ -1,8 +1,5 @@
 @import "tailwindcss";
-<<<<<<< HEAD
 @source "../src";
-=======
->>>>>>> ae98cde67e2937bfbc667783cb848127361be17e
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -1193,8 +1190,7 @@
   border-radius: 4px;
 }
 
-/* ================================================================
-   GLOBAL LAYER + THEME HARDENING
+/* =========================================================   GLOBAL LAYER + THEME HARDENING
    Single source of truth for stacking, nav clearance, ghost-word
    safety, form legibility, and light-mode scrim inversion.
    ================================================================ */
@@ -1365,8 +1361,7 @@ header nav.bg-transparent {
   color: transparent !important;
 }
 
-/* ================================================================
-   LK BOOT VEIL & PAGE TRANSITIONS — the brand loading experience.
+/* =========================================================   LK BOOT VEIL & PAGE TRANSITIONS — the brand loading experience.
    Living water rises over the company logo and reveals it in full
    colour while sonar ripples breathe behind it; the veil then
    drains upward with a curved water edge, revealing the page
@@ -1932,8 +1927,7 @@ html.light .lk-boot {
   transition-delay: 0.15s;
 }
 
-/* ================================================================
-   NAVIGATION — water wash + page entrance
+/* =========================================================   NAVIGATION — water wash + page entrance
    ================================================================ */
 
 /* soft band of light that sweeps down the viewport on route change */

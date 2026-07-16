@@ -182,8 +182,7 @@ function Card({
   );
 }
 
-/* =============== SIGNATURE MAP ===============
-   Custom-styled cartographic canvas — deep-water aesthetic,
+/* =============== SIGNATURE MAP ========   Custom-styled cartographic canvas — deep-water aesthetic,
    pulsing droplet pin, glass info card, hard-linked to Google Maps.
 */
 function MapInfoCard({

@@ -1,28 +1,18 @@
 // Home "What we service" — the service catalog's own signature moment,
 // deliberately nothing like the product photo-rail.
 //
-// Desktop: an editorial index — numbered rows on the left drive a sticky 3D
-// "field console" on the right that tilts with the pointer (spring physics)
-// and crossfades between categories, with a slow conic halo spinning behind
-// the icon. Mobile: a scroll-driven 3D card deck — each category is a full
-// card that pins under the nav and gets covered by the next one sliding over
-// it, the buried cards receding in scale like a shuffled deck. Icon +
-// typography driven, so it looks finished before any category photos exist,
-// and every colour rides the section-light tokens so both themes work
-// without special cases.
+// Desktop: an expanding photo-panel band — every category is a full-height
+// photo panel; the hovered/focused one opens into an editorial card while the
+// rest compress into labelled spines (flex-grow transition, no JS layout
+// work). Mobile: a scroll-driven 3D card deck — each category is a full card
+// that pins under the nav and gets covered by the next one sliding over it,
+// the buried cards receding in scale like a shuffled deck. Categories without
+// photos fall back to icon + brand gradient, and every colour rides the
+// section tokens so both themes work without special cases.
 import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import {
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "motion/react";
-import { ArrowUpRight, Wrench } from "lucide-react";
+import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from "motion/react";
+import { ArrowUpRight } from "lucide-react";
 import { useServiceCategories, useServices } from "@/lib/content";
 import { useHomeContent } from "@/lib/pages";
 import { iconByName } from "@/lib/icons";
@@ -37,16 +27,9 @@ export function ServiceIndex() {
   const [active, setActive] = useState(0);
   const reduced = useReducedMotion();
 
-  // Pointer-follow tilt for the desktop console.
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const rotateX = useSpring(useTransform(my, [0, 1], [7, -7]), { stiffness: 160, damping: 18 });
-  const rotateY = useSpring(useTransform(mx, [0, 1], [-9, 9]), { stiffness: 160, damping: 18 });
-
   // Admin-managed catalog: nothing published yet → no fabricated section.
   if (categories.length === 0) return null;
 
-  const current = categories[Math.min(active, categories.length - 1)];
   const countFor = (slug: string) => services.filter((s) => s.serviceCategory === slug).length;
 
   // overflow-x-clip, NOT overflow-hidden: a hidden ancestor becomes a scroll
@@ -75,194 +58,136 @@ export function ServiceIndex() {
           </LiquidButton>
         </div>
 
-        {/* ---------- Desktop: index rows + sticky 3D console ---------- */}
-        <div className="mt-14 hidden lg:grid grid-cols-12 gap-10 items-start">
-          <div className="col-span-7 border-t border-ink/10">
-            {categories.map((cat, i) => {
-              const Icon = iconByName(cat.iconName);
-              const isActive = i === active;
-              return (
-                <motion.div
-                  id={`svc-${cat.slug}`}
-                  key={cat.slug}
-                  initial={{ opacity: 0, y: 18 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-8%" }}
-                  transition={{ delay: i * 0.06, duration: 0.5 }}
-                >
-                  <Link
-                    to="/services/$category"
-                    params={{ category: cat.slug }}
-                    onMouseEnter={() => setActive(i)}
-                    onFocus={() => setActive(i)}
-                    className="group relative flex items-center gap-6 py-6 border-b border-ink/10"
-                  >
-                    {isActive && (
-                      <motion.span
-                        layoutId="svc-active-rail"
-                        aria-hidden
-                        className="absolute -left-5 top-4 bottom-4 w-[3px] rounded-full"
-                        style={{
-                          background:
-                            "linear-gradient(180deg, var(--royal), var(--cyan-hi), var(--leaf))",
-                        }}
-                      />
-                    )}
-                    <span
-                      className={
-                        "display-xl w-10 shrink-0 text-xl transition-all duration-300 " +
-                        (isActive ? "grad-leaf-text" : "text-foreground opacity-25")
-                      }
-                    >
-                      {cat.number}
-                    </span>
-                    <motion.span
-                      animate={{ scale: isActive ? 1.08 : 1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 18 }}
-                      className={
-                        "grid h-12 w-12 shrink-0 place-items-center rounded-2xl transition-colors duration-300 " +
-                        (isActive
-                          ? "bg-cyan-hi/20 text-cyan-hi"
-                          : "bg-cyan-hi/10 text-cyan-hi opacity-70")
-                      }
-                    >
-                      <Icon className="h-5 w-5" />
-                    </motion.span>
-                    <span className="min-w-0 flex-1">
-                      <span
-                        className={
-                          "display-xl block text-2xl xl:text-3xl transition-opacity duration-300 " +
-                          (isActive ? "text-foreground" : "text-foreground opacity-60")
-                        }
-                      >
-                        {cat.name}
-                      </span>
-                      <span className="mt-1 block text-sm text-ink/60 line-clamp-1">
-                        {cat.tagline}
-                      </span>
-                    </span>
-                    <span
-                      className={
-                        "grid h-10 w-10 shrink-0 place-items-center rounded-full border transition-all duration-300 " +
-                        (isActive
-                          ? "border-cyan-hi text-cyan-hi rotate-45"
-                          : "border-ink/15 text-foreground opacity-40")
-                      }
-                    >
-                      <ArrowUpRight className="h-4 w-4" />
-                    </span>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          <motion.div
-            className="col-span-5 sticky top-28"
-            onMouseMove={(e) => {
-              const r = e.currentTarget.getBoundingClientRect();
-              mx.set((e.clientX - r.left) / r.width);
-              my.set((e.clientY - r.top) / r.height);
-            }}
-            onMouseLeave={() => {
-              mx.set(0.5);
-              my.set(0.5);
-            }}
-          >
-            <motion.div
-              style={
-                reduced
-                  ? undefined
-                  : { rotateX, rotateY, transformPerspective: 1200, transformStyle: "preserve-3d" }
-              }
-              className="relative min-h-[480px] overflow-hidden rounded-[2rem] bento-tile"
-            >
-              {/* Slow conic halo + dot grid give the console a "live" depth */}
-              <motion.div
-                aria-hidden
-                className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full opacity-25"
+        {/* ---------- Desktop: expanding photo panels ----------
+            The whole catalog in one glance: every category is a full-height
+            photo panel; the hovered (or keyboard-focused) one breathes open
+            into an editorial card while its neighbours compress into labelled
+            spines. Flex-grow does the choreography — pure CSS transition, no
+            layout thrash. */}
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-10% 0px" }}
+          transition={{ duration: 0.7, ease: [0.2, 0.7, 0.2, 1] }}
+          className="mt-14 hidden lg:flex gap-3 h-[clamp(460px,58vh,600px)]"
+        >
+          {categories.map((cat, i) => {
+            const Icon = iconByName(cat.iconName);
+            const isActive = i === active;
+            const count = countFor(cat.slug);
+            return (
+              <Link
+                key={cat.slug}
+                id={`svc-${cat.slug}`}
+                to="/services/$category"
+                params={{ category: cat.slug }}
+                aria-label={`${cat.name} — explore services`}
+                onMouseEnter={() => setActive(i)}
+                onFocus={() => setActive(i)}
+                className="group relative block min-w-0 overflow-hidden rounded-[1.75rem] bg-ink-2 outline-none focus-visible:ring-2 focus-visible:ring-cyan-hi"
                 style={{
-                  background:
-                    "conic-gradient(from 0deg, transparent 0%, var(--cyan-hi) 30%, var(--leaf) 55%, transparent 75%)",
-                  filter: "blur(2px)",
+                  flexGrow: isActive ? 4 : 1,
+                  flexBasis: 0,
+                  transition: reduced
+                    ? undefined
+                    : "flex-grow 0.75s cubic-bezier(0.22, 0.9, 0.26, 1)",
                 }}
-                animate={reduced ? undefined : { rotate: 360 }}
-                transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-              />
-              <div className="pointer-events-none absolute inset-0 dot-grid opacity-25" />
+              >
+                {cat.image ? (
+                  <img
+                    src={cat.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className={
+                      "absolute inset-0 h-full w-full object-cover transition-[transform,filter] duration-700 " +
+                      (isActive ? "scale-100 grayscale-0" : "scale-105 grayscale-[0.4]")
+                    }
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-royal/50 via-ink-2 to-ink" />
+                )}
+                {/* Legibility scrim — heavier while expanded, so copy reads
+                    over any photo in either theme */}
+                <div
+                  className={
+                    "absolute inset-0 bg-gradient-to-t transition-opacity duration-700 " +
+                    (isActive
+                      ? "from-black/85 via-black/35 to-black/10 opacity-100"
+                      : "from-black/80 via-black/45 to-black/25 opacity-100")
+                  }
+                />
 
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={current.slug}
-                  initial={{ opacity: 0, y: 26, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -18, scale: 0.98 }}
-                  transition={{ duration: 0.35, ease: [0.2, 0.7, 0.2, 1] }}
-                  className="relative flex h-full min-h-[480px] flex-col"
-                  style={{ z: reduced ? 0 : 46 }}
+                {/* Collapsed spine: number on top, vertical name, a round
+                    photo thumb as the anchor (icon only when no photo exists) */}
+                <div
+                  className={
+                    "absolute inset-0 flex flex-col items-center justify-between py-6 transition-opacity duration-400 " +
+                    (isActive ? "opacity-0 pointer-events-none" : "opacity-100")
+                  }
                 >
-                  {(() => {
-                    const Icon = iconByName(current.iconName);
-                    return current.image ? (
-                      /* Cover image header — full bleed inside the console,
-                         with a legibility scrim and the category number
-                         etched over it (always-white text-on-media, so both
-                         themes read over the photo). */
-                      <div className="relative h-52 xl:h-60 shrink-0 overflow-hidden">
-                        <motion.img
-                          src={current.image}
-                          alt=""
-                          initial={reduced ? undefined : { scale: 1.1 }}
-                          animate={{ scale: 1 }}
-                          transition={{ duration: 0.9, ease: [0.2, 0.7, 0.2, 1] }}
-                          className="h-full w-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
-                        <span className="display-xl absolute bottom-3 right-6 text-5xl text-on-media opacity-80">
-                          {current.number}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="px-8 pt-8 xl:px-10 xl:pt-10">
-                        <span className="relative grid h-20 w-20 place-items-center rounded-3xl bg-cyan-hi/15 text-cyan-hi">
-                          <Icon className="h-9 w-9" />
-                          <span className="absolute inset-0 rounded-3xl border border-cyan-hi/30 animate-pulse-soft" />
-                        </span>
-                      </div>
-                    );
-                  })()}
-                  <div className="flex flex-1 flex-col px-8 pb-8 pt-6 xl:px-10 xl:pb-10">
-                    <div className="flex items-center gap-3">
-                      {current.image &&
-                        (() => {
-                          const Icon = iconByName(current.iconName);
-                          return (
-                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-hi/15 text-cyan-hi">
-                              <Icon className="h-5 w-5" />
-                            </span>
-                          );
-                        })()}
-                      <div className="micro-label !text-royal">{current.number} · Field crew</div>
-                    </div>
-                    <h3 className="display-xl mt-2 text-3xl xl:text-4xl">{current.name}</h3>
-                    <p className="mt-3 text-sm text-ink/70">{current.tagline}</p>
-                    <p className="mt-3 flex-1 text-sm text-ink/60 line-clamp-3">
-                      {current.description}
-                    </p>
-                    <div className="mt-6 flex flex-wrap items-center gap-3">
-                      <LiquidButton to={`/services/${current.slug}`}>Explore</LiquidButton>
-                      {countFor(current.slug) > 0 && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-leaf/25 bg-leaf/10 px-3 py-1.5 text-[11px] uppercase tracking-widest text-leaf">
-                          <Wrench className="h-3 w-3" /> {countFor(current.slug)} service lines
-                        </span>
-                      )}
-                    </div>
+                  <span className="display-xl text-lg text-cyan-hi">{cat.number}</span>
+                  <span
+                    className="display-xl whitespace-nowrap text-xl xl:text-2xl text-on-media"
+                    style={{ writingMode: "vertical-rl" }}
+                  >
+                    {cat.name}
+                  </span>
+                  {cat.image ? (
+                    <img
+                      src={cat.image}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-12 w-12 rounded-full object-cover ring-2 ring-white/50 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.7)]"
+                    />
+                  ) : (
+                    <span className="grid h-12 w-12 place-items-center rounded-full bg-white/12 text-on-media backdrop-blur">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                  )}
+                </div>
+
+                {/* Expanded editorial card */}
+                <div
+                  className={
+                    "absolute inset-0 flex flex-col justify-end p-8 xl:p-10 transition-all duration-500 " +
+                    (isActive
+                      ? "opacity-100 translate-y-0 delay-150"
+                      : "opacity-0 translate-y-4 pointer-events-none")
+                  }
+                >
+                  <span className="display-xl absolute top-7 right-8 text-5xl text-on-media opacity-50">
+                    {cat.number}
+                  </span>
+                  {/* No icon chip here — the panel itself is the category's
+                      photo; a glyph on top of it was just noise. The label
+                      rides a dark chip so it reads over light photo areas. */}
+                  <span className="micro-label w-fit rounded-full bg-black/40 px-3 py-1.5 !text-cyan-hi backdrop-blur-sm">
+                    {cat.number} · Field crew
+                  </span>
+                  <h3 className="display-xl mt-4 text-4xl xl:text-5xl text-on-media">{cat.name}</h3>
+                  <p className="mt-3 max-w-xl text-sm xl:text-base text-on-media-soft line-clamp-2">
+                    {cat.tagline}
+                  </p>
+                  <p className="mt-2 max-w-xl text-sm text-on-media-soft line-clamp-2">
+                    {cat.description}
+                  </p>
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-cyan-hi px-5 py-2.5 text-sm font-semibold text-ink shadow-[0_12px_32px_-12px_var(--cyan-hi)] transition-transform duration-300 group-hover:gap-3">
+                      Explore <ArrowUpRight className="h-4 w-4" />
+                    </span>
+                    {count > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-leaf px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-ink shadow-[0_10px_24px_-10px_var(--leaf)]">
+                        {count} service {count === 1 ? "line" : "lines"}
+                      </span>
+                    )}
                   </div>
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-          </motion.div>
-        </div>
+                </div>
+              </Link>
+            );
+          })}
+        </motion.div>
 
         {/* ---------- Mobile / tablet: scroll-driven 3D card deck ---------- */}
         <ServiceDeck categories={categories} countFor={countFor} reduced={!!reduced} />
@@ -392,12 +317,13 @@ function DeckCard({
           <div className={"px-6 pb-7 " + (cat.image ? "pt-5" : "pt-6")}>
             {cat.image ? (
               <div className="flex items-center gap-3">
-                <span
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
-                  style={{ background: `color-mix(in oklab, ${hue} 16%, transparent)`, color: hue }}
-                >
-                  <Icon className="h-5 w-5" />
-                </span>
+                <img
+                  src={cat.image}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white/40"
+                />
                 <span className="micro-label !text-royal">{cat.number} · Field crew</span>
               </div>
             ) : (
@@ -421,8 +347,8 @@ function DeckCard({
                 Explore <ArrowUpRight className="h-4 w-4" />
               </span>
               {count > 0 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-leaf/25 bg-leaf/10 px-3 py-1.5 text-[11px] uppercase tracking-widest text-leaf">
-                  <Wrench className="h-3 w-3" /> {count} service lines
+                <span className="inline-flex items-center rounded-full bg-leaf px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-ink shadow-[0_10px_24px_-10px_var(--leaf)]">
+                  {count} service {count === 1 ? "line" : "lines"}
                 </span>
               )}
             </span>

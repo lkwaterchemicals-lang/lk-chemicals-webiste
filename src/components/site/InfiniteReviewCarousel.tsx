@@ -21,7 +21,7 @@ export function InfiniteReviewCarousel() {
         stopOnInteraction: false,
         stopOnMouseEnter: true, // Pauses on hover
       }),
-    ]
+    ],
   );
 
   const [isReady, setIsReady] = useState(false);
@@ -72,20 +72,26 @@ export function InfiniteReviewCarousel() {
                   </p>
                 </div>
 
-                {/* Customer Info */}
+                {/* Customer Info — admin records store photos in `images`
+                    (gallery field); older/seed records use a single `image`. */}
                 <div className="flex items-center gap-4 mt-auto">
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/5 flex items-center justify-center">
-                    {testimonial.image ? (
-                      <img
-                        src={testimonial.image}
-                        alt={testimonial.who}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <User className="h-5 w-5 text-white/40" />
-                    )}
-                  </div>
+                  {(() => {
+                    const photo = testimonial.images?.find(Boolean) ?? testimonial.image;
+                    return (
+                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/5 flex items-center justify-center">
+                        {photo ? (
+                          <img
+                            src={photo}
+                            alt={testimonial.who}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <User className="h-5 w-5 text-white/40" />
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-sm text-foreground">

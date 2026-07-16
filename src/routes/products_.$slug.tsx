@@ -1,14 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { ArrowLeft, Check, Download, Phone } from "lucide-react";
+import { ArrowLeft, Check, Download } from "lucide-react";
 import { findProduct, type Product, type Service } from "@/data/products";
-import {
-  useCategories,
-  useProducts,
-  useServiceCategories,
-  useServices,
-  useSiteSettings,
-} from "@/lib/content";
+import { useCategories, useProducts, useServiceCategories, useServices } from "@/lib/content";
 import { fetchDocRest } from "@/lib/firestore-rest";
 import { absUrl, useLiveMeta } from "@/lib/site";
 import { MicroLabel } from "@/components/site/GhostWord";
@@ -21,10 +14,9 @@ import {
   SuggestRail,
   type SuggestItem,
 } from "@/components/site/Detail";
-import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
-import { waLink } from "@/components/site/WaCluster";
+import { ContactDock } from "@/components/site/ContactDock";
 import drumImg from "@/assets/drum.jpg";
 import resinImg from "@/assets/resin.jpg";
 
@@ -91,16 +83,6 @@ function ProductDetail() {
   const { data: categories } = useCategories();
   const { data: services } = useServices();
   const { data: serviceCategories } = useServiceCategories();
-  const { data: settings } = useSiteSettings();
-
-  // While this page is open, phones swap the floating contact cluster for the
-  // fixed action dock (they'd overlap) — see body[data-dock] in styles.css.
-  useEffect(() => {
-    document.body.dataset.dock = "1";
-    return () => {
-      delete document.body.dataset.dock;
-    };
-  }, []);
 
   const product: Product | null = staticProduct ?? products.find((p) => p.slug === slug) ?? null;
 
@@ -348,38 +330,19 @@ function ProductDetail() {
               </div>
             </div>
           </div>
-
-          {/* Action dock — phones get it pinned to the bottom of the screen
-              from the first paint (no scrolling hunt to buy); desktop keeps
-              the floating pill inside the section. The floating contact
-              cluster is hidden on phones while this page is open (see the
-              body[data-dock] rules in styles.css). */}
-          <div className="mt-10 sticky bottom-4 z-20 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[60] max-lg:mt-0 max-lg:px-3 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <div className="glass-dark rounded-full px-4 py-3 flex flex-wrap items-center justify-between gap-3 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2.5">
-              <div className="hidden lg:block text-white/80 text-sm px-2">
-                <span className="micro-label">Enquire · {product.name}</span>
-              </div>
-              <div className="flex gap-2 max-lg:w-full">
-                <WhatsAppButton href={waLink(msg)} className="max-lg:flex-1 justify-center !px-4">
-                  WhatsApp
-                </WhatsAppButton>
-                <a
-                  href={`tel:${settings.phone.replace(/\s+/g, "")}`}
-                  className="max-lg:flex-1 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm text-white/85 transition-colors hover:border-cyan-hi hover:text-white"
-                >
-                  <Phone className="h-4 w-4" /> Call
-                </a>
-                <a
-                  href="#enquire"
-                  className="max-lg:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-cyan-hi px-5 py-3 text-sm font-semibold text-ink shadow-[0_10px_30px_-10px_var(--cyan-hi)] transition-all hover:brightness-110"
-                >
-                  Enquiry
-                </a>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
+
+      {/* WhatsApp · Call · Enquiry — fixed to the screen on every viewport, so
+          the moment this product convinces someone the conversation is one tap
+          away (Enquiry opens the form in a dialog, no scroll hunt). The old
+          in-section pill scrolled away with the hero; this never does. */}
+      <ContactDock
+        source={`product:${product.slug}`}
+        message={msg}
+        productRef={product.name}
+        label={`Enquire · ${product.name}`}
+      />
 
       <section id="enquire" className="section-dark py-20">
         <div className="mx-auto max-w-7xl px-6 md:px-8 grid lg:grid-cols-5 gap-10">

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { Linkedin, Mail, Phone } from "lucide-react";
+import { Linkedin, Mail, Phone, UsersRound } from "lucide-react";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
 import { Waterline } from "@/components/site/Waterline";
@@ -302,31 +302,30 @@ function FounderSection() {
   );
 }
 
+// Name and role live UNDER the photo, never over it — admin uploads are
+// unpredictable (logos, badges, busy promos) and overlaid text was routinely
+// unreadable. A square window crops any upload predictably.
 function TeamCard({ m, i }: { m: TeamMember; i: number }) {
   return (
     <motion.article
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-8%" }}
+      viewport={{ once: true, margin: "-8% 0px" }}
       transition={{ delay: (i % 4) * 0.06, duration: 0.55 }}
-      className="group bento-tile rounded-3xl overflow-hidden hover-lift flex flex-col"
+      className="group bento-tile flex h-full flex-col overflow-hidden rounded-[1.75rem] hover-lift"
     >
-      <div className="relative aspect-[4/5] overflow-hidden">
+      <div className="relative aspect-square overflow-hidden">
         <Portrait member={m} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-        <div className="absolute bottom-0 inset-x-0 p-4">
-          <h3 className="display-xl text-lg leading-tight text-on-media">{m.name}</h3>
-          <div className="mt-1 text-[10px] tracking-[0.18em] uppercase text-on-media-soft">
-            {m.role}
-          </div>
-        </div>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
       </div>
-      {(m.bio || m.linkedin || m.email || m.phone) && (
-        <div className="flex flex-1 flex-col gap-3 p-4">
-          {m.bio && <p className="text-xs leading-relaxed text-ink/70 line-clamp-3">{m.bio}</p>}
-          <ContactRow member={m} className="mt-auto !gap-2 [&>a]:h-9 [&>a]:w-9" />
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="display-xl text-xl leading-tight text-foreground">{m.name}</h3>
+        <div className="mt-1.5 text-[10px] font-semibold tracking-[0.18em] uppercase text-royal">
+          {m.role}
         </div>
-      )}
+        {m.bio && <p className="mt-3 text-sm leading-relaxed text-ink/70 line-clamp-3">{m.bio}</p>}
+        <ContactRow member={m} className="mt-auto pt-4 !gap-2 [&>a]:h-10 [&>a]:w-10" />
+      </div>
     </motion.article>
   );
 }
@@ -339,14 +338,37 @@ function TeamSection({ heading, body }: { heading: string; body: string }) {
     <section className="section-light py-28 relative overflow-hidden">
       <GhostWord className="absolute top-0 left-1/2 -translate-x-1/2 text-[20vw]">TEAM</GhostWord>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
-        <MicroLabel n="06" className="!text-royal">
-          The team
-        </MicroLabel>
-        <h2 className="display-xl mt-3" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>
-          {heading}
-        </h2>
-        {body && <p className="mt-4 max-w-2xl text-ink/70">{body}</p>}
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="min-w-0">
+            <MicroLabel n="06" className="!text-royal">
+              The team
+            </MicroLabel>
+            <h2
+              className="display-xl mt-3 max-w-3xl"
+              style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}
+            >
+              {heading}
+            </h2>
+            {body && <p className="mt-4 max-w-2xl text-ink/70">{body}</p>}
+          </div>
+          <span className="bento-tile hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] uppercase tracking-widest text-ink/70">
+            <UsersRound className="h-3.5 w-3.5 text-cyan-hi" /> {members.length} people
+          </span>
+        </div>
+
+        {/* Phones: a swipeable snap rail — one big card in view, the next one
+            peeking in to invite the thumb (the old 2-col grid crushed both
+            the photos and the contact buttons). */}
+        <div className="mt-10 -mx-6 flex gap-4 overflow-x-auto px-6 pb-3 snap-x snap-mandatory md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {members.map((m, i) => (
+            <div key={m.name + i} className="w-[74vw] max-w-[330px] shrink-0 snap-center">
+              <TeamCard m={m} i={i} />
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop / tablet: airy grid */}
+        <div className="mt-12 hidden md:grid md:grid-cols-3 xl:grid-cols-4 gap-6">
           {members.map((m, i) => (
             <TeamCard key={m.name + i} m={m} i={i} />
           ))}

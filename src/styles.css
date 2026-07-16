@@ -556,6 +556,11 @@
     padding-bottom: 92px;
   }
 }
+/* The dock floats bottom-centre on desktop too — give the footer clearance so
+   its own contact pills never sit underneath it at the end of the page. */
+body[data-dock="1"] footer {
+  padding-bottom: 108px;
+}
 
 /* ---------- Mobile section rhythm ----------
    The desktop's generous vertical bands read as dead gaps on phones —
@@ -1399,10 +1404,11 @@ header nav.bg-transparent {
   overscroll-behavior: contain;
   touch-action: none;
   /* No-JS / hydration-failure failsafe: the veil dissolves on its own so it
-     can never trap the page. JS normally unmounts it long before this fires.
+     can never trap the page. JS normally unmounts it long before this fires
+     (full beat ends ~3.5s), so 5s only ever triggers when hydration is dead.
      (Encoded as a long duration, not a delay — the global reduced-motion
      kill-switch collapses durations to ~0, hiding the veil instantly.) */
-  animation: lkb-failsafe 8s linear both;
+  animation: lkb-failsafe 5s linear both;
 }
 @keyframes lkb-failsafe {
   0%,
@@ -1927,51 +1933,8 @@ html.light .lk-boot {
   transition-delay: 0.15s;
 }
 
-/* =========================================================   NAVIGATION — water wash + page entrance
+/* =========================================================   NAVIGATION — page entrance
    ================================================================ */
-
-/* soft band of light that sweeps down the viewport on route change */
-#lk-wash {
-  --lkw-tint: rgba(120, 214, 245, 0.05);
-  --lkw-crest: rgba(160, 228, 250, 0.1);
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  pointer-events: none;
-  overflow: hidden;
-  opacity: 0;
-}
-html.light #lk-wash {
-  --lkw-tint: rgba(56, 152, 199, 0.045);
-  --lkw-crest: rgba(255, 255, 255, 0.35);
-}
-#lk-wash.lk-wash-run {
-  opacity: 1;
-}
-#lk-wash i {
-  position: absolute;
-  left: -12%;
-  right: -12%;
-  top: 0;
-  height: 44%;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--lkw-tint) 42%,
-    var(--lkw-crest) 76%,
-    transparent
-  );
-  transform: translate3d(0, -130%, 0);
-  will-change: transform;
-}
-#lk-wash.lk-wash-run i {
-  animation: lkw-sweep 0.8s cubic-bezier(0.6, 0.05, 0.28, 0.99) both;
-}
-@keyframes lkw-sweep {
-  to {
-    transform: translate3d(0, 330%, 0);
-  }
-}
 
 /* the incoming page rises gently into place */
 .site-shell main.lk-page-enter {
@@ -1991,8 +1954,7 @@ html.light #lk-wash {
 /* Reduced motion: no ceremony at all — content, instantly. (The global
    kill-switch already collapses durations; this removes even the flash.) */
 @media (prefers-reduced-motion: reduce) {
-  .lk-boot,
-  #lk-wash {
+  .lk-boot {
     display: none !important;
   }
   .site-shell main.lk-page-enter {

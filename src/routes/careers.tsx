@@ -94,18 +94,24 @@ function CareersPage() {
             all ours.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-4 sm:gap-6">
-            <LiquidButton onClick={() => document.getElementById("openings")?.scrollIntoView({ behavior: "smooth" })} variant="primary">
+            <LiquidButton
+              onClick={() =>
+                document.getElementById("openings")?.scrollIntoView({ behavior: "smooth" })
+              }
+              variant="primary"
+            >
               View open roles
             </LiquidButton>
-            <a
-              href={applyMail()}
+            <button
+              type="button"
+              onClick={() => setApplyFor("general")}
               className="group inline-flex items-center gap-3 text-sm font-medium text-white/80 transition-colors hover:text-white"
             >
               <span className="grid h-10 w-10 place-items-center rounded-full border border-white/20 transition-all group-hover:bg-white group-hover:text-ink">
                 <Send className="h-4 w-4" />
               </span>
               <span>Send general application</span>
-            </a>
+            </button>
           </div>
         </div>
       </section>

@@ -1,14 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Check, ChevronDown, Download, Phone } from "lucide-react";
-import {
-  useCategories,
-  useProducts,
-  useServiceCategories,
-  useServices,
-  useSiteSettings,
-} from "@/lib/content";
+import { ArrowLeft, Check, ChevronDown, Download } from "lucide-react";
+import { useCategories, useProducts, useServiceCategories, useServices } from "@/lib/content";
 import { type Product, type Service } from "@/data/products";
 import { fetchDocRest } from "@/lib/firestore-rest";
 import { absUrl, useLiveMeta } from "@/lib/site";
@@ -21,10 +15,9 @@ import {
   SuggestRail,
   type SuggestItem,
 } from "@/components/site/Detail";
-import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
-import { waLink } from "@/components/site/WaCluster";
+import { ContactDock } from "@/components/site/ContactDock";
 
 export const Route = createFileRoute("/services_/$category_/$service")({
   // Services live only in Firestore — fetch on the server so crawlers and
@@ -80,17 +73,7 @@ function ServiceDetail() {
   const { data: categories } = useServiceCategories();
   const { data: products } = useProducts();
   const { data: productCategories } = useCategories();
-  const { data: settings } = useSiteSettings();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-
-  // Phones swap the floating contact cluster for the fixed action dock while
-  // this page is open — see body[data-dock] in styles.css.
-  useEffect(() => {
-    document.body.dataset.dock = "1";
-    return () => {
-      delete document.body.dataset.dock;
-    };
-  }, []);
 
   const service: Service | null =
     services.find((s) => s.slug === serviceSlug) ?? ssrService ?? null;
@@ -344,35 +327,17 @@ function ServiceDetail() {
               </div>
             </div>
           )}
-
-          {/* Action dock — fixed to the screen bottom on phones, floating
-              pill inside the section on desktop. */}
-          <div className="mt-10 sticky bottom-4 z-20 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-[60] max-lg:mt-0 max-lg:px-3 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <div className="glass-dark rounded-full px-4 py-3 flex flex-wrap items-center justify-between gap-3 max-lg:rounded-2xl max-lg:px-3 max-lg:py-2.5">
-              <div className="hidden lg:block text-white/80 text-sm px-2">
-                <span className="micro-label">Enquire · {service.name}</span>
-              </div>
-              <div className="flex gap-2 max-lg:w-full">
-                <WhatsAppButton href={waLink(msg)} className="max-lg:flex-1 justify-center !px-4">
-                  WhatsApp
-                </WhatsAppButton>
-                <a
-                  href={`tel:${settings.phone.replace(/\s+/g, "")}`}
-                  className="max-lg:flex-1 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm text-white/85 transition-colors hover:border-cyan-hi hover:text-white"
-                >
-                  <Phone className="h-4 w-4" /> Call
-                </a>
-                <a
-                  href="#enquire"
-                  className="max-lg:flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-cyan-hi px-5 py-3 text-sm font-semibold text-ink shadow-[0_10px_30px_-10px_var(--cyan-hi)] transition-all hover:brightness-110"
-                >
-                  Enquiry
-                </a>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
+
+      {/* WhatsApp · Call · Enquiry — fixed to the screen on every viewport;
+          Enquiry opens the booking form in a dialog, no scroll hunt. */}
+      <ContactDock
+        source={`service:${service.slug}`}
+        message={msg}
+        productRef={service.name}
+        label={`Enquire · ${service.name}`}
+      />
 
       <section id="enquire" className="section-dark py-20">
         <div className="mx-auto max-w-7xl px-6 md:px-8 grid lg:grid-cols-5 gap-10">

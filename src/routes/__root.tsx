@@ -8,7 +8,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import logoUrl from "@/assets/lk-logo.png";
@@ -160,6 +160,12 @@ const SPLASH_HTML = `
 <script>if(window.location.pathname!=='/')document.documentElement.classList.add('no-splash');</script>
 <style>
 html.no-splash #lk-splash{display:none!important}
+/* Only the splash from the original HTML parse is real: its inline script
+   (below) stamps data-live as the document streams in. When React re-injects
+   this island later, the re-added <script> never executes, so the copy has no
+   dismiss logic — this rule keeps such copies invisible instead of letting
+   them sit over the page forever. */
+#lk-splash:not([data-live]){display:none!important}
 #lk-splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;overflow:hidden;
   background:radial-gradient(640px 480px at 50% 44%,oklch(0.3 0.09 235 / 0.32),transparent 70%),var(--ink,#0a0f1e);}
 html.light #lk-splash{
@@ -190,6 +196,12 @@ html.light .lk-splash-bar{background:oklch(0.22 0.06 258 / 0.12);}
 @keyframes lk-splash-ripple{0%{opacity:0;transform:scale(.7)}20%{opacity:1}100%{opacity:0;transform:scale(1.85)}}
 @keyframes lk-splash-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes lk-splash-sweep{from{transform:translateX(-110%)}to{transform:translateX(250%)}}
+/* Pure-CSS failsafe: if the dismiss script never runs (dead JS, or React
+   re-injecting this island without executing its scripts), the splash hides
+   on its own. Scoped to :not(.lk-splash-done) so it can't fight the scripted
+   fade-out. */
+#lk-splash:not(.lk-splash-done){animation:lk-splash-die 7s linear both;}
+@keyframes lk-splash-die{0%,85%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden;pointer-events:none}}
 #lk-splash.lk-splash-done{opacity:0;pointer-events:none;transition:opacity .55s cubic-bezier(.4,0,.2,1) .3s;}
 #lk-splash.lk-splash-done .lk-splash-core{animation:none;transform:scale(1.04);transition:transform .6s cubic-bezier(.4,0,.2,1) .3s;}
 #lk-splash.lk-splash-done .lk-splash-bar i{animation:none;transform:none;width:100%;transition:width .28s ease;}
@@ -217,10 +229,11 @@ html.light .lk-splash-bar{background:oklch(0.22 0.06 258 / 0.12);}
 <noscript><style>#lk-splash{display:none}</style></noscript>
 <script>
 (function(){
+  var live=document.getElementById('lk-splash');
+  if(live)live.setAttribute('data-live','1');
   if(window.location.pathname!=='/'){
     window.__lkSplashHide=function(){};
-    var el=document.getElementById('lk-splash');
-    if(el&&el.parentNode)el.parentNode.removeChild(el);
+    if(live&&live.parentNode)live.parentNode.removeChild(live);
     return;
   }
   var t0=performance.now(),hidden=false;
@@ -343,11 +356,49 @@ function RootComponent() {
     if (GA_ID) window.gtag?.("event", "page_view", { page_path: pathname });
   }, [pathname]);
 
+  // React sometimes re-injects the raw-HTML splash island after hydration
+  // (its inline <script>s don't execute on re-injection, so the re-added
+  // splash has no dismiss logic and would sit over the page forever — the
+  // "About never opens / back is stuck loading" bug). Sweep it on every
+  // route change; the initial mount is skipped so the real first-load splash
+  // keeps its scripted fade-out.
+  const firstNav = useRef(true);
+  useEffect(() => {
+    if (firstNav.current) {
+      firstNav.current = false;
+      return;
+    }
+    document.getElementById("lk-splash")?.remove();
+  }, [pathname]);
+
   // React is interactive — lift the first-load splash (min-hold + exit
   // animation are handled inside the splash's own script/CSS).
   useEffect(() => {
     if (window.__lkSplashHide) window.__lkSplashHide();
     else document.getElementById("lk-splash")?.remove();
+  }, []);
+
+  // Stale-deploy self-healing: after a redeploy the old HTML still references
+  // the previous hashed chunks, so the next route navigation 404s its dynamic
+  // import and the page just hangs on the veil ("About never opens"). Vite
+  // surfaces that as `vite:preloadError` — reload once to pick up fresh HTML
+  // with the new asset hashes. Time-gated so a genuinely broken deploy can't
+  // put the browser in a reload loop.
+  useEffect(() => {
+    const onPreloadError = (e: Event) => {
+      try {
+        const KEY = "lk-chunk-reload-at";
+        const last = Number(sessionStorage.getItem(KEY) || 0);
+        if (Date.now() - last < 20_000) return; // just tried — let the error surface
+        sessionStorage.setItem(KEY, String(Date.now()));
+      } catch {
+        /* private mode — still worth one reload attempt */
+      }
+      e.preventDefault();
+      window.location.reload();
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
   }, []);
 
   return (

@@ -1,26 +1,26 @@
-// Route-change choreography: a soft band of water-light sweeps down the
-// viewport (#lk-wash) while the incoming page rises into place
+// Route-change choreography: the incoming page rises gently into place
 // (.lk-page-enter on <main>). Also plays the very first page-rise when the
 // boot veil begins to drain.
 //
+// (The old full-viewport "water wash" band that swept top→bottom on every
+// route change is gone — in the light theme its crest read as a white flash
+// line, a glitch rather than a transition.)
+//
 // Deliberate skips:
 //   · reduced motion — no ceremony at all;
-//   · search/hash-only changes (catalog filters etc.) — same page, no wash;
+//   · search/hash-only changes (catalog filters etc.) — same page, no rise;
 //   · deep scroll restorations (back/forward) — the rise is designed for
 //     top-of-page arrivals, and a transformed <main> would briefly detach the
 //     hero's fixed-attachment backdrop: invisible at the top of the page, a
-//     visible jump mid-page. The wash still covers those swaps.
-import { useEffect, useRef } from "react";
+//     visible jump mid-page.
+import { useEffect } from "react";
 import { useRouter } from "@tanstack/react-router";
 
 export function PageFx() {
-  const washRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    let washTimer = 0;
 
     const risePage = () => {
       if (window.scrollY > 24) return;
@@ -29,16 +29,17 @@ export function PageFx() {
       main.classList.remove("lk-page-enter");
       void main.offsetWidth; // restart the CSS animation
       main.classList.add("lk-page-enter");
-    };
-
-    const runWash = () => {
-      const wash = washRef.current;
-      if (!wash) return;
-      wash.classList.remove("lk-wash-run");
-      void wash.offsetWidth;
-      wash.classList.add("lk-wash-run");
-      clearTimeout(washTimer);
-      washTimer = window.setTimeout(() => wash.classList.remove("lk-wash-run"), 900);
+      // Drop the class the moment the rise finishes: fill-mode keeps an
+      // identity transform on <main>, and ANY transform makes it the
+      // containing block for position:fixed descendants — the contact dock
+      // was pinning to main's bottom edge instead of the screen.
+      main.addEventListener(
+        "animationend",
+        (e) => {
+          if (e.animationName === "lk-page-in") main.classList.remove("lk-page-enter");
+        },
+        { once: true },
+      );
     };
 
     let prevPath = router.state.location.pathname;
@@ -46,7 +47,6 @@ export function PageFx() {
       const path = router.state.location.pathname;
       if (path === prevPath) return;
       prevPath = path;
-      runWash();
       risePage();
     });
 
@@ -54,13 +54,8 @@ export function PageFx() {
     return () => {
       unsubscribe();
       window.removeEventListener("lk:boot-exit", risePage);
-      clearTimeout(washTimer);
     };
   }, [router]);
 
-  return (
-    <div id="lk-wash" ref={washRef} aria-hidden="true">
-      <i />
-    </div>
-  );
+  return null;
 }

@@ -311,7 +311,9 @@ function WaterlineTransition() {
 
 function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-20%" });
+  // Vertical-only margin: a bare "-20%" also insets the viewport horizontally,
+  // so the left-edge stat never intersected and stayed frozen at 0.
+  const inView = useInView(ref, { once: true, margin: "-20% 0px" });
   const [n, setN] = useState(0);
   useEffect(() => {
     if (!inView) return;
@@ -357,13 +359,12 @@ function WhoWeAre() {
             <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
               {c.stats.map((s) => (
                 <div key={s.label}>
-                  <div className="display-xl text-3xl sm:text-4xl md:text-5xl relative">
+                  <div className="display-xl text-3xl sm:text-4xl md:text-5xl">
                     <span className="grad-leaf-text">
-                      <Counter to={parseInt(String(s.value).replace(/\D/g, ""), 10) || 0} suffix={s.suffix} />
-                    </span>
-                    {/* Debug overlay to see what the CMS is actually returning */}
-                    <span className="absolute top-0 right-0 text-[9px] text-red-500 opacity-50 font-mono">
-                      val:'{String(s.value)}'
+                      <Counter
+                        to={parseInt(String(s.value).replace(/\D/g, ""), 10) || 0}
+                        suffix={s.suffix}
+                      />
                     </span>
                   </div>
                   <div className="mt-2 micro-label opacity-60 text-[10px] sm:text-[11px] leading-tight">
@@ -805,7 +806,6 @@ function WhyLK() {
   );
 }
 
-
 // Accent tints rotate per card; every third card flips to a solid gradient so
 // the rail reads as a designed set, not a repeated template.
 const QUOTE_HUES = ["var(--cyan-hi)", "var(--leaf)", "var(--royal)"];
@@ -908,7 +908,7 @@ function QuoteCard({ t, i }: { t: import("@/data/content").Testimonial; i: numbe
 // blockquote on a timer nobody controls.
 function Proof() {
   const { data: c } = useHomeContent();
-  
+
   const row = [...c.certs, ...c.certs];
   return (
     <section className="section-light py-28 relative overflow-hidden">

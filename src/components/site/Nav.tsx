@@ -21,8 +21,38 @@ type MegaItem = {
   name: string;
   tagline?: string;
   iconName?: string;
+  image?: string | null;
   link: { to: string; params?: Record<string, string>; search?: Record<string, string> };
 };
+
+/* Small real-photo thumbnail for menu rows — every thumb shares the same 4:3
+   ratio so the lists read as one set; categories without a photo yet fall
+   back to their icon tile. */
+function MegaThumb({ item, size = "md" }: { item: MegaItem; size?: "md" | "lg" }) {
+  const dims = size === "lg" ? "h-11 w-[3.7rem]" : "h-10 w-[3.35rem]";
+  if (item.image) {
+    return (
+      <span className={`relative ${dims} shrink-0 overflow-hidden rounded-lg`}>
+        <img
+          src={item.image}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+        <span className="absolute inset-0 rounded-lg ring-1 ring-inset ring-white/10" aria-hidden />
+      </span>
+    );
+  }
+  const Icon = iconByName(item.iconName);
+  return (
+    <span
+      className={`nav-mega-icon grid ${dims} shrink-0 place-items-center rounded-lg bg-cyan-hi/15 text-cyan-hi`}
+    >
+      <Icon className="h-4 w-4" />
+    </span>
+  );
+}
 
 const PLAIN_LINKS: { to: string; label: string }[] = [
   { to: "/", label: "Home" },
@@ -40,6 +70,7 @@ function useMegaData() {
     name: c.name,
     tagline: c.tagline,
     iconName: c.iconName,
+    image: c.image ?? null,
     link: { to: "/products", search: { cat: c.slug } },
   }));
   const services: MegaItem[] = serviceCategories.map((c) => ({
@@ -47,6 +78,7 @@ function useMegaData() {
     name: c.name,
     tagline: c.tagline,
     iconName: c.iconName,
+    image: c.image ?? null,
     link: { to: "/services/$category", params: { category: c.slug } },
   }));
   return { products, services };
@@ -122,31 +154,26 @@ function MegaDropdown({
           >
             <div className="nav-mega-panel rounded-2xl p-2.5">
               <div className="grid grid-cols-2 gap-1">
-                {items.map((it) => {
-                  const Icon = iconByName(it.iconName);
-                  return (
-                    <Link
-                      key={it.key}
-                      to={it.link.to as never}
-                      params={it.link.params as never}
-                      search={it.link.search as never}
-                      onClick={() => setOpen(false)}
-                      className="nav-mega-item group flex items-center gap-3 rounded-xl px-3 py-2.5"
-                    >
-                      <span className="nav-mega-icon grid h-9 w-9 shrink-0 place-items-center rounded-lg">
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-[13px] font-semibold">{it.name}</span>
-                        {it.tagline && (
-                          <span className="nav-mega-sub block truncate text-[11px]">
-                            {it.tagline}
-                          </span>
-                        )}
-                      </span>
-                    </Link>
-                  );
-                })}
+                {items.map((it) => (
+                  <Link
+                    key={it.key}
+                    to={it.link.to as never}
+                    params={it.link.params as never}
+                    search={it.link.search as never}
+                    onClick={() => setOpen(false)}
+                    className="nav-mega-item group flex items-center gap-3 rounded-xl px-3 py-2.5"
+                  >
+                    <MegaThumb item={it} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[13px] font-semibold">{it.name}</span>
+                      {it.tagline && (
+                        <span className="nav-mega-sub block truncate text-[11px]">
+                          {it.tagline}
+                        </span>
+                      )}
+                    </span>
+                  </Link>
+                ))}
               </div>
               <Link
                 to={to}
@@ -342,7 +369,7 @@ export function Nav() {
             {/* Root pane */}
             <div
               className={
-                "absolute inset-0 flex flex-col justify-center px-8 gap-1.5 transition-all duration-400 " +
+                "absolute inset-0 flex flex-col justify-center px-8 gap-4 sm:gap-5 transition-all duration-400 " +
                 (sub
                   ? "-translate-x-10 opacity-0 pointer-events-none"
                   : "translate-x-0 opacity-100")
@@ -360,7 +387,7 @@ export function Nav() {
                 ] as const
               ).map((l, i) => {
                 const cls =
-                  "display-xl text-[2.6rem] sm:text-6xl grad-text opacity-0 translate-y-3";
+                  "display-xl text-[3.1rem] leading-[1.05] sm:text-6xl grad-text opacity-0 translate-y-3";
                 const style = {
                   animation: open && !sub ? `fade-in .6s ${i * 0.05}s forwards` : "none",
                 } as const;
@@ -413,35 +440,27 @@ export function Nav() {
                   All {subLabel.toLowerCase()}
                   <ArrowUpRight className="h-4 w-4" />
                 </Link>
-                {subData.map((it) => {
-                  const Icon = iconByName(it.iconName);
-                  return (
-                    <Link
-                      key={it.key}
-                      to={it.link.to as never}
-                      params={it.link.params as never}
-                      search={it.link.search as never}
-                      onClick={() => closeMenu()}
-                      className="flex items-center gap-3.5 rounded-2xl glass px-4 py-3.5"
-                    >
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-hi/15 text-cyan-hi">
-                        <Icon className="h-4.5 w-4.5" />
+                {subData.map((it) => (
+                  <Link
+                    key={it.key}
+                    to={it.link.to as never}
+                    params={it.link.params as never}
+                    search={it.link.search as never}
+                    onClick={() => closeMenu()}
+                    className="group flex items-center gap-3.5 rounded-2xl glass px-4 py-3.5"
+                  >
+                    <MegaThumb item={it} size="lg" />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[15px] font-semibold text-white">
+                        {it.name}
                       </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-[15px] font-semibold text-white">
-                          {it.name}
-                        </span>
-                        {it.tagline && (
-                          <span className="block truncate text-xs text-white/55">{it.tagline}</span>
-                        )}
-                      </span>
-                      <ChevronRight
-                        className="ml-auto h-4 w-4 shrink-0 text-white/40"
-                        aria-hidden
-                      />
-                    </Link>
-                  );
-                })}
+                      {it.tagline && (
+                        <span className="block truncate text-xs text-white/55">{it.tagline}</span>
+                      )}
+                    </span>
+                    <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-white/40" aria-hidden />
+                  </Link>
+                ))}
               </div>
             </div>
           </div>

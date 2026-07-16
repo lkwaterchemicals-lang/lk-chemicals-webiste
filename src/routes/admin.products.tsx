@@ -84,7 +84,7 @@ function ProductsAdmin() {
       searchText={(r) => `${r.name ?? ""} ${r.slug ?? ""} ${r.category ?? ""} ${r.description ?? ""}`}
       filterRows={cat ? (rows) => rows.filter((r) => r.category === cat) : undefined}
       extraToolbar={
-        <div className="w-44 hidden md:block">
+        <div className="w-full sm:w-44">
           <SelectWrap>
             <select className="a-select !py-2 !text-xs" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Filter by category">
               <option value="">All categories</option>

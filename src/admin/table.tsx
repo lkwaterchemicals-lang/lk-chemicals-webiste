@@ -201,7 +201,7 @@ export function DataTable<T extends { __id: string }>({
       ) : (
         <>
           {/* Desktop / tablet table */}
-          <div className="hidden sm:block max-h-[62vh] overflow-y-auto">
+          <div className="a-scroll-x hidden sm:block max-h-[62vh] overflow-y-auto">
             <table className="a-table">
               <thead>
                 <tr>
@@ -295,7 +295,10 @@ export function DataTable<T extends { __id: string }>({
                 )}
                 <div className="flex-1 min-w-0">{mobileCard(r)}</div>
                 {rowActions && (
-                  <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  // max-w caps the strip at two icon buttons per row, so
+                  // action-heavy modules wrap into a 2×2 block instead of
+                  // squeezing the card text off a narrow phone.
+                  <div className="flex max-w-[80px] shrink-0 flex-wrap items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                     {rowActions(r)}
                   </div>
                 )}

@@ -410,6 +410,19 @@
   .adm .a-input, .adm .a-select, .adm .a-textarea, .adm .a-cmdk-input {
     font-size: 1rem !important;
   }
+
+  /* Fingers need bigger targets than mouse pointers — grow the small
+     buttons/checkboxes without touching the desktop density. */
+  .adm .a-btn-sm { min-height: 2.25rem; }
+  .adm .a-iconbtn { width: 2.25rem; min-height: 2.25rem; }
+  .adm .a-iconbtn.a-btn-sm { width: 2.25rem; }
+  .adm .a-check { width: 1.125rem; height: 1.125rem; }
+}
+
+/* Hover-revealed controls (gallery tile actions) have no hover to reveal
+   them on touch screens — keep them visible there. */
+@media (hover: none) {
+  .adm .a-touch-show { opacity: 1 !important; }
 }
 
 /* Drawer/modal footers clear the home-indicator on notched phones. */

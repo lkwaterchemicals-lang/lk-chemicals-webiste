@@ -463,7 +463,7 @@ export function DocumentsInput({
         >
           <FileIcon className="h-4 w-4 shrink-0" style={{ color: "var(--a-text3)" }} />
           <input
-            className="a-input !py-1.5 !text-xs flex-1"
+            className="a-input !py-1.5 !text-xs min-w-0 flex-1"
             value={d.label}
             placeholder="Label"
             onChange={(e) => setLabel(i, e.target.value)}

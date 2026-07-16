@@ -266,7 +266,7 @@ function EnquiriesAdmin() {
               <Btn variant="danger" icon={Trash2} onClick={() => setConfirmDelete([openRow])}>
                 Delete
               </Btn>
-              <div className="ml-auto flex gap-2">
+              <div className="ml-auto flex flex-wrap justify-end gap-2">
                 {STATUSES.filter((s) => s.id !== "all").map((s) => (
                   <Btn
                     key={s.id}

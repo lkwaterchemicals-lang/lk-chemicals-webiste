@@ -103,7 +103,7 @@ function ServicesAdmin() {
       }
       filterRows={cat ? (rows) => rows.filter((r) => r.serviceCategory === cat) : undefined}
       extraToolbar={
-        <div className="w-44 hidden md:block">
+        <div className="w-full sm:w-44">
           <SelectWrap>
             <select
               className="a-select !py-2 !text-xs"

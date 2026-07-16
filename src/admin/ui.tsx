@@ -84,8 +84,8 @@ export function Card({
   return (
     <section className={`a-card ${className}`}>
       {(title || action) && (
-        <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-0">
-          <h3 className="text-sm font-semibold">{title}</h3>
+        <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-5 pt-4 pb-0">
+          <h3 className="min-w-0 text-sm font-semibold">{title}</h3>
           {action}
         </header>
       )}

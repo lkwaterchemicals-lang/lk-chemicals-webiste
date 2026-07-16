@@ -234,7 +234,7 @@ function AnalyticsPage() {
           </button>
         </div>
         {preset === "custom" && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="date"
               className="a-input !w-auto !py-1.5 !text-xs"

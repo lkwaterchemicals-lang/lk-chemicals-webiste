@@ -293,7 +293,7 @@ function GalleryAdmin() {
                     <Play className="h-3.5 w-3.5 fill-current" />
                   </span>
                 )}
-                <div className="absolute inset-x-0 top-0 flex justify-end gap-1 p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                <div className="a-touch-show absolute inset-x-0 top-0 flex justify-end gap-1 p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                   <button
                     type="button"
                     aria-label="Edit"

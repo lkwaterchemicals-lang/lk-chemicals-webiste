@@ -2,7 +2,16 @@
 // visibility, CSV export. Renders as a true table on ≥sm screens and as a
 // stacked card list on phones, so nothing ever scrolls horizontally.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Columns3, Download, Inbox, Search } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronLeft,
+  ChevronRight,
+  Columns3,
+  Download,
+  Inbox,
+  Search,
+} from "lucide-react";
 import { downloadCsv } from "./registry";
 import { Btn, IconBtn, SkeletonRows, Empty, FirestoreError } from "./ui";
 
@@ -138,15 +147,23 @@ export function DataTable<T extends { __id: string }>({
 
   const headerSort = (c: Col<T>) => {
     if (!c.sortVal) return;
-    setSort((s) => (s?.id !== c.id ? { id: c.id, dir: 1 } : s.dir === 1 ? { id: c.id, dir: -1 } : null));
+    setSort((s) =>
+      s?.id !== c.id ? { id: c.id, dir: 1 } : s.dir === 1 ? { id: c.id, dir: -1 } : null,
+    );
   };
 
   return (
     <div className="a-card overflow-hidden">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid var(--a-border)" }}>
+      <div
+        className="flex flex-wrap items-center gap-2 px-4 py-3"
+        style={{ borderBottom: "1px solid var(--a-border)" }}
+      >
         <div className="relative flex-1 min-w-[160px] max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" style={{ color: "var(--a-text3)" }} />
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2"
+            style={{ color: "var(--a-text3)" }}
+          />
           <input
             ref={searchRef}
             className="a-input !pl-8"
@@ -164,11 +181,23 @@ export function DataTable<T extends { __id: string }>({
             </Btn>
           )}
           <div className="relative hidden sm:block" ref={colMenuRef}>
-            <IconBtn label="Columns" icon={Columns3} variant="ghost" size="sm" onClick={() => setColMenu((v) => !v)} />
+            <IconBtn
+              label="Columns"
+              icon={Columns3}
+              variant="ghost"
+              size="sm"
+              onClick={() => setColMenu((v) => !v)}
+            />
             {colMenu && (
-              <div className="a-card a-pop absolute right-0 top-full z-20 mt-1 w-44 p-2" style={{ boxShadow: "var(--a-shadow-lg)" }}>
+              <div
+                className="a-card a-pop absolute right-0 top-full z-20 mt-1 w-44 p-2"
+                style={{ boxShadow: "var(--a-shadow-lg)" }}
+              >
                 {cols.map((c) => (
-                  <label key={c.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs cursor-pointer hover:bg-[var(--a-hover)]">
+                  <label
+                    key={c.id}
+                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs cursor-pointer hover:bg-[var(--a-hover)]"
+                  >
                     <input
                       type="checkbox"
                       className="a-check"
@@ -193,11 +222,18 @@ export function DataTable<T extends { __id: string }>({
 
       {/* Body */}
       {error != null ? (
-        <div className="p-4"><FirestoreError error={error} /></div>
+        <div className="p-4">
+          <FirestoreError error={error} />
+        </div>
       ) : loading ? (
         <SkeletonRows n={6} />
       ) : filtered.length === 0 ? (
-        <Empty icon={Inbox} title={q ? "No matches" : emptyTitle} body={q ? `Nothing matches "${q}".` : emptyBody} action={q ? undefined : emptyAction} />
+        <Empty
+          icon={Inbox}
+          title={q ? "No matches" : emptyTitle}
+          body={q ? `Nothing matches "${q}".` : emptyBody}
+          action={q ? undefined : emptyAction}
+        />
       ) : (
         <>
           {/* Desktop / tablet table */}
@@ -207,23 +243,45 @@ export function DataTable<T extends { __id: string }>({
                 <tr>
                   {bulkActions && (
                     <th style={{ width: 36 }}>
-                      <input type="checkbox" className="a-check" checked={allOnPage} onChange={toggleAll} aria-label="Select page" />
+                      <input
+                        type="checkbox"
+                        className="a-check"
+                        checked={allOnPage}
+                        onChange={toggleAll}
+                        aria-label="Select page"
+                      />
                     </th>
                   )}
                   {visCols.map((c) => (
                     <th
                       key={c.id}
                       style={{ width: c.width }}
-                      className={c.hideBelow === "lg" ? "hidden lg:table-cell" : c.hideBelow === "md" ? "hidden md:table-cell" : ""}
+                      className={
+                        c.hideBelow === "lg"
+                          ? "hidden lg:table-cell"
+                          : c.hideBelow === "md"
+                            ? "hidden md:table-cell"
+                            : ""
+                      }
                     >
                       <button
                         type="button"
                         onClick={() => headerSort(c)}
-                        className={"inline-flex items-center gap-1 uppercase tracking-[0.06em] text-[11px] font-semibold" + (c.sortVal ? " cursor-pointer hover:text-[var(--a-text)]" : " cursor-default")}
+                        className={
+                          "inline-flex items-center gap-1 uppercase tracking-[0.06em] text-[11px] font-semibold" +
+                          (c.sortVal
+                            ? " cursor-pointer hover:text-[var(--a-text)]"
+                            : " cursor-default")
+                        }
                         style={{ color: sort?.id === c.id ? "var(--a-accent)" : undefined }}
                       >
                         {c.label}
-                        {sort?.id === c.id && (sort.dir === 1 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+                        {sort?.id === c.id &&
+                          (sort.dir === 1 ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          ))}
                       </button>
                     </th>
                   ))}
@@ -257,7 +315,16 @@ export function DataTable<T extends { __id: string }>({
                       </td>
                     )}
                     {visCols.map((c) => (
-                      <td key={c.id} className={c.hideBelow === "lg" ? "hidden lg:table-cell" : c.hideBelow === "md" ? "hidden md:table-cell" : ""}>
+                      <td
+                        key={c.id}
+                        className={
+                          c.hideBelow === "lg"
+                            ? "hidden lg:table-cell"
+                            : c.hideBelow === "md"
+                              ? "hidden md:table-cell"
+                              : ""
+                        }
+                      >
                         {c.render(r)}
                       </td>
                     ))}
@@ -275,7 +342,11 @@ export function DataTable<T extends { __id: string }>({
           {/* Phone cards */}
           <div className="sm:hidden divide-y" style={{ borderColor: "var(--a-border)" }}>
             {pageRows.map((r) => (
-              <div key={r.__id} className="flex items-center gap-3 px-4 py-3" onClick={onRow ? () => onRow(r) : undefined}>
+              <div
+                key={r.__id}
+                className="flex items-center gap-3 px-4 py-3"
+                onClick={onRow ? () => onRow(r) : undefined}
+              >
                 {bulkActions && (
                   <input
                     type="checkbox"
@@ -298,7 +369,10 @@ export function DataTable<T extends { __id: string }>({
                   // max-w caps the strip at two icon buttons per row, so
                   // action-heavy modules wrap into a 2×2 block instead of
                   // squeezing the card text off a narrow phone.
-                  <div className="flex max-w-[80px] shrink-0 flex-wrap items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex max-w-[80px] shrink-0 flex-wrap items-center justify-end gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {rowActions(r)}
                   </div>
                 )}
@@ -307,7 +381,10 @@ export function DataTable<T extends { __id: string }>({
           </div>
 
           {/* Footer */}
-          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5" style={{ borderTop: "1px solid var(--a-border)" }}>
+          <div
+            className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5"
+            style={{ borderTop: "1px solid var(--a-border)" }}
+          >
             <span className="text-xs" style={{ color: "var(--a-text3)" }}>
               {filtered.length === rows.length
                 ? `${rows.length} ${rows.length === 1 ? "item" : "items"}`
@@ -315,11 +392,25 @@ export function DataTable<T extends { __id: string }>({
             </span>
             {pages > 1 && (
               <div className="flex items-center gap-1.5">
-                <IconBtn label="Previous page" icon={ChevronLeft} size="sm" variant="ghost" disabled={safePage === 0} onClick={() => setPage((p) => p - 1)} />
+                <IconBtn
+                  label="Previous page"
+                  icon={ChevronLeft}
+                  size="sm"
+                  variant="ghost"
+                  disabled={safePage === 0}
+                  onClick={() => setPage((p) => p - 1)}
+                />
                 <span className="text-xs tabular-nums" style={{ color: "var(--a-text2)" }}>
                   {safePage + 1} / {pages}
                 </span>
-                <IconBtn label="Next page" icon={ChevronRight} size="sm" variant="ghost" disabled={safePage >= pages - 1} onClick={() => setPage((p) => p + 1)} />
+                <IconBtn
+                  label="Next page"
+                  icon={ChevronRight}
+                  size="sm"
+                  variant="ghost"
+                  disabled={safePage >= pages - 1}
+                  onClick={() => setPage((p) => p + 1)}
+                />
               </div>
             )}
           </div>
@@ -330,13 +421,23 @@ export function DataTable<T extends { __id: string }>({
       {bulkActions && selected.size > 0 && (
         <div
           className="a-pop sticky bottom-3 z-10 mx-3 mb-3 flex flex-wrap items-center gap-2 rounded-xl px-4 py-2.5"
-          style={{ background: "var(--a-surface2)", border: "1px solid var(--a-border2)", boxShadow: "var(--a-shadow-lg)" }}
+          style={{
+            background: "var(--a-surface2)",
+            border: "1px solid var(--a-border2)",
+            boxShadow: "var(--a-shadow-lg)",
+          }}
         >
           <span className="text-xs font-semibold">{selected.size} selected</span>
-          <button className="text-xs underline" style={{ color: "var(--a-text3)" }} onClick={clearSel}>
+          <button
+            className="text-xs underline"
+            style={{ color: "var(--a-text3)" }}
+            onClick={clearSel}
+          >
             Clear
           </button>
-          <div className="ml-auto flex items-center gap-2">{bulkActions(selectedRows, clearSel)}</div>
+          <div className="ml-auto flex items-center gap-2">
+            {bulkActions(selectedRows, clearSel)}
+          </div>
         </div>
       )}
     </div>

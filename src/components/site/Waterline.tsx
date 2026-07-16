@@ -1,12 +1,7 @@
 export function Waterline({ className = "" }: { className?: string }) {
   return (
     <div className={"relative w-full " + className}>
-      <svg
-        className="w-full h-8"
-        viewBox="0 0 1200 32"
-        preserveAspectRatio="none"
-        aria-hidden
-      >
+      <svg className="w-full h-8" viewBox="0 0 1200 32" preserveAspectRatio="none" aria-hidden>
         <defs>
           <linearGradient id="wl" x1="0" x2="1">
             <stop offset="0" stopColor="var(--cyan-hi)" stopOpacity="0" />

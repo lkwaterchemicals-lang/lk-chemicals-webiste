@@ -33,13 +33,25 @@ function ProductsAdmin() {
       render: (r) => (
         <div className="flex items-center gap-3 min-w-0">
           {rowImage(def, r) ? (
-            <img src={rowImage(def, r)!} alt="" className="h-9 w-12 rounded-md object-cover shrink-0" loading="lazy" />
+            <img
+              src={rowImage(def, r)!}
+              alt=""
+              className="h-9 w-12 rounded-md object-cover shrink-0"
+              loading="lazy"
+            />
           ) : (
-            <span className="h-9 w-12 rounded-md shrink-0" style={{ background: "var(--a-surface2)" }} />
+            <span
+              className="h-9 w-12 rounded-md shrink-0"
+              style={{ background: "var(--a-surface2)" }}
+            />
           )}
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold truncate max-w-[340px]">{String(r.name ?? "")}</div>
-            <div className="text-[11px] truncate" style={{ color: "var(--a-text3)" }}>/{String(r.slug ?? r.__id)}</div>
+            <div className="text-[13px] font-semibold truncate max-w-[340px]">
+              {String(r.name ?? "")}
+            </div>
+            <div className="text-[11px] truncate" style={{ color: "var(--a-text3)" }}>
+              /{String(r.slug ?? r.__id)}
+            </div>
           </div>
         </div>
       ),
@@ -70,7 +82,9 @@ function ProductsAdmin() {
       sortVal: (r) => toDate(r._updatedAt)?.getTime() ?? 0,
       csv: (r) => toDate(r._updatedAt)?.toISOString() ?? "",
       render: (r) => (
-        <span className="text-xs" style={{ color: "var(--a-text3)" }}>{timeAgo(toDate(r._updatedAt)) || "—"}</span>
+        <span className="text-xs" style={{ color: "var(--a-text3)" }}>
+          {timeAgo(toDate(r._updatedAt)) || "—"}
+        </span>
       ),
     },
   ];
@@ -81,15 +95,24 @@ function ProductsAdmin() {
       cols={cols}
       urlQuery={q}
       urlNew={isNew === "1"}
-      searchText={(r) => `${r.name ?? ""} ${r.slug ?? ""} ${r.category ?? ""} ${r.description ?? ""}`}
+      searchText={(r) =>
+        `${r.name ?? ""} ${r.slug ?? ""} ${r.category ?? ""} ${r.description ?? ""}`
+      }
       filterRows={cat ? (rows) => rows.filter((r) => r.category === cat) : undefined}
       extraToolbar={
         <div className="w-full sm:w-44">
           <SelectWrap>
-            <select className="a-select !py-2 !text-xs" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Filter by category">
+            <select
+              className="a-select !py-2 !text-xs"
+              value={cat}
+              onChange={(e) => setCat(e.target.value)}
+              aria-label="Filter by category"
+            >
               <option value="">All categories</option>
               {cats.map((c) => (
-                <option key={c.__id} value={String(c.slug ?? c.__id)}>{String(c.name ?? c.__id)}</option>
+                <option key={c.__id} value={String(c.slug ?? c.__id)}>
+                  {String(c.name ?? c.__id)}
+                </option>
               ))}
             </select>
           </SelectWrap>

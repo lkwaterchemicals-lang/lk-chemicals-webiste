@@ -28,7 +28,11 @@ function CategoriesAdmin() {
       width: "56px",
       sortVal: (r) => String(r.number ?? ""),
       csv: (r) => String(r.number ?? ""),
-      render: (r) => <span className="text-xs font-bold tabular-nums" style={{ color: "var(--a-accent)" }}>{String(r.number ?? "")}</span>,
+      render: (r) => (
+        <span className="text-xs font-bold tabular-nums" style={{ color: "var(--a-accent)" }}>
+          {String(r.number ?? "")}
+        </span>
+      ),
     },
     {
       id: "name",
@@ -37,10 +41,19 @@ function CategoriesAdmin() {
       csv: (r) => String(r.name ?? ""),
       render: (r) => (
         <div className="flex items-center gap-3 min-w-0">
-          {rowImage(def, r) && <img src={rowImage(def, r)!} alt="" className="h-9 w-12 rounded-md object-cover shrink-0" loading="lazy" />}
+          {rowImage(def, r) && (
+            <img
+              src={rowImage(def, r)!}
+              alt=""
+              className="h-9 w-12 rounded-md object-cover shrink-0"
+              loading="lazy"
+            />
+          )}
           <div className="min-w-0">
             <div className="text-[13px] font-semibold truncate">{String(r.name ?? "")}</div>
-            <div className="text-[11px] truncate" style={{ color: "var(--a-text3)" }}>{String(r.tagline ?? "")}</div>
+            <div className="text-[11px] truncate" style={{ color: "var(--a-text3)" }}>
+              {String(r.tagline ?? "")}
+            </div>
           </div>
         </div>
       ),
@@ -54,7 +67,10 @@ function CategoriesAdmin() {
       render: (r) => {
         const n = products.filter((p) => p.category === r.slug).length;
         return (
-          <span className="text-xs tabular-nums" style={{ color: n === 0 ? "var(--a-warn)" : "var(--a-text2)" }}>
+          <span
+            className="text-xs tabular-nums"
+            style={{ color: n === 0 ? "var(--a-warn)" : "var(--a-text2)" }}
+          >
             {n}
           </span>
         );
@@ -68,7 +84,9 @@ function CategoriesAdmin() {
       cols={cols}
       urlQuery={q}
       urlNew={isNew === "1"}
-      searchText={(r) => `${r.name ?? ""} ${r.slug ?? ""} ${r.tagline ?? ""} ${r.description ?? ""}`}
+      searchText={(r) =>
+        `${r.name ?? ""} ${r.slug ?? ""} ${r.tagline ?? ""} ${r.description ?? ""}`
+      }
     />
   );
 }

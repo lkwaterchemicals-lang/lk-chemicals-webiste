@@ -14,14 +14,26 @@ type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   busy?: boolean;
 };
 
-export function Btn({ variant = "ghost", size = "md", icon: Icon, busy, children, className = "", ...rest }: BtnProps) {
+export function Btn({
+  variant = "ghost",
+  size = "md",
+  icon: Icon,
+  busy,
+  children,
+  className = "",
+  ...rest
+}: BtnProps) {
   return (
     <button
       {...rest}
       disabled={rest.disabled || busy}
       className={`a-btn a-btn-${variant} ${size === "sm" ? "a-btn-sm" : ""} ${className}`}
     >
-      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+      {busy ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : Icon ? (
+        <Icon className="h-3.5 w-3.5" />
+      ) : null}
       {children}
     </button>
   );
@@ -94,12 +106,24 @@ export function Card({
   );
 }
 
-export function PageHeader({ title, sub, actions }: { title: string; sub?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({
+  title,
+  sub,
+  actions,
+}: {
+  title: string;
+  sub?: ReactNode;
+  actions?: ReactNode;
+}) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3 a-rise">
       <div className="min-w-0">
         <h1 className="text-xl sm:text-2xl leading-tight">{title}</h1>
-        {sub && <p className="mt-1 text-[13px]" style={{ color: "var(--a-text2)" }}>{sub}</p>}
+        {sub && (
+          <p className="mt-1 text-[13px]" style={{ color: "var(--a-text2)" }}>
+            {sub}
+          </p>
+        )}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -127,7 +151,11 @@ export function Field({
         <span className="text-xs font-semibold" style={{ color: "var(--a-text2)" }}>
           {label} {required && <span style={{ color: "var(--a-danger)" }}>*</span>}
         </span>
-        {hint && <span className="text-[11px]" style={{ color: "var(--a-text3)" }}>{hint}</span>}
+        {hint && (
+          <span className="text-[11px]" style={{ color: "var(--a-text3)" }}>
+            {hint}
+          </span>
+        )}
       </div>
       <div className="mt-1.5">{children}</div>
       {error && (
@@ -191,7 +219,10 @@ export function Modal({
   if (!open) return null;
   return (
     <Portal>
-      <div className="a-overlay overflow-y-auto" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div
+        className="a-overlay overflow-y-auto"
+        onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      >
         <div className="min-h-full grid place-items-center p-4">
           <div
             role="dialog"
@@ -200,13 +231,19 @@ export function Modal({
             style={{ boxShadow: "var(--a-shadow-lg)" }}
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <header className="flex items-center justify-between gap-3 px-5 py-4" style={{ borderBottom: "1px solid var(--a-border)" }}>
+            <header
+              className="flex items-center justify-between gap-3 px-5 py-4"
+              style={{ borderBottom: "1px solid var(--a-border)" }}
+            >
               <h3 className="text-sm font-semibold">{title}</h3>
               <IconBtn label="Close" icon={X} size="sm" onClick={onClose} />
             </header>
             <div className="p-5">{children}</div>
             {footer && (
-              <footer className="flex justify-end gap-2 px-5 py-4" style={{ borderTop: "1px solid var(--a-border)" }}>
+              <footer
+                className="flex justify-end gap-2 px-5 py-4"
+                style={{ borderTop: "1px solid var(--a-border)" }}
+              >
                 {footer}
               </footer>
             )}
@@ -246,12 +283,23 @@ export function Drawer({
           role="dialog"
           aria-modal="true"
           className="a-slide-right fixed inset-y-0 right-0 flex w-full max-w-xl flex-col"
-          style={{ background: "var(--a-surface)", borderLeft: "1px solid var(--a-border)", boxShadow: "var(--a-shadow-lg)" }}
+          style={{
+            background: "var(--a-surface)",
+            borderLeft: "1px solid var(--a-border)",
+            boxShadow: "var(--a-shadow-lg)",
+          }}
         >
-          <header className="flex items-start justify-between gap-3 px-5 sm:px-6 py-4 shrink-0" style={{ borderBottom: "1px solid var(--a-border)" }}>
+          <header
+            className="flex items-start justify-between gap-3 px-5 sm:px-6 py-4 shrink-0"
+            style={{ borderBottom: "1px solid var(--a-border)" }}
+          >
             <div className="min-w-0">
               <h3 className="text-base font-semibold truncate">{title}</h3>
-              {sub && <p className="mt-0.5 text-xs truncate" style={{ color: "var(--a-text3)" }}>{sub}</p>}
+              {sub && (
+                <p className="mt-0.5 text-xs truncate" style={{ color: "var(--a-text3)" }}>
+                  {sub}
+                </p>
+              )}
             </div>
             <IconBtn label="Close" icon={X} onClick={onClose} />
           </header>
@@ -314,7 +362,9 @@ export function Confirm({
         </>
       }
     >
-      <p className="text-[13px]" style={{ color: "var(--a-text2)" }}>{body}</p>
+      <p className="text-[13px]" style={{ color: "var(--a-text2)" }}>
+        {body}
+      </p>
     </Modal>
   );
 }
@@ -341,7 +391,11 @@ export function Empty({
         <Icon className="h-5 w-5" />
       </span>
       <h3 className="mt-4 text-sm font-semibold">{title}</h3>
-      {body && <p className="mt-1 max-w-sm text-[13px]" style={{ color: "var(--a-text2)" }}>{body}</p>}
+      {body && (
+        <p className="mt-1 max-w-sm text-[13px]" style={{ color: "var(--a-text2)" }}>
+          {body}
+        </p>
+      )}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
@@ -351,7 +405,11 @@ export function SkeletonRows({ n = 5, h = 44 }: { n?: number; h?: number }) {
   return (
     <div className="space-y-2 p-4">
       {Array.from({ length: n }).map((_, i) => (
-        <div key={i} className="a-skel w-full" style={{ height: h, animationDelay: `${i * 80}ms` }} />
+        <div
+          key={i}
+          className="a-skel w-full"
+          style={{ height: h, animationDelay: `${i * 80}ms` }}
+        />
       ))}
     </div>
   );
@@ -361,7 +419,10 @@ export function FirestoreError({ error }: { error: unknown }) {
   const msg = error instanceof Error ? error.message : String(error);
   const notEnabled = /has not been used|is disabled|PERMISSION_DENIED/i.test(msg);
   return (
-    <div className="a-card p-5 text-[13px]" style={{ borderColor: "color-mix(in oklab, var(--a-danger) 35%, var(--a-border))" }}>
+    <div
+      className="a-card p-5 text-[13px]"
+      style={{ borderColor: "color-mix(in oklab, var(--a-danger) 35%, var(--a-border))" }}
+    >
       <p className="font-semibold flex items-center gap-2" style={{ color: "var(--a-danger)" }}>
         <AlertTriangle className="h-4 w-4" /> Firestore isn't reachable.
       </p>
@@ -377,11 +438,13 @@ export function FirestoreError({ error }: { error: unknown }) {
           >
             Firestore Database
           </a>{" "}
-          → <b>Create database</b>, allow public reads and authenticated writes in the rules, then reload. The
-          public site keeps using the built-in content until then.
+          → <b>Create database</b>, allow public reads and authenticated writes in the rules, then
+          reload. The public site keeps using the built-in content until then.
         </p>
       ) : (
-        <p className="mt-2 break-all" style={{ color: "var(--a-text2)" }}>{msg}</p>
+        <p className="mt-2 break-all" style={{ color: "var(--a-text2)" }}>
+          {msg}
+        </p>
       )}
     </div>
   );

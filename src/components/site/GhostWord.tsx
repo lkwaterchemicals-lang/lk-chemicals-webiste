@@ -32,7 +32,10 @@ export function GhostWord({
 
   return (
     <span aria-hidden className={"ghost-word block text-[18vw] md:text-[14vw] " + className}>
-      <span ref={inner} className="inline-block whitespace-nowrap origin-center will-change-transform">
+      <span
+        ref={inner}
+        className="inline-block whitespace-nowrap origin-center will-change-transform"
+      >
         {children}
       </span>
     </span>

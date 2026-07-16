@@ -17,6 +17,17 @@ const snap = await getDocs(collection(db, "categories"));
 console.log("count:", snap.size);
 for (const d of snap.docs) {
   const x = d.data();
-  console.log(JSON.stringify({ __id: d.id, slug: x.slug, number: x.number, name: x.name, iconName: x.iconName, status: x.status, featured: x.featured, parent: x.parent ?? null }));
+  console.log(
+    JSON.stringify({
+      __id: d.id,
+      slug: x.slug,
+      number: x.number,
+      name: x.name,
+      iconName: x.iconName,
+      status: x.status,
+      featured: x.featured,
+      parent: x.parent ?? null,
+    }),
+  );
 }
 process.exit(0);

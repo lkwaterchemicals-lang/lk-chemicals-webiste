@@ -54,12 +54,26 @@ export function BackToTop() {
       }
     >
       <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
-        <circle cx="24" cy="24" r={R} fill="none" stroke="currentColor" strokeOpacity="0.12" strokeWidth="2.5" />
+        <circle
+          cx="24"
+          cy="24"
+          r={R}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity="0.12"
+          strokeWidth="2.5"
+        />
         <circle
           ref={ringRef}
-          cx="24" cy="24" r={R} fill="none"
-          stroke="url(#btt-grad)" strokeWidth="2.5" strokeLinecap="round"
-          strokeDasharray={CIRC} strokeDashoffset={CIRC}
+          cx="24"
+          cy="24"
+          r={R}
+          fill="none"
+          stroke="url(#btt-grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeDasharray={CIRC}
+          strokeDashoffset={CIRC}
         />
         <defs>
           <linearGradient id="btt-grad" x1="0" y1="0" x2="1" y2="1">

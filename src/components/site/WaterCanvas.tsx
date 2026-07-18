@@ -7,8 +7,11 @@
 // Perf notes: renders at a reduced internal resolution and upscales (water is
 // low-frequency, so this is invisible), caps DPR, compiles a cheaper shader
 // variant on mobile, pauses when the tab is hidden, and renders a single
-// static frame when the user prefers reduced motion.
+// static frame when the user prefers reduced motion. GL init is deferred to a
+// post-paint idle slot and the shader links asynchronously (see lib/gl-boot) —
+// first-visit cold shader compiles used to stall hydration and freeze devices.
 import { useEffect, useRef } from "react";
+import { linkProgramAsync, whenBootIdle } from "@/lib/gl-boot";
 
 // World-space scale for page scroll (px → world units). Must match the shader.
 const SCROLL_K = 0.00045;
@@ -215,59 +218,79 @@ export function WaterCanvas() {
     let gl: WebGLRenderingContext | null = null;
     let uniforms: Record<string, WebGLUniformLocation | null> = {};
     let renderOnce = () => {};
+    // Nothing draws until the async link resolves — draw() bails while false.
+    let ready = false;
+    let cancelLink: (() => void) | null = null;
 
-    function setupGL() {
+    function setupGL(onReady: (ok: boolean) => void) {
+      ready = false;
       // low-power: this canvas runs on every page for the whole visit — on
       // dual-GPU laptops "high-performance" pinned the discrete GPU at full
       // clocks and made the whole machine feel stuck.
+      // failIfMajorPerformanceCaveat: software GL (SwiftShader) would run this
+      // full-screen shader on the CPU and peg every core — refuse it and let
+      // the CSS backgrounds carry the site instead.
       gl = canvas!.getContext("webgl", {
         alpha: false,
         antialias: false,
         depth: false,
         stencil: false,
         powerPreference: "low-power",
+        failIfMajorPerformanceCaveat: true,
       });
-      if (!gl) return false;
+      if (!gl) {
+        onReady(false);
+        return;
+      }
       const g = gl;
 
+      // No COMPILE_STATUS/LINK_STATUS queries here — those force a synchronous
+      // compile. Failures surface through linkProgramAsync instead.
       const compile = (type: number, src: string) => {
         const s = g.createShader(type)!;
         g.shaderSource(s, src);
         g.compileShader(s);
-        if (!g.getShaderParameter(s, g.COMPILE_STATUS)) {
-          console.warn("[water] shader:", g.getShaderInfoLog(s));
-          return null;
-        }
         return s;
       };
       const vs = compile(g.VERTEX_SHADER, VERT);
       const fs = compile(g.FRAGMENT_SHADER, fragSource(quality));
-      if (!vs || !fs) return false;
       const prog = g.createProgram()!;
       g.attachShader(prog, vs);
       g.attachShader(prog, fs);
       g.linkProgram(prog);
-      if (!g.getProgramParameter(prog, g.LINK_STATUS)) return false;
-      g.useProgram(prog);
 
-      const buf = g.createBuffer();
-      g.bindBuffer(g.ARRAY_BUFFER, buf);
-      g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), g.STATIC_DRAW);
-      const loc = g.getAttribLocation(prog, "a_pos");
-      g.enableVertexAttribArray(loc);
-      g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+      cancelLink = linkProgramAsync(g, prog, (ok) => {
+        if (destroyed) return;
+        if (!ok) {
+          console.warn("[water] program:", g.getProgramInfoLog(prog), g.getShaderInfoLog(fs));
+          g.deleteProgram(prog);
+          g.deleteShader(vs);
+          g.deleteShader(fs);
+          onReady(false);
+          return;
+        }
+        g.useProgram(prog);
 
-      uniforms = {};
-      for (const n of ["u_res", "u_time", "u_scroll", "u_mouseW", "u_theme", "u_ripples[0]"]) {
-        uniforms[n] = g.getUniformLocation(prog, n);
-      }
-      cleanupGL = () => {
-        g.deleteProgram(prog);
-        g.deleteShader(vs);
-        g.deleteShader(fs);
-        g.deleteBuffer(buf);
-      };
-      return true;
+        const buf = g.createBuffer();
+        g.bindBuffer(g.ARRAY_BUFFER, buf);
+        g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), g.STATIC_DRAW);
+        const loc = g.getAttribLocation(prog, "a_pos");
+        g.enableVertexAttribArray(loc);
+        g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+
+        uniforms = {};
+        for (const n of ["u_res", "u_time", "u_scroll", "u_mouseW", "u_theme", "u_ripples[0]"]) {
+          uniforms[n] = g.getUniformLocation(prog, n);
+        }
+        cleanupGL = () => {
+          g.deleteProgram(prog);
+          g.deleteShader(vs);
+          g.deleteShader(fs);
+          g.deleteBuffer(buf);
+        };
+        ready = true;
+        onReady(true);
+      });
     }
 
     function resize() {
@@ -284,7 +307,7 @@ export function WaterCanvas() {
 
     function draw(dt: number) {
       const g = gl;
-      if (!g) return;
+      if (!g || !ready) return;
       resize();
 
       // Scroll inertia: the camera glides, accelerates the flow when you
@@ -371,14 +394,7 @@ export function WaterCanvas() {
       draw(1 / 60);
     };
 
-    if (!setupGL() || isLowPower) {
-      // If WebGL can't be setup or device is low-power, render a single static
-      // fallback frame and don't start the animation loop.
-      renderOnce();
-      return;
-    } // WebGL unavailable → CSS backgrounds still carry the site
-
-    // ---- listeners ----
+    // ---- listeners (wired only once the program is ready) ----
     const onMove = (e: PointerEvent) => {
       tmx = e.clientX;
       tmy = e.clientY;
@@ -413,37 +429,66 @@ export function WaterCanvas() {
         renderOnce();
       }
     });
-    themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
     const onLost = (e: Event) => {
       e.preventDefault();
+      ready = false;
       cancelAnimationFrame(raf);
     };
     const onRestored = () => {
-      if (setupGL() && !destroyed) {
+      setupGL((ok) => {
+        if (!ok || destroyed) return;
         if (staticOnly) renderOnce();
         else {
           last = lastFrameTs = performance.now();
           raf = requestAnimationFrame(frame);
         }
-      }
+      });
     };
-    canvas.addEventListener("webglcontextlost", onLost);
-    canvas.addEventListener("webglcontextrestored", onRestored);
-    addEventListener("pointermove", onMove, { passive: true });
-    addEventListener("pointerdown", onDown, { passive: true });
-    addEventListener("pointerover", onOver, { passive: true });
-    addEventListener("resize", onResize);
-    document.addEventListener("visibilitychange", onVis);
 
-    if (staticOnly) {
-      renderOnce(); // one calm, already-composed frame — zero per-frame cost
-    } else {
-      raf = requestAnimationFrame(frame);
-    }
+    let wired = false;
+    const wire = () => {
+      if (wired) return;
+      wired = true;
+      themeObs.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+      canvas.addEventListener("webglcontextlost", onLost);
+      canvas.addEventListener("webglcontextrestored", onRestored);
+      addEventListener("pointermove", onMove, { passive: true });
+      addEventListener("pointerdown", onDown, { passive: true });
+      addEventListener("pointerover", onOver, { passive: true });
+      addEventListener("resize", onResize);
+      document.addEventListener("visibilitychange", onVis);
+    };
+
+    // First-load choreography: hydrate + paint first, then compile the shader
+    // in an idle slot and link it asynchronously. The splash/veil covers the
+    // wait; the canvas fades in (CSS .is-live) on its first composed frame.
+    const cancelBoot = whenBootIdle(() => {
+      setupGL((ok) => {
+        if (!ok || destroyed) return; // no/software WebGL → CSS carries the site
+        canvas.classList.add("is-live");
+        if (isLowPower) {
+          // Constrained device: one calm static frame, no listeners, no loop.
+          renderOnce();
+          return;
+        }
+        wire();
+        if (staticOnly) {
+          renderOnce(); // one calm, already-composed frame — zero per-frame cost
+        } else {
+          last = lastFrameTs = performance.now();
+          raf = requestAnimationFrame(frame);
+        }
+      });
+    });
 
     return () => {
       destroyed = true;
+      cancelBoot();
+      cancelLink?.();
       cancelAnimationFrame(raf);
       themeObs.disconnect();
       canvas.removeEventListener("webglcontextlost", onLost);

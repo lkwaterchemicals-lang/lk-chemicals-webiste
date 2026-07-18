@@ -3,10 +3,9 @@
 // files everything into the `applications` collection, which the admin
 // reviews under Careers → Applications. Same spam layers as every public form.
 import { useEffect, useRef, useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore/lite";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, FileText, Loader2, Paperclip, Send, Trash2, X } from "lucide-react";
-import { db } from "@/integrations/firebase/client";
+import { firestoreLite } from "@/integrations/firebase/lite";
 import { uploadToCloudinary } from "@/integrations/cloudinary";
 import { getRecaptchaToken, honeypotProps, isLikelySpam } from "@/lib/spam";
 import type { CareerOpening } from "@/lib/content";
@@ -85,7 +84,8 @@ export function ApplyDialog({
     setSubmitting(true);
     try {
       const recaptcha = await getRecaptchaToken("application");
-      await addDoc(collection(db, "applications"), {
+      const { fs, db } = await firestoreLite();
+      await fs.addDoc(fs.collection(db, "applications"), {
         name: form.name.trim(),
         phone: form.phone.trim(),
         email: form.email.trim() || null,
@@ -97,7 +97,7 @@ export function ApplyDialog({
         jobTitle: job?.title ?? "General application",
         source: "careers-page",
         recaptcha: recaptcha ?? null,
-        createdAt: serverTimestamp(),
+        createdAt: fs.serverTimestamp(),
       });
       setSent(true);
     } catch {

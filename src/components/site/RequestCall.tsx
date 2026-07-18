@@ -9,9 +9,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore/lite";
 import { Check, PhoneCall, X } from "lucide-react";
-import { db } from "@/integrations/firebase/client";
+import { firestoreLite } from "@/integrations/firebase/lite";
 import { getRecaptchaToken, honeypotProps, isLikelySpam } from "@/lib/spam";
 
 const SLOTS = ["Morning 9–12", "Afternoon 12–4", "Evening 4–7", "Anytime"] as const;
@@ -106,7 +105,8 @@ export function RequestCallDialog({
     setBusy(true);
     try {
       const recaptcha = await getRecaptchaToken("request_call");
-      await addDoc(collection(db, "enquiries"), {
+      const { fs, db } = await firestoreLite();
+      await fs.addDoc(fs.collection(db, "enquiries"), {
         kind: "call-request",
         name: name.trim(),
         phone: phone.trim(),
@@ -114,7 +114,7 @@ export function RequestCallDialog({
         requirement: `📞 Call-back request · Preferred time: ${slot}${note.trim() ? `\nTopic: ${note.trim()}` : ""}`,
         source,
         recaptcha: recaptcha ?? null,
-        createdAt: serverTimestamp(),
+        createdAt: fs.serverTimestamp(),
       });
       setSent(true);
       setName("");

@@ -5,7 +5,7 @@
 // sitemap entries for crawlers that never execute JavaScript. The web SDK is
 // built for the browser, so on the server we read documents over Firestore's
 // public REST API instead (same public project config, same security rules).
-import { firebaseConfig } from "@/integrations/firebase/client";
+import { firebaseConfig } from "@/integrations/firebase/config";
 
 const BASE = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
 

@@ -10,7 +10,12 @@
 //
 // Renders only while on screen, at a reduced internal resolution, with an
 // adaptive governor (resolution → static frame) so it never janks anywhere.
+// GL init is doubly deferred: nothing compiles until the section approaches
+// the viewport (it is the LAST section of the page — most first visits never
+// pay for it at all), and even then only in a post-paint idle slot with an
+// asynchronous link (see lib/gl-boot).
 import { useEffect, useRef } from "react";
+import { linkProgramAsync, whenBootIdle } from "@/lib/gl-boot";
 import { motion } from "motion/react";
 import { LiquidButton } from "./LiquidButton";
 import { MicroLabel } from "./GhostWord";
@@ -87,6 +92,17 @@ vec3 envLight(vec2 p, float t) {
   return col;
 }
 vec3 env(vec2 p, float t) { return mix(envDark(p, t), envLight(p, t), u_theme); }
+/* Gradient-only env for sub-15px features (orbiting beads). The full env()
+   inlines whole fbm chains at every call site — six bead call sites alone
+   made ANGLE's D3D shader compile take ~an order of magnitude longer (tens of
+   seconds cold), which is what used to freeze first visits. At bead size the
+   caustic detail is invisible anyway. */
+vec3 envFast(vec2 p) {
+  float g = clamp(p.y + 0.5, 0.0, 1.0);
+  vec3 d = mix(vec3(0.012, 0.030, 0.062), vec3(0.035, 0.062, 0.098), g * 0.7);
+  vec3 l = mix(vec3(0.760, 0.848, 0.918), vec3(0.912, 0.945, 0.972), g);
+  return mix(d, l, u_theme);
+}
 
 float particles(vec2 p, float n, vec2 drift, float thr) {
   vec2 g = p * n + drift;
@@ -157,7 +173,7 @@ void main() {
       float oR = R * (0.050 + 0.013 * float(i)) * mix(1.08, 0.86, behind); \
       float od = length(p - orb); \
       float mask = smoothstep(oR, oR * 0.45, od) * u_reveal; \
-      vec3 beadCol = env(orb, t) * mix(0.72, 0.90, u_theme); \
+      vec3 beadCol = envFast(orb) * mix(0.72, 0.90, u_theme); \
       vec2 hq = p - orb + vec2(oR * 0.35, -oR * 0.35); \
       beadCol += exp(-dot(hq, hq) * (9.0 / (oR * oR))) * mix(vec3(0.45, 0.75, 0.88), vec3(1.0), u_theme) * 0.8; \
       float rimB = smoothstep(oR * 0.6, oR * 0.95, od) * (1.0 - smoothstep(oR * 0.95, oR, od)); \
@@ -305,9 +321,15 @@ function WaterCoreCanvas() {
 
     let gl: WebGLRenderingContext | null = null;
     let uniforms: Record<string, WebGLUniformLocation | null> = {};
+    // Nothing draws until the async link resolves — draw() bails while false.
+    let ready = false;
+    let cancelLink: (() => void) | null = null;
 
-    function setupGL() {
-      // alpha:true so the top of the scene can dissolve into the page's water
+    function setupGL(onReady: (ok: boolean) => void) {
+      ready = false;
+      // alpha:true so the top of the scene can dissolve into the page's water.
+      // failIfMajorPerformanceCaveat: on software GL this scene would raster
+      // on the CPU — refuse it; the CSS art direction carries the section.
       gl = canvas!.getContext("webgl", {
         alpha: true,
         antialias: false,
@@ -315,54 +337,66 @@ function WaterCoreCanvas() {
         stencil: false,
         // Decorative scene — never wake the discrete GPU for it.
         powerPreference: "low-power",
+        failIfMajorPerformanceCaveat: true,
       });
-      if (!gl) return false;
+      if (!gl) {
+        onReady(false);
+        return;
+      }
       const g = gl;
+      // No COMPILE_STATUS/LINK_STATUS queries here — those force a synchronous
+      // compile. Failures surface through linkProgramAsync instead.
       const compile = (type: number, src: string) => {
         const s = g.createShader(type)!;
         g.shaderSource(s, src);
         g.compileShader(s);
-        if (!g.getShaderParameter(s, g.COMPILE_STATUS)) {
-          console.warn("[water-core] shader:", g.getShaderInfoLog(s));
-          return null;
-        }
         return s;
       };
       const vs = compile(g.VERTEX_SHADER, VERT);
       const fs = compile(g.FRAGMENT_SHADER, fragSource(quality));
-      if (!vs || !fs) return false;
       const prog = g.createProgram()!;
       g.attachShader(prog, vs);
       g.attachShader(prog, fs);
       g.linkProgram(prog);
-      if (!g.getProgramParameter(prog, g.LINK_STATUS)) return false;
-      g.useProgram(prog);
-      const buf = g.createBuffer();
-      g.bindBuffer(g.ARRAY_BUFFER, buf);
-      g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), g.STATIC_DRAW);
-      const loc = g.getAttribLocation(prog, "a_pos");
-      g.enableVertexAttribArray(loc);
-      g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
-      uniforms = {};
-      for (const n of [
-        "u_res",
-        "u_time",
-        "u_theme",
-        "u_mouse",
-        "u_anchor",
-        "u_radius",
-        "u_reveal",
-        "u_ripples[0]",
-      ]) {
-        uniforms[n] = g.getUniformLocation(prog, n);
-      }
-      cleanupGL = () => {
-        g.deleteProgram(prog);
-        g.deleteShader(vs);
-        g.deleteShader(fs);
-        g.deleteBuffer(buf);
-      };
-      return true;
+      cancelLink = linkProgramAsync(g, prog, (ok) => {
+        if (destroyed) return;
+        if (!ok) {
+          console.warn("[water-core] program:", g.getProgramInfoLog(prog), g.getShaderInfoLog(fs));
+          g.deleteProgram(prog);
+          g.deleteShader(vs);
+          g.deleteShader(fs);
+          onReady(false);
+          return;
+        }
+        g.useProgram(prog);
+        const buf = g.createBuffer();
+        g.bindBuffer(g.ARRAY_BUFFER, buf);
+        g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), g.STATIC_DRAW);
+        const loc = g.getAttribLocation(prog, "a_pos");
+        g.enableVertexAttribArray(loc);
+        g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+        uniforms = {};
+        for (const n of [
+          "u_res",
+          "u_time",
+          "u_theme",
+          "u_mouse",
+          "u_anchor",
+          "u_radius",
+          "u_reveal",
+          "u_ripples[0]",
+        ]) {
+          uniforms[n] = g.getUniformLocation(prog, n);
+        }
+        cleanupGL = () => {
+          g.deleteProgram(prog);
+          g.deleteShader(vs);
+          g.deleteShader(fs);
+          g.deleteBuffer(buf);
+        };
+        ready = true;
+        onReady(true);
+      });
     }
 
     function resize() {
@@ -381,7 +415,7 @@ function WaterCoreCanvas() {
 
     function draw(dt: number) {
       const g = gl;
-      if (!g) return;
+      if (!g || !ready) return;
       resize();
       flowTime += dt * 0.8;
       mx += (tmx - mx) * Math.min(1, dt * 3);
@@ -452,13 +486,46 @@ function WaterCoreCanvas() {
       }
     }
     const kick = () => {
-      if (!raf && !destroyed && !staticOnly && !staticFallback && inView && !document.hidden) {
+      if (
+        ready &&
+        !raf &&
+        !destroyed &&
+        !staticOnly &&
+        !staticFallback &&
+        inView &&
+        !document.hidden
+      ) {
         last = lastFrameTs = performance.now();
         raf = requestAnimationFrame(frame);
       }
     };
 
-    if (!setupGL()) return; // no WebGL → CSS art direction carries the section
+    // Lazy warm-up: compile nothing until the visitor is within three
+    // viewports of the section, then init in a post-paint idle slot with an
+    // async link. Three viewports (not one) because a cold ANGLE compile of
+    // this shader can take >15s on weak Windows GPUs — starting a few screens
+    // early means it's usually linked by the time the section arrives, while
+    // visitors who never scroll deep still pay nothing.
+    // On failure (no/software WebGL) the CSS art direction carries the section.
+    let cancelBoot: (() => void) | null = null;
+    const warmIO = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        warmIO.disconnect();
+        cancelBoot = whenBootIdle(() => {
+          setupGL((ok) => {
+            if (!ok || destroyed) return;
+            layout();
+            canvas.classList.add("is-live");
+            if (staticOnly) {
+              if (inView) renderOnce();
+            } else kick();
+          });
+        });
+      },
+      { rootMargin: "300% 0px" },
+    );
+    warmIO.observe(canvas);
 
     layout();
 
@@ -509,12 +576,11 @@ function WaterCoreCanvas() {
     document.addEventListener("visibilitychange", onVis);
     addEventListener("resize", onResize);
 
-    if (staticOnly) {
-      if (inView) renderOnce();
-    } else kick();
-
     return () => {
       destroyed = true;
+      warmIO.disconnect();
+      cancelBoot?.();
+      cancelLink?.();
       cancelAnimationFrame(raf);
       io.disconnect();
       themeObs.disconnect();

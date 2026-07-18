@@ -9,8 +9,8 @@
 // fallbacks (src/data/content.ts) so those surfaces never blank while the
 // client fills them in.
 import { useQuery } from "@tanstack/react-query";
-import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore/lite";
-import { db } from "@/integrations/firebase/client";
+// Firestore loads on demand (never in the first-load bundle) — see lite.ts.
+import { firestoreLite } from "@/integrations/firebase/lite";
 import { type Category, type Product, type ServiceCategory, type Service } from "@/data/products";
 import {
   staticGallery,
@@ -27,8 +27,9 @@ const isBrowser = typeof window !== "undefined";
 
 async function fetchCollection<T>(name: string, fallback: T[], order?: string): Promise<T[]> {
   try {
-    const ref = collection(db, name);
-    const snap = await getDocs(order ? query(ref, orderBy(order)) : ref);
+    const { fs, db } = await firestoreLite();
+    const ref = fs.collection(db, name);
+    const snap = await fs.getDocs(order ? fs.query(ref, fs.orderBy(order)) : ref);
     if (snap.empty) return fallback;
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as T);
   } catch (err) {
@@ -174,7 +175,8 @@ export function useSiteSettings() {
     queryKey: ["content", "settings"],
     queryFn: async (): Promise<SiteSettings> => {
       try {
-        const snap = await getDoc(doc(db, "settings", "site"));
+        const { fs, db } = await firestoreLite();
+        const snap = await fs.getDoc(fs.doc(db, "settings", "site"));
         if (!snap.exists()) return staticSettings;
         return { ...staticSettings, ...(snap.data() as Partial<SiteSettings>) };
       } catch (err) {

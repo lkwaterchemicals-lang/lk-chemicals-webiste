@@ -7,8 +7,8 @@
 // empty/unreachable Firestore keeps the built-ins entirely — the public site
 // can never go blank.
 import { useQuery } from "@tanstack/react-query";
-import { doc, getDoc } from "firebase/firestore/lite";
-import { db } from "@/integrations/firebase/client";
+// Firestore loads on demand (never in the first-load bundle) — see lite.ts.
+import { firestoreLite } from "@/integrations/firebase/lite";
 import { stabilizeDeep } from "@/lib/assets";
 import {
   globalContent,
@@ -44,7 +44,8 @@ function usePageDoc<T extends object>(id: string, fallback: T) {
     queryKey: ["content", "pages", id],
     queryFn: async (): Promise<T> => {
       try {
-        const snap = await getDoc(doc(db, "pages", id));
+        const { fs, db } = await firestoreLite();
+        const snap = await fs.getDoc(fs.doc(db, "pages", id));
         if (!snap.exists()) return fallback;
         // Shallow merge: a stored field (including arrays) replaces the default;
         // anything the admin hasn't touched stays on the built-in value.

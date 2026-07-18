@@ -6,16 +6,11 @@
 // shipped ~250 KB of login machinery to every public visitor.
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore/lite";
+import { firebaseConfig } from "./config";
 
-export const firebaseConfig = {
-  apiKey: "AIzaSyC75KOofn4DBajf_zkESH7f8bft65EDsxs",
-  authDomain: "lk-chemicals-webiste.firebaseapp.com",
-  projectId: "lk-chemicals-webiste",
-  storageBucket: "lk-chemicals-webiste.firebasestorage.app",
-  messagingSenderId: "1005832126462",
-  appId: "1:1005832126462:web:aa260afa3cabfcf1dccaaf",
-  measurementId: "G-GF53GRYMW2",
-};
+// Public site code must not import this module statically — go through
+// ./lite (deferred) instead, or the SDK lands back in the first-load bundle.
+export { firebaseConfig };
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 

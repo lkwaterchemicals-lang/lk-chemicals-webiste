@@ -140,6 +140,15 @@ function InitialScrollRestore() {
 const GA_ID = (import.meta.env.VITE_GA_ID as string | undefined) || "";
 const GSC_TOKEN = (import.meta.env.VITE_GSC_VERIFICATION as string | undefined) || "";
 
+// Webfonts load WITHOUT blocking first paint: a plain <link rel="stylesheet">
+// to fonts.googleapis.com held up rendering for a third-party round trip on
+// every cold cache — part of the first-visit freeze. A script-injected
+// stylesheet loads async instead (display=swap upgrades text in place; the
+// boot veil covers the swap on first loads). <noscript> keeps the blocking
+// link for the JS-less. Preconnects below still warm both font origins.
+const FONTS_URL =
+  "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap";
+
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
@@ -303,19 +312,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/og-image.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
-      },
     ],
-    scripts: GA_ID
-      ? [
-          { src: `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`, async: true },
-          {
-            children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:true});`,
-          },
-        ]
-      : [],
+    scripts: [
+      // Async font CSS (see FONTS_URL note) — script-injected stylesheets
+      // never block the parser or first paint.
+      {
+        children: `(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS_URL}';document.head.appendChild(l);})();`,
+      },
+      ...(GA_ID
+        ? [
+            { src: `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`, async: true },
+            {
+              children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:true});`,
+            },
+          ]
+        : []),
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -328,6 +340,9 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <noscript>
+          <link rel="stylesheet" href={FONTS_URL} />
+        </noscript>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('lk-theme');if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}try{if(sessionStorage.getItem('lk-boot')){document.documentElement.classList.add('lk-seen');}}catch(e){}})();`,

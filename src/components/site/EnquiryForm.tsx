@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore/lite";
-import { db } from "@/integrations/firebase/client";
+import { firestoreLite } from "@/integrations/firebase/lite";
 import { getRecaptchaToken, honeypotProps, isLikelySpam } from "@/lib/spam";
 import { LiquidButton } from "./LiquidButton";
 import { Check } from "lucide-react";
@@ -46,7 +45,8 @@ export function EnquiryForm({
     setSubmitting(true);
     try {
       const recaptcha = await getRecaptchaToken("enquiry");
-      await addDoc(collection(db, "enquiries"), {
+      const { fs, db } = await firestoreLite();
+      await fs.addDoc(fs.collection(db, "enquiries"), {
         name: form.name,
         company: form.company || null,
         phone: form.phone,
@@ -55,7 +55,7 @@ export function EnquiryForm({
         product_ref: productRef || null,
         source,
         recaptcha: recaptcha ?? null,
-        createdAt: serverTimestamp(),
+        createdAt: fs.serverTimestamp(),
       });
       setSent(true);
     } catch {

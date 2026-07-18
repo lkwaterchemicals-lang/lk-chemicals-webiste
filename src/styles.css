@@ -465,6 +465,13 @@
   height: 100%;
   z-index: 0;
   pointer-events: none;
+  /* GL init is deferred off the first-load critical path (see lib/gl-boot);
+     the canvas fades in on its first composed frame instead of popping. */
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+.water-canvas.is-live {
+  opacity: 1;
 }
 .site-shell {
   position: relative;
@@ -494,6 +501,15 @@
   background:
     radial-gradient(90rem 50rem at 70% 40%, oklch(0.88 0.06 225 / 0.8), transparent 60%),
     linear-gradient(180deg, oklch(0.93 0.03 232) 0%, oklch(0.86 0.055 228) 100%);
+}
+/* The scene's GL init is lazy (compiles only as the section approaches, in an
+   idle slot — see lib/gl-boot); the canvas fades over the CSS art when ready. */
+.water-core canvas {
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+.water-core canvas.is-live {
+  opacity: 1;
 }
 
 /* ---------- Bento tile (WhyLK & friends) ----------

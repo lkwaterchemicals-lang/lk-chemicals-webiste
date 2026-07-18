@@ -43,6 +43,48 @@ export function cloudinaryPoster(videoUrl: string): string | null {
   return videoUrl.replace(/\.[a-z0-9]+(\?.*)?$/i, ".jpg");
 }
 
+/* ---------------------------------------------- cloudinary image delivery */
+
+// Admin uploads land on Cloudinary as full-size originals — often multi-MB
+// PNGs straight from a phone or an AI export. Served raw, the home page
+// weighed ~27 MB of images (PageSpeed mobile 63). Rewriting the delivery URL
+// makes the CDN do the work: f_auto picks AVIF/WebP per browser, q_auto
+// compresses to visual quality, and w_<cap>,c_limit downscales without ever
+// upscaling. 1600px covers the largest slot on the site (~820 CSS px @2x).
+const CLOUDINARY_DELIVERY = /^(https?:\/\/res\.cloudinary\.com\/[^/]+\/(image|video)\/upload\/)(.+)$/i;
+
+/** Cloudinary image delivery URL → same image via f_auto,q_auto with a width
+ * cap. Video URLs are only rewritten for derived poster frames (image
+ * extensions); real video files and non-Cloudinary URLs pass through. A URL
+ * that already carries a transformation segment is an explicit admin choice
+ * and is left alone. */
+export function optimizedImageUrl(url: string, width = 1600): string {
+  const m = url.match(CLOUDINARY_DELIVERY);
+  if (!m) return url;
+  const [, prefix, kind, rest] = m;
+  // Untransformed delivery URLs start with the version segment (v123/…) or
+  // are a bare public id; anything else already has transformations.
+  if (rest.includes("/") && !/^v\d+$/.test(rest.split("/")[0])) return url;
+  if (kind.toLowerCase() === "video" && !/\.(jpe?g|png|webp|avif|gif)(\?.*)?$/i.test(rest)) {
+    return url;
+  }
+  return `${prefix}f_auto,q_auto,w_${width},c_limit/${rest}`;
+}
+
+/** Walk a content document and rewrite every Cloudinary image URL in it —
+ * the shared read-path hook (src/lib/content.ts, src/lib/pages.ts) applies
+ * this so no render site ever sees a raw multi-MB original. */
+export function optimizeImagesDeep<T>(value: T): T {
+  if (typeof value === "string") return optimizedImageUrl(value) as T;
+  if (Array.isArray(value)) return value.map((v) => optimizeImagesDeep(v)) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, optimizeImagesDeep(v)]),
+    ) as T;
+  }
+  return value;
+}
+
 /** Accepts what admins actually paste — the full `<iframe …>` snippet from
  * Google Maps' "Embed a map", or just its src URL — and returns a safe embed
  * src. Anything that isn't a Google Maps embed yields null. */

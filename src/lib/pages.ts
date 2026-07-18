@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 // Firestore loads on demand (never in the first-load bundle) — see lite.ts.
 import { firestoreLite } from "@/integrations/firebase/lite";
 import { stabilizeDeep } from "@/lib/assets";
+import { optimizeImagesDeep } from "@/lib/media";
 import {
   globalContent,
   homeContent,
@@ -50,8 +51,10 @@ function usePageDoc<T extends object>(id: string, fallback: T) {
         // Shallow merge: a stored field (including arrays) replaces the default;
         // anything the admin hasn't touched stays on the built-in value.
         // stabilizeDeep heals docs saved with a since-rebuilt hashed asset URL
-        // (e.g. /assets/plant-XXXX.jpg) by remapping them to /content/*.
-        return stabilizeDeep({ ...fallback, ...(snap.data() as Partial<T>) });
+        // (e.g. /assets/plant-XXXX.jpg) by remapping them to /content/*;
+        // optimizeImagesDeep turns raw Cloudinary uploads into f_auto,q_auto
+        // delivery URLs so no page renders a multi-MB original.
+        return optimizeImagesDeep(stabilizeDeep({ ...fallback, ...(snap.data() as Partial<T>) }));
       } catch (err) {
         console.warn(`[pages] falling back to built-in ${id}:`, err);
         return fallback;

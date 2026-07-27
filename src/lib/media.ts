@@ -68,8 +68,15 @@ export function optimizedImageUrl(url: string, width = 1600): string {
   if (kind.toLowerCase() === "video" && !/\.(jpe?g|png|webp|avif|gif)(\?.*)?$/i.test(rest)) {
     return url;
   }
+  // Documents also land under /image/upload/ (that is how Cloudinary stores
+  // PDFs), and f_auto would rasterise them: a product's TDS download would hand
+  // the visitor a JPEG of page 1 instead of the datasheet. Only rewrite files
+  // that really are images.
+  if (DOCUMENT_FORMAT.test(rest)) return url;
   return `${prefix}f_auto,q_auto,w_${width},c_limit/${rest}`;
 }
+
+const DOCUMENT_FORMAT = /\.(pdf|zip|docx?|xlsx?|pptx?|csv|txt|dwg)(\?.*)?$/i;
 
 /** Walk a content document and rewrite every Cloudinary image URL in it —
  * the shared read-path hook (src/lib/content.ts, src/lib/pages.ts) applies

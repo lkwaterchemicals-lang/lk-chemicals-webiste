@@ -94,6 +94,50 @@ default). Industry icons are stored by name and resolved via `src/lib/icons.ts`.
 > (`match /{collection}/{doc}` → public read, authenticated write), so no rules
 > change is needed.
 
+### PDF Import Center — `/admin/imports`
+
+Drop technical (TDS) or safety (MSDS) data sheets into the **import folder** and they
+become catalog records with no data entry. The folder is `PDF's/` at the project root
+(override with `PDF_IMPORT_DIR`). Per file the pipeline:
+
+1. **Scans** the folder and fingerprints each PDF (sha256) — the import ledger's key, so
+   the same document dropped twice is recognised no matter what it is named.
+2. **Classifies** it as Product / Product category / Service / Service category using a
+   scored classifier. Every signal and its weight is recorded; anything under 55%
+   confidence, or two outcomes scoring alike, is parked as **Needs review** rather than
+   guessed at.
+3. **Extracts** name, code, description, short description, features, applications,
+   industries, specifications, dosage, packing, safety notes, keywords and SEO fields —
+   from the LK MSDS layout (9 numbered sections) and both data-sheet layouts.
+4. **Creates or updates** the record. Matching is by product code first (`LK CHEM 1001`),
+   then slug, then exact name, so a product is never duplicated — including products that
+   predate the pipeline, whose code is read out of their name. Scalars only ever fill
+   blanks and lists are only extended, so a TDS and an MSDS for the same product combine
+   into one complete record instead of overwriting each other.
+5. **Uploads** the original to Cloudinary and attaches the returned URL as the product's
+   downloadable document (labelled TDS or MSDS). The public id is derived from the code
+   and content hash, so retries reuse the asset instead of piling up copies.
+6. **Deletes the local file** — only after parse, content write, upload and download check
+   all succeed. Any failure leaves the PDF in place and records the reason, with a Retry
+   button next to it.
+
+Notes:
+
+- New records land as **drafts** by default, so a human can glance at them before they go
+  public; flip “Publish immediately” in the Import Center to skip that.
+- The route that reads the folder (`/api/pdf-import`) is **development-only** — it refuses
+  to run in a production build unless `PDF_IMPORT_ENABLED=1` is set. Deployed builds have
+  no folder to watch and say so.
+- **Cloudinary must be allowed to serve PDFs**: console → *Settings → Security* →
+  allow delivery of PDF and ZIP files. Until then every PDF URL returns 401 and the
+  pipeline reports it and keeps the local file.
+- `node scripts/pdf-import-dryrun.mjs --full` prints what would be extracted from every
+  PDF in the folder without touching Firestore, Cloudinary or the files;
+  `node scripts/pdf-import-verify.mjs` additionally reads the live catalog and shows which
+  records would be created, updated or left alone.
+- The engine lives in `src/lib/pdf-import/` (pure, no I/O), the orchestration in
+  `src/admin/import-pipeline.ts`, the filesystem half in `src/routes/api.pdf-import.ts`.
+
 ### One-time Firebase setup (required before the admin can save)
 
 1. Open <https://console.firebase.google.com/project/lk-chemicals/firestore> →
@@ -108,6 +152,9 @@ default). Industry icons are stored by name and resolved via `src/lib/icons.ts`.
          allow create: if true;                 // public enquiry form
          allow read, update, delete: if request.auth != null;
        }
+       match /imports/{doc} {
+         allow read, write: if request.auth != null;  // import ledger, admin only
+       }
        match /{collection}/{doc} {
          allow read: if true;                    // public site content
          allow write: if request.auth != null;   // admin only
@@ -115,6 +162,16 @@ default). Industry icons are stored by name and resolved via `src/lib/icons.ts`.
      }
    }
    ```
+
+   The `imports` rule is optional — the catch-all below it already permits the writes —
+   but without it the import history (file names and Cloudinary URLs) is publicly
+   readable, which it has no reason to be.
+
+   > ⚠️ **The rules currently published on this project do not match the block above.**
+   > Verified 27 Jul 2026: an unauthenticated client — nothing but the public API key
+   > that ships in the JS bundle — can create, overwrite and delete documents in every
+   > collection, including `products`, `settings` and `pages`. Anyone who opens the site
+   > can rewrite or wipe the catalog. Publish the rules above to close it.
 
 3. The admin user already exists in Firebase Auth. Until steps 1–2 are done, the admin
    panel shows a “Firestore isn’t reachable” banner with a direct link, and the public
@@ -130,6 +187,9 @@ src/data/products.ts        built-in categories + 35 products
 src/data/content.ts         built-in services/gallery/testimonials/site settings
 src/integrations/firebase/  Firebase app/auth/Firestore init
 src/integrations/cloudinary.ts  unsigned upload helper (XHR w/ progress)
+src/lib/pdf-import/          PDF → CMS engine (normalise, classify, extract, taxonomy)
+src/admin/import-pipeline.ts    the seven import steps, run from the browser
+src/routes/api.pdf-import.ts    dev-only filesystem half (scan / text / bytes / delete)
 public/content/             stable copies of site images (used by seeded data)
 src/styles.css              theme + extensive .light overrides (see notes below)
 ```

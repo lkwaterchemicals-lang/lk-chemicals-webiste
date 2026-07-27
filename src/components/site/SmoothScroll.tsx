@@ -19,6 +19,7 @@
 import { useEffect } from "react";
 import { useRouter } from "@tanstack/react-router";
 import Lenis from "lenis";
+import { registerScrollEngine } from "@/lib/scroll";
 
 export function SmoothScroll() {
   const router = useRouter();
@@ -41,6 +42,10 @@ export function SmoothScroll() {
       raf = requestAnimationFrame(loop);
     });
 
+    // Any in-page scroll the app performs has to go through this same instance,
+    // or the two scroll systems fight — see src/lib/scroll.ts.
+    const unregister = registerScrollEngine(lenis);
+
     // Runs after the router's own onRendered scroll handler (it subscribed
     // first), so window.scrollY is already where the navigation wants us.
     const unsubscribe = router.subscribe("onRendered", () => {
@@ -48,6 +53,7 @@ export function SmoothScroll() {
     });
 
     return () => {
+      unregister();
       unsubscribe();
       cancelAnimationFrame(raf);
       lenis.destroy();

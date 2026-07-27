@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowUpRight, LayoutGrid, Search } from "lucide-react";
 import { useCategories, useProducts } from "@/lib/content";
 import { useProductsContent } from "@/lib/pages";
 import { imgFallback } from "@/lib/assets";
+import { scrollToElement } from "@/lib/scroll";
 import { MicroLabel } from "@/components/site/GhostWord";
 import resinImg from "@/assets/resin.jpg";
 
@@ -37,6 +38,7 @@ function ProductsPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const [q, setQ] = useState("");
   const gridRef = useRef<HTMLElement>(null);
+  const browseRef = useRef<HTMLElement>(null);
 
   const activeCat = categories.find((c) => c.slug === cat);
   const browsing = !!cat || q.trim().length > 0;
@@ -54,9 +56,19 @@ function ProductsPage() {
   const openCat = (slug: string) => navigate({ search: { cat: slug }, resetScroll: false });
   const closeCat = () => navigate({ search: {}, resetScroll: false });
 
-  // When a category opens, glide the catalog into view.
+  // Opening a category swaps a tall section of tiles for the catalog grid, so
+  // the document height changes in the same frame as the click. Measuring the
+  // target before that settles is what used to fling the page to the footer —
+  // scrollToElement waits for layout and routes through Lenis. The very first
+  // render is skipped so a shared /products?cat=… link opens where the router
+  // put it instead of yanking the visitor mid-load.
+  const landed = useRef(false);
   useEffect(() => {
-    if (cat) gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!landed.current) {
+      landed.current = true;
+      return;
+    }
+    scrollToElement(cat ? gridRef.current : browseRef.current);
   }, [cat]);
 
   // Living placeholder: types out real product names character by character
@@ -125,7 +137,7 @@ function ProductsPage() {
 
       {/* Category overview — the front door of the catalog */}
       {!browsing && (
-        <section className="section-dark py-16">
+        <section ref={browseRef} className="section-dark py-16 scroll-mt-24">
           <div className="mx-auto max-w-7xl px-6 md:px-8">
             <MicroLabel n="01">Browse by category</MicroLabel>
             {categories.length === 0 && products.length === 0 && (

@@ -10,6 +10,7 @@ import {
   BarChart3,
   ExternalLink,
   FileText,
+  Import,
   Inbox,
   LayoutDashboard,
   LogOut,
@@ -51,8 +52,11 @@ function useNav(): NavSection[] {
   const careers = useCol("careers").data?.length;
   const enquiries = useEnquiries().data;
   const applications = useApplications().data;
+  const imports = useCol("imports").data;
   const newEnq = enquiries?.filter((e) => !e.status || e.status === "new").length ?? 0;
   const newApps = applications?.filter((a) => !a.status || a.status === "new").length ?? 0;
+  const needsAttention =
+    imports?.filter((i) => i.status === "failed" || i.status === "review").length ?? 0;
 
   return [
     {
@@ -145,7 +149,18 @@ function useNav(): NavSection[] {
     },
     {
       label: "System",
-      items: [{ to: "/admin/settings", label: "Settings", icon: Settings, key: "," }],
+      items: [
+        {
+          to: "/admin/imports",
+          label: "Import Center",
+          icon: Import,
+          key: "o",
+          // Anything waiting for a human — a failed run or an unclassified
+          // document — is worth a badge; clean imports are not.
+          badge: needsAttention || undefined,
+        },
+        { to: "/admin/settings", label: "Settings", icon: Settings, key: "," },
+      ],
     },
   ];
 }

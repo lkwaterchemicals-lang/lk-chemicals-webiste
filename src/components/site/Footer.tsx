@@ -164,8 +164,12 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-white/70">
               <li className="flex gap-2">
                 <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />
+                {/* The registered office has an exact pin in Settings — use it
+                    so this link opens the same place as the contact map. */}
                 <a
-                  href={mapsUrl(s.address)}
+                  href={mapsUrl(
+                    s.mapLat && s.mapLng ? `${s.mapLat.trim()},${s.mapLng.trim()}` : s.address,
+                  )}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-white"

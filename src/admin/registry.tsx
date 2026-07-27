@@ -112,6 +112,22 @@ const SPEC_FIELD: FieldDef = {
   ],
 };
 
+// Safety notes come straight off a material safety data sheet — one row per
+// topic (handling, storage, first aid…). Populated automatically by the PDF
+// import pipeline; editable here like anything else.
+const SAFETY_FIELD: FieldDef = {
+  key: "safety",
+  label: "Safety information",
+  type: "group",
+  itemNoun: "note",
+  itemTitleKey: "topic",
+  hint: "Handling, storage, first aid — shown on the product page",
+  itemFields: [
+    { key: "topic", label: "Topic", type: "text" },
+    { key: "detail", label: "Detail", type: "textarea" },
+  ],
+};
+
 // Reused by services: an ordered set of process steps and a FAQ list.
 const PROCESS_FIELD: FieldDef = {
   key: "process",
@@ -170,6 +186,13 @@ export const MODULES: ModuleDef[] = [
         required: true,
       },
       {
+        key: "code",
+        label: "Product code",
+        type: "text",
+        hint: "e.g. LK CHEM 1001 — also how PDF imports recognise this product",
+        placeholder: "LK CHEM 1001",
+      },
+      {
         key: "subcategory",
         label: "Subcategory",
         type: "text",
@@ -184,11 +207,25 @@ export const MODULES: ModuleDef[] = [
         type: "text",
         hint: "Optional — shown on the product page, e.g. ₹2,400 / 25 L drum",
       },
+      {
+        key: "shortDescription",
+        label: "Short description",
+        type: "textarea",
+        hint: "One line for cards and search results",
+      },
       { key: "description", label: "Description", type: "textarea", required: true },
       { key: "features", label: "Features", type: "list", hint: "One per line" },
       { key: "applications", label: "Applications", type: "list", hint: "One per line" },
+      { key: "industries", label: "Industries served", type: "list", hint: "One per line" },
+      {
+        key: "dosage",
+        label: "Dosage",
+        type: "textarea",
+        hint: "Recommended dose rate as printed on the data sheet",
+      },
       { key: "packing", label: "Packing options", type: "list", hint: "One per line" },
       { ...SPEC_FIELD },
+      { ...SAFETY_FIELD },
       {
         key: "image",
         label: "Primary photo",
@@ -354,8 +391,15 @@ export const MODULES: ModuleDef[] = [
       { ...STATUS_FIELD },
       { key: "featured", label: "Featured", type: "boolean", hint: "Highlight on listings" },
       { key: "order", label: "Display order", type: "text", hint: "Lower shows first (e.g. 10)" },
+      {
+        key: "shortDescription",
+        label: "Short description",
+        type: "textarea",
+        hint: "One line for cards and search results",
+      },
       { key: "description", label: "Description", type: "textarea", required: true },
       { key: "highlights", label: "What's included", type: "list", hint: "One per line" },
+      { key: "industries", label: "Industries served", type: "list", hint: "One per line" },
       {
         key: "image",
         label: "Cover image",

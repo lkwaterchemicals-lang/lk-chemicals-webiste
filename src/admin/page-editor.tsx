@@ -10,6 +10,7 @@ import { ArrowDown, ArrowUp, Clock, Plus, RotateCcw, Save, Trash2 } from "lucide
 import { db } from "@/integrations/firebase/client";
 import { logActivity, useInvalidate } from "./api";
 import { ImageField } from "./editor";
+import { RecordContext } from "./record-context";
 import { Btn, Card, Field, PageHeader, SelectWrap, SkeletonRows } from "./ui";
 import type { ContentField, PageSchema } from "./content-schema";
 
@@ -65,7 +66,7 @@ function LeafInput({
         />
       );
     case "image":
-      return <ImageField value={String(value ?? "")} onChange={onChange} />;
+      return <ImageField value={String(value ?? "")} onChange={onChange} fieldKey={field.key} />;
     case "select":
       return (
         <SelectWrap>
@@ -122,7 +123,7 @@ function ImageListField({ value, onChange }: { value: unknown; onChange: (v: str
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {items.map((url, i) => (
           <div key={i} className="space-y-1.5">
-            <ImageField value={url} onChange={(u) => setAt(i, u)} />
+            <ImageField value={url} onChange={(u) => setAt(i, u)} fieldKey="gallery" />
             <button
               type="button"
               className="a-btn a-btn-bare a-btn-sm w-full"
@@ -333,86 +334,93 @@ export function PageContentEditor({ schema }: { schema: PageSchema }) {
   };
 
   return (
-    <div className="space-y-4 max-w-4xl">
-      <PageHeader
-        title={schema.label}
-        sub={schema.description}
-        actions={
-          <>
-            {dirty && (
-              <Btn
-                icon={RotateCcw}
-                onClick={() => baseline && setValues(structuredClone(baseline))}
-              >
-                Reset
+    // Image fields inside read this to tailor their AI prompt to the page and
+    // the section they sit in — see src/lib/image-prompts.ts.
+    <RecordContext.Provider value={{ module: `page:${schema.id}`, record: values ?? {} }}>
+      <div className="space-y-4 max-w-4xl">
+        <PageHeader
+          title={schema.label}
+          sub={schema.description}
+          actions={
+            <>
+              {dirty && (
+                <Btn
+                  icon={RotateCcw}
+                  onClick={() => baseline && setValues(structuredClone(baseline))}
+                >
+                  Reset
+                </Btn>
+              )}
+              <Btn variant="primary" icon={Save} busy={busy} disabled={!dirty} onClick={save}>
+                {dirty ? "Save changes" : "Saved"}
               </Btn>
-            )}
-            <Btn variant="primary" icon={Save} busy={busy} disabled={!dirty} onClick={save}>
-              {dirty ? "Save changes" : "Saved"}
+            </>
+          }
+        />
+
+        {isLoading || !values ? (
+          <div className="a-card">
+            <SkeletonRows n={6} />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {schema.sections.map((sec, si) => (
+              <Card key={sec.title} className="a-rise" title={sec.title}>
+                <div
+                  className="grid gap-4 sm:grid-cols-2"
+                  style={{ animationDelay: `${si * 40}ms` }}
+                >
+                  {sec.fields.map((f) => (
+                    <div
+                      key={f.key}
+                      className={
+                        f.full ||
+                        f.type === "group" ||
+                        f.type === "imagelist" ||
+                        f.type === "list" ||
+                        f.type === "textarea" ||
+                        f.type === "image"
+                          ? "sm:col-span-2"
+                          : ""
+                      }
+                    >
+                      <Field label={f.label} hint={f.hint}>
+                        <FieldRenderer
+                          field={f}
+                          value={values[f.key]}
+                          onChange={(v) => setField(f.key, v)}
+                        />
+                      </Field>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        <p className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--a-text3)" }}>
+          <Clock className="h-3 w-3" /> Changes publish the moment you save — no deploy needed.
+        </p>
+
+        {dirty && (
+          <div
+            className="a-pop sticky bottom-3 z-10 flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+            style={{
+              background: "var(--a-surface2)",
+              border: "1px solid var(--a-border2)",
+              boxShadow: "var(--a-shadow-lg)",
+            }}
+          >
+            <span className="text-xs font-semibold" style={{ color: "var(--a-warn)" }}>
+              Unsaved changes
+            </span>
+            <Btn size="sm" variant="primary" busy={busy} onClick={save}>
+              Save
             </Btn>
-          </>
-        }
-      />
-
-      {isLoading || !values ? (
-        <div className="a-card">
-          <SkeletonRows n={6} />
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {schema.sections.map((sec, si) => (
-            <Card key={sec.title} className="a-rise" title={sec.title}>
-              <div className="grid gap-4 sm:grid-cols-2" style={{ animationDelay: `${si * 40}ms` }}>
-                {sec.fields.map((f) => (
-                  <div
-                    key={f.key}
-                    className={
-                      f.full ||
-                      f.type === "group" ||
-                      f.type === "imagelist" ||
-                      f.type === "list" ||
-                      f.type === "textarea" ||
-                      f.type === "image"
-                        ? "sm:col-span-2"
-                        : ""
-                    }
-                  >
-                    <Field label={f.label} hint={f.hint}>
-                      <FieldRenderer
-                        field={f}
-                        value={values[f.key]}
-                        onChange={(v) => setField(f.key, v)}
-                      />
-                    </Field>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <p className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--a-text3)" }}>
-        <Clock className="h-3 w-3" /> Changes publish the moment you save — no deploy needed.
-      </p>
-
-      {dirty && (
-        <div
-          className="a-pop sticky bottom-3 z-10 flex items-center justify-between gap-3 rounded-xl px-4 py-3"
-          style={{
-            background: "var(--a-surface2)",
-            border: "1px solid var(--a-border2)",
-            boxShadow: "var(--a-shadow-lg)",
-          }}
-        >
-          <span className="text-xs font-semibold" style={{ color: "var(--a-warn)" }}>
-            Unsaved changes
-          </span>
-          <Btn size="sm" variant="primary" busy={busy} onClick={save}>
-            Save
-          </Btn>
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    </RecordContext.Provider>
   );
 }

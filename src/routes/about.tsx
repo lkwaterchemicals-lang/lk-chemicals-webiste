@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { Linkedin, Mail, Phone, UsersRound } from "lucide-react";
+import { useState, type ComponentType } from "react";
+import { BadgeCheck, Linkedin, Mail, Phone, Trophy, UsersRound, X } from "lucide-react";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
 import { Waterline } from "@/components/site/Waterline";
@@ -8,7 +9,13 @@ import { Coverflow3D } from "@/components/site/Coverflow3D";
 import { useAboutContent } from "@/lib/pages";
 import { useTeam } from "@/lib/content";
 import { imgFallback } from "@/lib/assets";
-import { aboutContent, type ValueItem, type Facility } from "@/data/site";
+import {
+  aboutContent,
+  type Achievement,
+  type Credential,
+  type ValueItem,
+  type Facility,
+} from "@/data/site";
 import type { TeamMember } from "@/data/content";
 
 export const Route = createFileRoute("/about")({
@@ -163,6 +170,26 @@ function AboutPage() {
         </div>
       </section>
 
+      {/* Proof — numbers, certificates and awards. Each hides itself until the
+          dashboard has something real to show (Content → About). */}
+      <AchievementsSection heading={c.achievementsHeading} items={c.achievements} />
+      <CredentialsSection
+        n="06"
+        heading={c.certificationsHeading}
+        body={c.certificationsBody}
+        items={c.certifications}
+        label="Certifications"
+        emptyImageIcon={BadgeCheck}
+      />
+      <CredentialsSection
+        n="07"
+        heading={c.awardsHeading}
+        items={c.awards}
+        label="Awards"
+        emptyImageIcon={Trophy}
+        tone="light"
+      />
+
       {/* Founder spotlight + team — both fully admin-managed (Content → Team) */}
       <FounderSection />
       <TeamSection heading={c.teamHeading} body={c.teamBody} />
@@ -181,6 +208,181 @@ function AboutPage() {
         </div>
       </section>
     </>
+  );
+}
+
+/* =============== PROOF: NUMBERS, CERTIFICATES, AWARDS =============== */
+
+/** Headline numbers. Renders nothing until the dashboard supplies some — an
+ * empty stat strip reads as a site that hasn't been finished. */
+function AchievementsSection({ heading, items = [] }: { heading?: string; items?: Achievement[] }) {
+  const rows = items.filter((a) => a?.value || a?.label);
+  if (!rows.length) return null;
+  return (
+    <section className="section-dark py-24 relative overflow-hidden">
+      <div className="mx-auto max-w-7xl px-6 md:px-8">
+        <MicroLabel n="05">Achievements</MicroLabel>
+        <h2 className="display-xl mt-3 grad-text" style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}>
+          {heading || "By the numbers."}
+        </h2>
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {rows.map((a, i) => (
+            <motion.div
+              key={`${a.label}-${i}`}
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-8%" }}
+              transition={{ delay: (i % 4) * 0.07, duration: 0.5 }}
+              className="glass-dark rounded-3xl p-7"
+            >
+              <div className="display-xl grad-text text-4xl sm:text-5xl leading-none">
+                {a.value}
+              </div>
+              <div className="mt-3 text-sm font-medium text-white/90">{a.label}</div>
+              {a.body && <p className="mt-2 text-[13px] leading-relaxed text-white/55">{a.body}</p>}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Certificates and awards share a shape: a title, who issued it, a year and a
+ * scan worth enlarging — so they share a component and differ only in tone. */
+function CredentialsSection({
+  n,
+  label,
+  heading,
+  body,
+  items = [],
+  emptyImageIcon: Icon,
+  tone = "dark",
+}: {
+  n: string;
+  label: string;
+  heading?: string;
+  body?: string;
+  items?: Credential[];
+  emptyImageIcon: ComponentType<{ className?: string }>;
+  tone?: "dark" | "light";
+}) {
+  const [zoomed, setZoomed] = useState<Credential | null>(null);
+  const rows = items.filter((c) => c?.title);
+  if (!rows.length) return null;
+
+  const light = tone === "light";
+  return (
+    <section
+      className={`${light ? "section-light" : "section-dark"} py-24 relative overflow-hidden`}
+    >
+      <div className="mx-auto max-w-7xl px-6 md:px-8">
+        <MicroLabel n={n} className={light ? "!text-royal" : undefined}>
+          {label}
+        </MicroLabel>
+        <h2
+          className={`display-xl mt-3 ${light ? "" : "grad-text"}`}
+          style={{ fontSize: "clamp(2.25rem, 8vw, 5rem)" }}
+        >
+          {heading || label}
+        </h2>
+        {body && (
+          <p className={`mt-4 max-w-2xl ${light ? "text-ink/70" : "text-white/60"}`}>{body}</p>
+        )}
+
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {rows.map((c, i) => (
+            <motion.div
+              key={`${c.title}-${i}`}
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-8%" }}
+              transition={{ delay: (i % 3) * 0.07, duration: 0.5 }}
+              className={`group rounded-3xl overflow-hidden ${
+                light ? "bento-tile" : "glass-dark"
+              } hover-lift`}
+            >
+              {/* Certificates are portrait documents: contain, never crop, so
+                  the seal and signature stay in frame. */}
+              <button
+                type="button"
+                onClick={() => c.img && setZoomed(c)}
+                className={`relative block w-full aspect-[4/3] ${
+                  light ? "bg-ink/[0.04]" : "bg-white/[0.04]"
+                } ${c.img ? "cursor-zoom-in" : "cursor-default"}`}
+                aria-label={c.img ? `Enlarge ${c.title}` : undefined}
+              >
+                {c.img ? (
+                  <img
+                    src={c.img}
+                    alt={c.title}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                ) : (
+                  <span className="absolute inset-0 grid place-items-center">
+                    <Icon className={`h-10 w-10 ${light ? "text-royal/30" : "text-cyan-hi/30"}`} />
+                  </span>
+                )}
+              </button>
+              <div className="p-6">
+                <h3 className={`text-base font-semibold ${light ? "text-ink" : "text-white"}`}>
+                  {c.title}
+                </h3>
+                {(c.issuer || c.year) && (
+                  <div
+                    className={`mt-1 text-xs uppercase tracking-widest ${
+                      light ? "text-ink/50" : "text-white/45"
+                    }`}
+                  >
+                    {[c.issuer, c.year].filter(Boolean).join(" · ")}
+                  </div>
+                )}
+                {c.body && (
+                  <p
+                    className={`mt-3 text-[13px] leading-relaxed ${
+                      light ? "text-ink/70" : "text-white/60"
+                    }`}
+                  >
+                    {c.body}
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Lightbox — a certificate is only proof if it can be read. */}
+      {zoomed?.img && (
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center bg-ink/90 p-4 backdrop-blur-sm"
+          onClick={() => setZoomed(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={zoomed.title}
+        >
+          <button
+            type="button"
+            onClick={() => setZoomed(null)}
+            aria-label="Close"
+            className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <figure className="max-h-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={zoomed.img}
+              alt={zoomed.title}
+              className="max-h-[80vh] w-auto rounded-2xl object-contain"
+            />
+            <figcaption className="mt-4 text-center text-sm text-white/70">
+              {[zoomed.title, zoomed.issuer, zoomed.year].filter(Boolean).join(" · ")}
+            </figcaption>
+          </figure>
+        </div>
+      )}
+    </section>
   );
 }
 

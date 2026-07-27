@@ -119,6 +119,8 @@ function ProductDetail() {
   const packing = product.packing ?? [];
   const specs = product.specifications ?? [];
   const documents = product.documents ?? [];
+  const industries = product.industries ?? [];
+  const safety = product.safety ?? [];
   const images = [product.image, ...(product.gallery ?? [])].filter(Boolean) as string[];
 
   // Related: explicit picks first, otherwise same-category siblings.
@@ -212,6 +214,11 @@ function ProductDetail() {
             <span className="micro-label">
               {cat.number} · {cat.name}
             </span>
+            {product.code && (
+              <span className="rounded-full border border-white/15 px-3 py-1 text-[11px] font-mono uppercase tracking-widest text-white/70">
+                {product.code}
+              </span>
+            )}
           </div>
           {/* Desktop keeps the display headline. Phones get the PHOTO first,
               then a compact title with price + share — buyers scan image →
@@ -290,6 +297,25 @@ function ProductDetail() {
                     </table>
                   </Panel>
                 )}
+                {industries.length > 0 && (
+                  <Panel title="Industries served">
+                    <div className="flex flex-wrap gap-2">
+                      {industries.map((i: string) => (
+                        <span
+                          key={i}
+                          className="text-xs uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/15 text-white/80"
+                        >
+                          {i}
+                        </span>
+                      ))}
+                    </div>
+                  </Panel>
+                )}
+                {product.dosage && (
+                  <Panel title="Dosage">
+                    <p className="text-sm text-white/80 leading-relaxed">{product.dosage}</p>
+                  </Panel>
+                )}
                 {packing.length > 0 && (
                   <Panel title="Packing" className="md:col-span-2">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -302,6 +328,22 @@ function ProductDetail() {
                         </div>
                       ))}
                     </div>
+                  </Panel>
+                )}
+                {/* Safety comes off the MSDS: buyers in pharma and food plants
+                    check handling and first aid before they ask for a price. */}
+                {safety.length > 0 && (
+                  <Panel title="Safety & handling" className="md:col-span-2">
+                    <dl className="space-y-3">
+                      {safety.map((s, i) => (
+                        <div key={(s.topic ?? "") + i}>
+                          <dt className="text-xs uppercase tracking-widest text-white/50">
+                            {s.topic}
+                          </dt>
+                          <dd className="mt-1 text-sm text-white/80 leading-relaxed">{s.detail}</dd>
+                        </div>
+                      ))}
+                    </dl>
                   </Panel>
                 )}
                 {documents.length > 0 && (

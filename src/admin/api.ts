@@ -116,6 +116,17 @@ export async function saveRow(
   return id;
 }
 
+/** Flips a record's public visibility without touching anything else — the
+ * write path behind bulk publish/unpublish. */
+export async function setRowStatus(
+  def: ModuleDef,
+  id: string,
+  status: "published" | "draft" | "archived",
+): Promise<void> {
+  await setDoc(doc(db, def.id, id), { status, _updatedAt: serverTimestamp() }, { merge: true });
+  void logActivity("status", def.id, `${id} → ${status}`);
+}
+
 /** Deletes rows; returns an undo() that restores them. */
 export async function deleteRows(def: ModuleDef, rows: Row[]): Promise<() => Promise<void>> {
   const copies = rows.map((r) => ({ id: r.__id, data: stripMeta(r) }));

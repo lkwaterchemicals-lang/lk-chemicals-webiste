@@ -45,7 +45,18 @@ const GROUPS: Group[] = [
     fields: [
       { key: "address", label: "Registered office", textarea: true },
       { key: "address2", label: "Unit / works (optional)", textarea: true },
-      { key: "mapQuery", label: "Google Maps search query", hint: "Drives the contact-page map" },
+      {
+        key: "mapQuery",
+        label: "Google Maps search query",
+        hint: "Used by the Directions / Open in Maps buttons",
+      },
+      {
+        key: "mapLat",
+        label: "Map latitude",
+        hint: "Google Maps → right-click the pin → copy coordinates",
+      },
+      { key: "mapLng", label: "Map longitude", hint: "Pins the contact map exactly" },
+      { key: "mapZoom", label: "Map zoom", hint: "1 world … 17 street … 21 building" },
     ],
   },
   {

@@ -71,6 +71,19 @@ export type HomeContent = {
   talkBody: string;
 };
 
+/** A number worth putting on the wall — "12+ years", "150+ plants served". */
+export type Achievement = { value: string; label: string; body?: string };
+
+/** An ISO certificate, test report or approval, with a scan to enlarge. */
+export type Credential = {
+  title: string;
+  issuer?: string;
+  year?: string;
+  body?: string;
+  /** Scan or photo of the certificate / trophy. */
+  img?: string;
+};
+
 export type AboutContent = {
   heroLabel: string;
   heroHeading: string;
@@ -83,6 +96,16 @@ export type AboutContent = {
   visionText: string;
   facilities: Facility[];
   values: ValueItem[];
+  /** Headline numbers — proof at a glance. */
+  achievementsHeading?: string;
+  achievements?: Achievement[];
+  /** ISO certificates, approvals and test reports. */
+  certificationsHeading?: string;
+  certificationsBody?: string;
+  certifications?: Credential[];
+  /** Awards and recognitions. */
+  awardsHeading?: string;
+  awards?: Credential[];
   teamHeading: string;
   teamBody: string;
   ctaHeading: string;
@@ -109,7 +132,9 @@ export type GalleryContent = {
 export type ContactContent = {
   heroHeading: string;
   heroBody: string;
-  coordinates: string;
+  /** @deprecated The map heading now renders the address from Site settings.
+   * Kept so existing `pages/contact` documents keep type-checking. */
+  coordinates?: string;
   /** Google Maps embed — the Share → "Embed a map" URL (or full iframe HTML). */
   mapEmbed: string;
 };
@@ -320,6 +345,17 @@ export const aboutContent: AboutContent = {
     { title: "Consistency", body: "Batch #4501 is identical to #0001.", img: resin },
     { title: "Partnership", body: "We show up when the plant is down.", img: ct },
   ],
+  // Achievements / certifications / awards ship empty on purpose: these are
+  // claims about the company, and a placeholder certificate is worse than no
+  // certificate. Each section hides itself until the dashboard fills it in.
+  achievementsHeading: "By the numbers.",
+  achievements: [],
+  certificationsHeading: "Certified, audited, on file.",
+  certificationsBody:
+    "Every batch ships with a certificate of analysis. Tap any certificate to see the full document.",
+  certifications: [],
+  awardsHeading: "Recognition.",
+  awards: [],
   teamHeading: "The people behind the chemistry.",
   teamBody:
     "Chemists in the lab, engineers on the road and a founder who still answers the phone — meet the crew that keeps a hundred plants running at spec.",
@@ -355,6 +391,5 @@ export const contactContent: ContactContent = {
   heroHeading: "Let's talk.",
   heroBody:
     "Shiva Krishna picks up the phone himself. Or send a note — we reply within a business day.",
-  coordinates: "17.4948° N · 78.5719° E",
   mapEmbed: "",
 };

@@ -11,14 +11,23 @@ export type CloudinaryUploadResult = {
   bytes: number;
 };
 
+export type UploadOptions = {
+  /** Fixed public id. Unsigned uploads never overwrite, so re-uploading the
+   * same id returns the existing asset — which is how the PDF import pipeline
+   * retries without littering the media library with copies. */
+  publicId?: string;
+};
+
 export async function uploadToCloudinary(
   file: File,
   onProgress?: (percent: number) => void,
+  options: UploadOptions = {},
 ): Promise<CloudinaryUploadResult> {
   const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
   const body = new FormData();
   body.append("file", file);
   body.append("upload_preset", UPLOAD_PRESET);
+  if (options.publicId) body.append("public_id", options.publicId);
 
   // XHR instead of fetch so we can report upload progress to the admin UI.
   return new Promise((resolve, reject) => {

@@ -26,12 +26,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ServicesCategoryRouteImport } from './routes/services_.$category'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
+import { Route as ApiPdfImportRouteImport } from './routes/api.pdf-import'
 import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
 import { Route as AdminTeamRouteImport } from './routes/admin.team'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminServiceCategoriesRouteImport } from './routes/admin.serviceCategories'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
+import { Route as AdminImportsRouteImport } from './routes/admin.imports'
 import { Route as AdminGalleryRouteImport } from './routes/admin.gallery'
 import { Route as AdminEnquiriesRouteImport } from './routes/admin.enquiries'
 import { Route as AdminContentRouteImport } from './routes/admin.content'
@@ -127,6 +129,11 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   path: '/products/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPdfImportRoute = ApiPdfImportRouteImport.update({
+  id: '/api/pdf-import',
+  path: '/api/pdf-import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTestimonialsRoute = AdminTestimonialsRouteImport.update({
   id: '/testimonials',
   path: '/testimonials',
@@ -155,6 +162,11 @@ const AdminServiceCategoriesRoute = AdminServiceCategoriesRouteImport.update({
 const AdminProductsRoute = AdminProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminImportsRoute = AdminImportsRouteImport.update({
+  id: '/imports',
+  path: '/imports',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminGalleryRoute = AdminGalleryRouteImport.update({
@@ -225,12 +237,14 @@ export interface FileRoutesByFullPath {
   '/admin/content': typeof AdminContentRoute
   '/admin/enquiries': typeof AdminEnquiriesRoute
   '/admin/gallery': typeof AdminGalleryRoute
+  '/admin/imports': typeof AdminImportsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/serviceCategories': typeof AdminServiceCategoriesRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/team': typeof AdminTeamRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
+  '/api/pdf-import': typeof ApiPdfImportRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/services/$category': typeof ServicesCategoryRoute
   '/admin/': typeof AdminIndexRoute
@@ -258,12 +272,14 @@ export interface FileRoutesByTo {
   '/admin/content': typeof AdminContentRoute
   '/admin/enquiries': typeof AdminEnquiriesRoute
   '/admin/gallery': typeof AdminGalleryRoute
+  '/admin/imports': typeof AdminImportsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/serviceCategories': typeof AdminServiceCategoriesRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/team': typeof AdminTeamRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
+  '/api/pdf-import': typeof ApiPdfImportRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/services/$category': typeof ServicesCategoryRoute
   '/admin': typeof AdminIndexRoute
@@ -293,12 +309,14 @@ export interface FileRoutesById {
   '/admin/content': typeof AdminContentRoute
   '/admin/enquiries': typeof AdminEnquiriesRoute
   '/admin/gallery': typeof AdminGalleryRoute
+  '/admin/imports': typeof AdminImportsRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/serviceCategories': typeof AdminServiceCategoriesRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/team': typeof AdminTeamRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
+  '/api/pdf-import': typeof ApiPdfImportRoute
   '/products_/$slug': typeof ProductsSlugRoute
   '/services_/$category': typeof ServicesCategoryRoute
   '/admin/': typeof AdminIndexRoute
@@ -329,12 +347,14 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/enquiries'
     | '/admin/gallery'
+    | '/admin/imports'
     | '/admin/products'
     | '/admin/serviceCategories'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/team'
     | '/admin/testimonials'
+    | '/api/pdf-import'
     | '/products/$slug'
     | '/services/$category'
     | '/admin/'
@@ -362,12 +382,14 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/enquiries'
     | '/admin/gallery'
+    | '/admin/imports'
     | '/admin/products'
     | '/admin/serviceCategories'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/team'
     | '/admin/testimonials'
+    | '/api/pdf-import'
     | '/products/$slug'
     | '/services/$category'
     | '/admin'
@@ -396,12 +418,14 @@ export interface FileRouteTypes {
     | '/admin/content'
     | '/admin/enquiries'
     | '/admin/gallery'
+    | '/admin/imports'
     | '/admin/products'
     | '/admin/serviceCategories'
     | '/admin/services'
     | '/admin/settings'
     | '/admin/team'
     | '/admin/testimonials'
+    | '/api/pdf-import'
     | '/products_/$slug'
     | '/services_/$category'
     | '/admin/'
@@ -424,6 +448,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   WarrantyPolicyRoute: typeof WarrantyPolicyRoute
+  ApiPdfImportRoute: typeof ApiPdfImportRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   ServicesCategoryRoute: typeof ServicesCategoryRoute
   ServicesCategoryServiceRoute: typeof ServicesCategoryServiceRoute
@@ -550,6 +575,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pdf-import': {
+      id: '/api/pdf-import'
+      path: '/api/pdf-import'
+      fullPath: '/api/pdf-import'
+      preLoaderRoute: typeof ApiPdfImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/testimonials': {
       id: '/admin/testimonials'
       path: '/testimonials'
@@ -590,6 +622,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/admin/products'
       preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/imports': {
+      id: '/admin/imports'
+      path: '/imports'
+      fullPath: '/admin/imports'
+      preLoaderRoute: typeof AdminImportsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/gallery': {
@@ -666,6 +705,7 @@ interface AdminRouteChildren {
   AdminContentRoute: typeof AdminContentRoute
   AdminEnquiriesRoute: typeof AdminEnquiriesRoute
   AdminGalleryRoute: typeof AdminGalleryRoute
+  AdminImportsRoute: typeof AdminImportsRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminServiceCategoriesRoute: typeof AdminServiceCategoriesRoute
   AdminServicesRoute: typeof AdminServicesRoute
@@ -684,6 +724,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContentRoute: AdminContentRoute,
   AdminEnquiriesRoute: AdminEnquiriesRoute,
   AdminGalleryRoute: AdminGalleryRoute,
+  AdminImportsRoute: AdminImportsRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminServiceCategoriesRoute: AdminServiceCategoriesRoute,
   AdminServicesRoute: AdminServicesRoute,
@@ -711,6 +752,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   WarrantyPolicyRoute: WarrantyPolicyRoute,
+  ApiPdfImportRoute: ApiPdfImportRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   ServicesCategoryRoute: ServicesCategoryRoute,
   ServicesCategoryServiceRoute: ServicesCategoryServiceRoute,

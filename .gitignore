@@ -33,3 +33,8 @@ dist-ssr
 
 # Local review media
 *.mp4
+
+# PDF import drop folder — a working tray, not source. Files land here, get
+# imported into the CMS and are deleted (see /admin/imports).
+PDF's/
+

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { slugify, type FieldDef, type ModuleDef } from "./registry";
+import { RecordContext } from "./record-context";
 import { Btn, Confirm, Drawer, Field, SelectWrap } from "./ui";
 import { ImageField, GroupInput, GalleryInput, DocumentsInput, MultiRefInput } from "./fields";
 
@@ -106,7 +107,9 @@ export function EditorDrawer({
   };
 
   return (
-    <>
+    // Every image field inside can now ask what record it belongs to, which is
+    // what makes its "get an AI prompt" action specific rather than generic.
+    <RecordContext.Provider value={{ module: def.id, record: values }}>
       <Drawer
         open={open}
         onClose={tryClose}
@@ -251,6 +254,6 @@ export function EditorDrawer({
         body="You have unsaved changes. Closing the editor will throw them away."
         confirmLabel="Discard"
       />
-    </>
+    </RecordContext.Provider>
   );
 }

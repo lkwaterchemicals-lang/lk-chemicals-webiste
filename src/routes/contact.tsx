@@ -42,6 +42,9 @@ function ContactPage() {
   const { data: s } = useSiteSettings();
   const { data: c } = useContactContent();
   const showAddress2 = Boolean(s.address2 && normAddr(s.address2) !== normAddr(s.address));
+  // "lat,lng" when Settings carries a pin — every map link then points at the
+  // exact gate instead of letting Google guess from the address text.
+  const pin = s.mapLat && s.mapLng ? `${s.mapLat.trim()},${s.mapLng.trim()}` : "";
   return (
     <>
       <section className="section-dark relative pt-32 sm:pt-40 pb-16 overflow-hidden">
@@ -67,8 +70,10 @@ function ContactPage() {
           <div className="grid gap-4 content-start">
             <Card icon={<MapPin className="h-4 w-4" />} label="Address">
               {/* Every address opens Google Maps — the arrow makes that obvious
-                  rather than leaving the text looking like plain copy. */}
-              <AddressLink query={s.mapQuery} label={s.address} />
+                  rather than leaving the text looking like plain copy. The
+                  registered office links to the exact pin; the second unit has
+                  no pin of its own, so it still searches by address. */}
+              <AddressLink query={pin || s.mapQuery} label={s.address} />
               {showAddress2 && (
                 <div className="mt-2">
                   <span className="text-white/50">Unit: </span>
@@ -76,7 +81,7 @@ function ContactPage() {
                 </div>
               )}
               <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.mapQuery)}`}
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pin || s.mapQuery)}`}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border border-cyan-hi/30 bg-cyan-hi/10 px-4 py-2 text-xs font-medium text-cyan-hi transition-colors hover:bg-cyan-hi hover:text-ink"
@@ -253,24 +258,37 @@ function MapInfoCard({
 function SignatureMap() {
   const { data: s } = useSiteSettings();
   const { data: c } = useContactContent();
+  // Coordinates beat a text query in every way that matters here: Google can't
+  // wander to a similarly-named business, the zoom is ours to choose, and the
+  // Directions button routes to the gate rather than to the suburb.
+  const point = s.mapLat && s.mapLng ? `${s.mapLat.trim()},${s.mapLng.trim()}` : "";
   const q = encodeURIComponent(s.mapQuery);
-  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${q}`;
-  const viewUrl = `https://www.google.com/maps/search/?api=1&query=${q}`;
-  // Admin-pasted "Embed a map" URL wins (exact pin, chosen zoom); otherwise
-  // fall back to a search-query embed built from the settings address.
+  const destination = point || q;
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+  const viewUrl = point
+    ? `https://www.google.com/maps/search/?api=1&query=${point}`
+    : `https://www.google.com/maps/search/?api=1&query=${q}`;
+  // Order of preference: an admin-pasted "Embed a map" URL (they chose the
+  // exact frame), then our pinned coordinates, then a plain search.
+  const zoom = (s.mapZoom ?? "17").trim() || "17";
   const embedUrl =
-    extractMapEmbedSrc(c.mapEmbed) ?? `https://www.google.com/maps?q=${q}&output=embed`;
+    extractMapEmbedSrc(c.mapEmbed) ??
+    (point
+      ? `https://www.google.com/maps?q=${point}&z=${zoom}&hl=en&output=embed`
+      : `https://www.google.com/maps?q=${q}&output=embed`);
   return (
     <section className="section-dark pb-24">
       <div className="mx-auto max-w-7xl px-6 md:px-8">
         <div className="flex items-end justify-between gap-4 mb-6">
           <div>
             <MicroLabel n="10">Reach us</MicroLabel>
+            {/* The address, not a coordinate pair — visitors navigate by street
+                names, and the numbers on show here never matched the pin. */}
             <h2
               className="display-xl mt-2 grad-text"
-              style={{ fontSize: "clamp(1.75rem, 5vw, 3.5rem)" }}
+              style={{ fontSize: "clamp(1.5rem, 3.6vw, 2.6rem)" }}
             >
-              {c.coordinates}
+              {s.address}
             </h2>
           </div>
           <div className="hidden md:block ghost-word text-[clamp(2rem,8vw,7rem)]">MAP</div>

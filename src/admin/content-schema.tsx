@@ -316,6 +316,68 @@ export const PAGE_SCHEMAS: PageSchema[] = [
         ],
       },
       {
+        title: "Achievements",
+        fields: [
+          { key: "achievementsHeading", label: "Section heading", type: "text", full: true },
+          {
+            key: "achievements",
+            label: "Headline numbers",
+            type: "group",
+            itemNoun: "achievement",
+            itemTitleKey: "label",
+            full: true,
+            itemFields: [
+              { key: "value", label: "Number", type: "text" },
+              { key: "label", label: "Label", type: "text" },
+              { key: "body", label: "Detail (optional)", type: "textarea" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Certifications",
+        fields: [
+          { key: "certificationsHeading", label: "Section heading", type: "text", full: true },
+          { key: "certificationsBody", label: "Intro line", type: "textarea", full: true },
+          {
+            key: "certifications",
+            label: "Certificates & approvals",
+            type: "group",
+            itemNoun: "certificate",
+            itemTitleKey: "title",
+            full: true,
+            itemFields: [
+              { key: "title", label: "Certificate", type: "text" },
+              { key: "issuer", label: "Issued by", type: "text" },
+              { key: "year", label: "Year / valid until", type: "text" },
+              { key: "body", label: "Scope (optional)", type: "textarea" },
+              { key: "img", label: "Certificate scan", type: "image" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Awards & recognition",
+        fields: [
+          { key: "awardsHeading", label: "Section heading", type: "text", full: true },
+          {
+            key: "awards",
+            label: "Awards",
+            type: "group",
+            itemNoun: "award",
+            itemTitleKey: "title",
+            full: true,
+            itemFields: [
+              { key: "title", label: "Award", type: "text" },
+              { key: "issuer", label: "Awarded by", type: "text" },
+              { key: "year", label: "Year", type: "text" },
+              { key: "body", label: "What for (optional)", type: "textarea" },
+              { key: "img", label: "Photo / trophy", type: "image" },
+            ],
+          },
+        ],
+      },
+      {
         title: "Team",
         fields: [
           { key: "teamHeading", label: "Heading", type: "text", full: true },
@@ -415,19 +477,14 @@ export const PAGE_SCHEMAS: PageSchema[] = [
         fields: [
           {
             key: "mapEmbed",
-            label: "Google Maps embed",
+            label: "Google Maps embed (optional)",
             type: "textarea",
-            hint: "Google Maps → Share → “Embed a map” → copy — paste the whole <iframe> or just its URL",
+            hint: "Leave blank to use the pin from Settings → Addresses. To override: Google Maps → Share → “Embed a map” → paste the <iframe> or its URL",
             placeholder: '<iframe src="https://www.google.com/maps/embed?pb=…"> or the URL itself',
             full: true,
           },
-          {
-            key: "coordinates",
-            label: "Map heading",
-            type: "text",
-            hint: "Big display line above the map",
-            full: true,
-          },
+          // The heading above the map is the registered address from Settings —
+          // one source of truth, and never a stale coordinate pair.
         ],
       },
     ],

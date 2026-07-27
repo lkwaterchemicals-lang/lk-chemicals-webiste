@@ -7,12 +7,22 @@ import {
   Copy,
   Database,
   ExternalLink,
+  Eye,
+  EyeOff,
   ListOrdered,
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
-import { deleteRows, duplicateRow, saveRow, seedModule, useCol, useInvalidate } from "./api";
+import {
+  deleteRows,
+  duplicateRow,
+  saveRow,
+  seedModule,
+  setRowStatus,
+  useCol,
+  useInvalidate,
+} from "./api";
 import { EditorDrawer } from "./editor";
 import { ReorderList } from "./reorder";
 import { DataTable, type Col } from "./table";
@@ -51,6 +61,19 @@ export function ModulePage({
   const [seeding, setSeeding] = useState(false);
   const [reordering, setReordering] = useState(false);
   const editingId = editing?.__id as string | undefined;
+  const hasStatus = def.fields.some((f) => f.key === "status");
+
+  /** Bulk publish / unpublish. Writes only the status field, so nothing else
+   * about the record is touched. */
+  const setStatusFor = async (targets: Row[], status: "published" | "draft") => {
+    await Promise.all(targets.map((r) => setRowStatus(def, r.__id, status)));
+    invalidate(def.id);
+    toast.success(
+      `${targets.length} ${targets.length === 1 ? def.singular : def.label.toLowerCase()} ${
+        status === "published" ? "published" : "moved to draft"
+      }`,
+    );
+  };
 
   // Reference options (category / parent / related) are resolved live from
   // Firestore by each field's `refCollection`, so selects always reflect what
@@ -194,17 +217,46 @@ export function ModulePage({
             </>
           )}
           bulkActions={(selected, clear) => (
-            <Btn
-              size="sm"
-              variant="danger"
-              icon={Trash2}
-              onClick={() => {
-                setConfirmDelete(selected);
-                clear();
-              }}
-            >
-              Delete {selected.length}
-            </Btn>
+            <>
+              {/* Publishing in bulk is the difference between a bulk import
+                  being useful and being 15 rows of clicking. Only offered on
+                  modules that actually have a status field. */}
+              {hasStatus && (
+                <>
+                  <Btn
+                    size="sm"
+                    icon={Eye}
+                    onClick={() => {
+                      void setStatusFor(selected, "published");
+                      clear();
+                    }}
+                  >
+                    Publish {selected.length}
+                  </Btn>
+                  <Btn
+                    size="sm"
+                    icon={EyeOff}
+                    onClick={() => {
+                      void setStatusFor(selected, "draft");
+                      clear();
+                    }}
+                  >
+                    Unpublish
+                  </Btn>
+                </>
+              )}
+              <Btn
+                size="sm"
+                variant="danger"
+                icon={Trash2}
+                onClick={() => {
+                  setConfirmDelete(selected);
+                  clear();
+                }}
+              >
+                Delete {selected.length}
+              </Btn>
+            </>
           )}
           mobileCard={(r) => (
             <div className="flex items-center gap-3">

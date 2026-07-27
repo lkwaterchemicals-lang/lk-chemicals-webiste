@@ -72,6 +72,13 @@ export type SiteSettings = {
   contactRole: string;
   hours: string;
   mapQuery: string;
+  /** Exact pin for the contact map. A search query alone lets Google choose the
+   * viewport (and sometimes a different branch); coordinates plus a zoom put
+   * one marker on the works, every time. */
+  mapLat?: string;
+  mapLng?: string;
+  /** Google Maps zoom level — 17 frames the plot and its street. */
+  mapZoom?: string;
 };
 
 export const staticGallery: GalleryItem[] = [
@@ -148,4 +155,8 @@ export const staticSettings: SiteSettings = {
   contactRole: "Founder & Director",
   hours: "Monday – Saturday · 9:30 AM – 7:00 PM",
   mapQuery: "LK Chemicals Cherlapally Hyderabad 500051",
+  // The company's Google listing (maps.app.goo.gl/FfLtLTvtLPeTWQwc6).
+  mapLat: "17.4634083",
+  mapLng: "78.5944718",
+  mapZoom: "17",
 };

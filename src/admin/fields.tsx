@@ -8,16 +8,21 @@ import { useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  Check,
+  Copy,
   File as FileIcon,
   Link2,
   Plus,
+  Sparkles,
   Trash2,
   UploadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadToCloudinary } from "@/integrations/cloudinary";
+import { buildImagePrompt, promptAsText } from "@/lib/image-prompts";
+import { useEditingRecord } from "./record-context";
 import type { FieldDef } from "./registry";
-import { Btn, Field, SelectWrap } from "./ui";
+import { Btn, Field, Modal, SelectWrap } from "./ui";
 
 /* ------------------------------------------------------------ image field */
 
@@ -27,14 +32,20 @@ import { Btn, Field, SelectWrap } from "./ui";
 export function ImageField({
   value,
   onChange,
+  fieldKey = "image",
 }: {
   value: string;
   onChange: (url: string) => void;
+  /** Which slot this is (image / banner / ogImage / gallery) — decides what the
+   * generated AI prompt asks for. */
+  fieldKey?: string;
 }) {
   const [progress, setProgress] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [editUrl, setEditUrl] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const editing = useEditingRecord();
 
   const pick = async (file: File | undefined | null) => {
     if (!file) return;
@@ -173,7 +184,104 @@ export function ImageField({
           </button>
         </div>
       )}
+
+      {/* No photo to hand? Get a prompt that already knows what this record is. */}
+      {editing && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setPromptOpen(true);
+            }}
+            className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold"
+            style={{ color: "var(--a-accent)" }}
+          >
+            <Sparkles className="h-3 w-3" /> Need an image? Get an AI prompt
+          </button>
+          <ImagePromptModal
+            open={promptOpen}
+            onClose={() => setPromptOpen(false)}
+            module={editing.module}
+            fieldKey={fieldKey}
+            record={editing.record}
+          />
+        </>
+      )}
     </div>
+  );
+}
+
+/** Shows the generated prompt with a one-tap copy. Deliberately a modal rather
+ * than inline text: the prompt is long, and it is read once and copied. */
+function ImagePromptModal({
+  open,
+  onClose,
+  module,
+  fieldKey,
+  record,
+}: {
+  open: boolean;
+  onClose: () => void;
+  module: string;
+  fieldKey: string;
+  record: Record<string, unknown>;
+}) {
+  const [copied, setCopied] = useState(false);
+  if (!open) return null;
+  const generated = buildImagePrompt({ module, fieldKey, record });
+  const text = promptAsText(generated);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+      toast.success("Prompt copied");
+    } catch {
+      toast.error("Couldn't copy — select the text and copy manually.");
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      wide
+      title={generated.title}
+      footer={
+        <>
+          <Btn onClick={onClose}>Close</Btn>
+          <Btn variant="primary" icon={copied ? Check : Copy} onClick={() => void copy()}>
+            {copied ? "Copied" : "Copy prompt"}
+          </Btn>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <textarea
+          readOnly
+          value={text}
+          rows={10}
+          className="a-input !text-[12px] leading-relaxed font-mono"
+          onFocus={(e) => e.currentTarget.select()}
+        />
+        <div>
+          <div className="text-[11px] font-semibold" style={{ color: "var(--a-text3)" }}>
+            BEFORE YOU GENERATE
+          </div>
+          <ul className="mt-1.5 space-y-1 text-[13px]" style={{ color: "var(--a-text2)" }}>
+            <li>
+              Attach the LK Chemicals logo file to the chat — the prompt tells the model to use it
+              as supplied rather than draw its own.
+            </li>
+            {generated.tips.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -199,7 +307,7 @@ function SubLeaf({
         />
       );
     case "image":
-      return <ImageField value={String(value ?? "")} onChange={onChange} />;
+      return <ImageField value={String(value ?? "")} onChange={onChange} fieldKey={field.key} />;
     case "boolean":
       return (
         <label
@@ -374,7 +482,7 @@ export function GalleryInput({
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {items.map((url, i) => (
           <div key={i} className="space-y-1.5">
-            <ImageField value={url} onChange={(u) => setAt(i, u)} />
+            <ImageField value={url} onChange={(u) => setAt(i, u)} fieldKey="gallery" />
             <div className="flex items-center justify-between gap-1">
               <div className="flex gap-1">
                 <button

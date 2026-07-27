@@ -9,6 +9,8 @@
 
 export type SpecRow = { name: string; value: string; unit?: string };
 export type ProductDocument = { label: string; url: string; type?: string };
+/** One safety topic lifted from a material safety data sheet. */
+export type SafetyNote = { topic: string; detail: string };
 
 export type Status = "published" | "draft" | "archived";
 
@@ -45,6 +47,17 @@ export type Product = {
   // Rich, admin-managed fields — all optional, created from the dashboard.
   price?: string; // display string, e.g. "₹2,400 / 25 L drum"
   subcategory?: string;
+  /** Manufacturer's product code, e.g. "LK CHEM 1001". Doubles as the identity
+   * key the PDF import pipeline matches on, so it must stay unique. */
+  code?: string;
+  /** One-line summary for listings, cards and meta descriptions. */
+  shortDescription?: string;
+  /** Recommended dose rate, as printed on the technical data sheet. */
+  dosage?: string;
+  /** Industries the product is sold into. */
+  industries?: string[];
+  /** Handling, storage and first-aid notes lifted from the MSDS. */
+  safety?: SafetyNote[];
   status?: Status;
   featured?: boolean;
   order?: string;
@@ -92,6 +105,12 @@ export type Service = {
   description: string;
   /** Optional service photo — falls back to the category image when absent. */
   image?: string;
+  /** Service code, when the offering is catalogued under one. */
+  code?: string;
+  /** One-line summary for listings, cards and meta descriptions. */
+  shortDescription?: string;
+  /** Industries the service is offered to. */
+  industries?: string[];
   status?: Status;
   featured?: boolean;
   order?: string;

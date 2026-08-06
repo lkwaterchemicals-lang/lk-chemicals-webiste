@@ -107,7 +107,7 @@ function CareersPage() {
               onClick={() => setApplyFor("general")}
               className="group inline-flex items-center gap-3 text-sm font-medium text-white/80 transition-colors hover:text-white"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-full border border-white/20 transition-all group-hover:bg-white group-hover:text-ink">
+              <span className="icon-orb h-10 w-10">
                 <Send className="h-4 w-4" />
               </span>
               <span>Send general application</span>
@@ -195,7 +195,7 @@ function CareersPage() {
                         {job.title}
                       </h3>
                     </div>
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-cyan-hi/15 text-cyan-hi transition-transform duration-500 group-hover:rotate-45">
+                    <span className="icon-orb h-11 w-11 shrink-0 transition-transform duration-500 group-hover:rotate-45">
                       <Briefcase className="h-5 w-5" />
                     </span>
                   </div>

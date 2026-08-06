@@ -193,20 +193,27 @@ export function ModulePage({
           }
           rowActions={(r) => (
             <>
-              {def.publicPath?.(r) && (
+              {/* Secondary actions are desktop-only — four icon buttons on a
+                  phone row squeezed the record name down to two words. The
+                  wrapper (not the buttons) carries the visibility classes:
+                  `.a-btn` sets display in an unlayered rule, which outranks
+                  Tailwind's layered `hidden`. */}
+              <span className="hidden sm:contents">
+                {def.publicPath?.(r) && (
+                  <IconBtn
+                    label="View on site"
+                    icon={ExternalLink}
+                    size="sm"
+                    onClick={() => window.open(def.publicPath!(r)!, "_blank")}
+                  />
+                )}
                 <IconBtn
-                  label="View on site"
-                  icon={ExternalLink}
+                  label="Duplicate"
+                  icon={Copy}
                   size="sm"
-                  onClick={() => window.open(def.publicPath!(r)!, "_blank")}
+                  onClick={() => void doDuplicate(r)}
                 />
-              )}
-              <IconBtn
-                label="Duplicate"
-                icon={Copy}
-                size="sm"
-                onClick={() => void doDuplicate(r)}
-              />
+              </span>
               <IconBtn label="Edit" icon={Pencil} size="sm" onClick={() => setEditing(r)} />
               <IconBtn
                 label="Delete"

@@ -10,9 +10,10 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowUpRight, ChevronDown, ChevronRight, Menu, X } from "lucide-react";
-import logoUrl from "@/assets/lk-logo.png";
 import { useCategories, useServiceCategories } from "@/lib/content";
 import { iconByName } from "@/lib/icons";
+import { BrandMark } from "./BrandMark";
+import { SocialRow } from "./Social";
 import { LiquidButton } from "./LiquidButton";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -224,6 +225,10 @@ export function Nav() {
 
   useEffect(() => {
     document.documentElement.style.overflow = open ? "hidden" : "";
+    // The floating contact cluster and back-to-top sit above this takeover and
+    // were covering the follow buttons in its footer. Park them while it's up.
+    if (open) document.body.dataset.menu = "1";
+    else delete document.body.dataset.menu;
     if (!open) {
       // Drop focus from inside the menu before it becomes inert — a focused
       // descendant in a hidden subtree trips the browser's a11y warning.
@@ -256,19 +261,13 @@ export function Nav() {
               (scrolled ? "glass-dark" : "bg-transparent")
             }
           >
-            <Link to="/" onClick={() => samePageTop("/")} className="flex items-center gap-3 group">
-              <img
-                src={logoUrl}
-                alt="LK Chemicals"
-                width={40}
-                height={40}
-                className="h-10 w-10 object-contain drop-shadow-[0_0_14px_color-mix(in_oklab,var(--cyan-hi)_55%,transparent)] transition-transform group-hover:scale-105"
-                style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.4))" }}
-              />
-              <span className="hidden sm:block text-sm">
-                <span className="font-display font-bold tracking-tight text-white">LK</span>
-                <span className="text-white/60"> Chemicals</span>
-              </span>
+            <Link
+              to="/"
+              onClick={() => samePageTop("/")}
+              aria-label="LK Chemicals — home"
+              className="group flex min-w-0 items-center"
+            >
+              <BrandMark size="md" responsiveText />
             </Link>
             <div className="hidden lg:flex items-center gap-1">
               <Link
@@ -328,7 +327,7 @@ export function Nav() {
               <button
                 aria-label="Open menu"
                 onClick={() => setOpen(true)}
-                className="lg:hidden grid h-10 w-10 place-items-center rounded-full glass-dark text-white"
+                className="icon-orb lg:hidden h-10 w-10"
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -357,7 +356,7 @@ export function Nav() {
               <button
                 aria-label="Close menu"
                 onClick={() => setOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-full glass text-white"
+                className="icon-orb h-10 w-10"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -426,7 +425,7 @@ export function Nav() {
               <button
                 type="button"
                 onClick={() => setSub(null)}
-                className="inline-flex w-fit min-h-11 items-center gap-2 rounded-full glass px-4 py-2 text-sm text-white"
+                className="inline-flex w-fit min-h-11 items-center gap-2 rounded-full glass px-4 py-2 text-sm text-white transition-colors hover:text-cyan-hi"
               >
                 <ArrowLeft className="h-4 w-4" /> Back
               </button>
@@ -466,10 +465,16 @@ export function Nav() {
           </div>
 
           {!sub && (
-            <div className="p-6">
+            <div className="space-y-5 p-6">
               <LiquidButton to="/contact" size="lg" onClick={() => setOpen(false)}>
                 Get a Quote
               </LiquidButton>
+              {/* The takeover is the one place a phone visitor pauses — the
+                  natural home for the follow buttons. */}
+              <div className="flex items-center justify-between gap-4">
+                <span className="micro-label">Follow us</span>
+                <SocialRow size="sm" onNavigate={() => setOpen(false)} />
+              </div>
             </div>
           )}
         </div>

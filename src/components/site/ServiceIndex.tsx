@@ -142,7 +142,7 @@ export function ServiceIndex() {
                       className="h-12 w-12 rounded-full object-cover ring-2 ring-white/50 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.7)]"
                     />
                   ) : (
-                    <span className="grid h-12 w-12 place-items-center rounded-full bg-white/12 text-on-media backdrop-blur">
+                    <span className="icon-orb icon-orb-media h-12 w-12">
                       <Icon className="h-4 w-4" />
                     </span>
                   )}

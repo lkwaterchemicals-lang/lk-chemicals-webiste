@@ -158,7 +158,7 @@ export function RequestCallDialog({
               type="button"
               aria-label="Close"
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/15 text-white/70 hover:text-white hover:border-cyan-hi transition-colors"
+              className="icon-orb absolute top-4 right-4 z-10 h-10 w-10"
             >
               <X className="h-4 w-4" />
             </button>

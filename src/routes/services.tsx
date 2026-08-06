@@ -101,7 +101,7 @@ function ServicesPage() {
                     <div className="absolute top-5 left-6 display-xl text-4xl text-on-media opacity-60">
                       {cat.number}
                     </div>
-                    <div className="absolute top-5 right-5 grid h-9 w-9 place-items-center rounded-full bg-white/10 backdrop-blur text-on-media transition-transform group-hover:rotate-45">
+                    <div className="icon-orb icon-orb-media absolute top-5 right-5 h-9 w-9 transition-transform duration-500 group-hover:rotate-45">
                       <ArrowUpRight className="h-4 w-4" />
                     </div>
                     <h2 className="relative display-xl text-2xl sm:text-3xl text-on-media">

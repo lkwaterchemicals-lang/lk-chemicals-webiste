@@ -72,14 +72,23 @@ export type SiteSettings = {
   contactRole: string;
   hours: string;
   mapQuery: string;
-  /** Exact pin for the contact map. A search query alone lets Google choose the
-   * viewport (and sometimes a different branch); coordinates plus a zoom put
-   * one marker on the works, every time. */
-  mapLat?: string;
-  mapLng?: string;
   /** Google Maps zoom level — 17 frames the plot and its street. */
   mapZoom?: string;
+  /** Public social profiles. Blank hides that channel everywhere. */
+  facebook?: string;
+  instagram?: string;
+  youtube?: string;
+  linkedin?: string;
 };
+
+/** Exact pin for the contact map, as "lat,lng".
+ *
+ * Deliberately NOT a dashboard field: raw coordinates meant nothing to the
+ * people who actually edit this site, and a mistyped digit silently moved the
+ * marker to another state. It is a fixed property of the registered office, so
+ * it lives in code — the editable knobs stay the address and the search query.
+ * From the company's Google listing (maps.app.goo.gl/FfLtLTvtLPeTWQwc6). */
+export const MAP_PIN = "17.4634083,78.5944718";
 
 export const staticGallery: GalleryItem[] = [
   { src: plant, alt: "Manufacturing plant floor", cat: "Factory", wide: true },
@@ -121,8 +130,9 @@ export const staticTeam: TeamMember[] = [
     name: "Shiva Krishna Kangadekar",
     role: "Founder & Director",
     founder: true,
-    quote: "Every drum leaves with a batch certificate and a phone number that answers.",
-    bio: "Shiva Krishna started LK Chemicals in 2013 with one plant, one bore well and one problem to solve. More than a decade on he still leads every formulation review — and still picks up the phone himself.",
+    quote:
+      "Every consignment leaves with a certificate of analysis and a named engineer behind it.",
+    bio: "Shiva Krishna founded LK Chemicals in 2013 to solve a single industrial water problem. More than a decade on he continues to lead every formulation review and stays directly involved with key accounts.",
     order: "01",
   },
 ];
@@ -155,8 +165,8 @@ export const staticSettings: SiteSettings = {
   contactRole: "Founder & Director",
   hours: "Monday – Saturday · 9:30 AM – 7:00 PM",
   mapQuery: "LK Chemicals Cherlapally Hyderabad 500051",
-  // The company's Google listing (maps.app.goo.gl/FfLtLTvtLPeTWQwc6).
-  mapLat: "17.4634083",
-  mapLng: "78.5944718",
   mapZoom: "17",
+  facebook: "https://www.facebook.com/lk.chemicals.2025",
+  instagram: "https://www.instagram.com/lk_chemicals/",
+  youtube: "https://www.youtube.com/channel/UCSeleQkJpur5pbVcXX0ob4Q",
 };

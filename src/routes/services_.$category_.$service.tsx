@@ -206,25 +206,24 @@ function ServiceDetail() {
           <div className="mt-4 lg:mt-8 grid gap-6 lg:grid-cols-12 lg:gap-12 items-center">
             <div className="hidden lg:block lg:col-span-7">
               <h1 className="display-xl text-6xl xl:text-7xl grad-text">{service.name}</h1>
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <ShareButton name={service.name} image={images[0] ?? null} />
-              </div>
               <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/70">
                 {service.description}
               </p>
             </div>
             <div className="lg:col-span-5">
+              {/* Share lives on the photo — one control, found at a glance on
+                  every breakpoint (it used to be a text pill people missed). */}
               <MediaGallery
                 images={images}
                 name={service.name}
                 fallbackImage={cat?.image ?? null}
+                overlay={
+                  <ShareButton name={service.name} image={images[0] ?? null} variant="orb" />
+                }
               />
             </div>
             <div className="lg:hidden">
               <h1 className="display-xl text-2xl sm:text-3xl grad-text">{service.name}</h1>
-              <div className="mt-3 flex flex-wrap items-center gap-2.5">
-                <ShareButton name={service.name} image={images[0] ?? null} />
-              </div>
               <div className="mt-4">
                 <ClampedText text={service.description} />
               </div>

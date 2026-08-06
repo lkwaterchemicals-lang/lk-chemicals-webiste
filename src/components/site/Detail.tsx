@@ -41,7 +41,17 @@ export function PriceChip({ price }: { price: string }) {
 // Level 2 file sharing), falls back to a plain link share, then to copying
 // the URL. The photo fetch is best-effort — a CORS refusal or slow network
 // silently degrades to the link share.
-export function ShareButton({ name, image }: { name: string; image?: string | null }) {
+export function ShareButton({
+  name,
+  image,
+  /** "orb" is the floating control that rides on the media stage — the place
+   * visitors actually look for share. "pill" is the inline labelled button. */
+  variant = "pill",
+}: {
+  name: string;
+  image?: string | null;
+  variant?: "pill" | "orb";
+}) {
   const [copied, setCopied] = useState(false);
   const share = async () => {
     const url = typeof location !== "undefined" ? location.href : "";
@@ -76,6 +86,26 @@ export function ShareButton({ name, image }: { name: string; image?: string | nu
       // Visitor cancelled the share sheet — nothing to do.
     }
   };
+  if (variant === "orb") {
+    return (
+      <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
+        {copied && (
+          <span className="rounded-full bg-ink-2/85 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur">
+            Link copied
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={share}
+          aria-label={`Share ${name}`}
+          title="Share this product"
+          className="icon-orb icon-orb-media h-10 w-10"
+        >
+          <Share2 className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
   return (
     <button
       type="button"
@@ -149,11 +179,15 @@ export function MediaGallery({
   name,
   fallbackImage,
   fallbackOverlay,
+  /** Controls that ride on the photo itself (the share orb). Visitors look for
+   * share on the image, not in a row of text links further down the page. */
+  overlay,
 }: {
   images: string[];
   name: string;
   fallbackImage?: string | null;
   fallbackOverlay?: string;
+  overlay?: React.ReactNode;
 }) {
   const reduced = useReducedMotion();
   const [active, setActive] = useState(0);
@@ -241,6 +275,7 @@ export function MediaGallery({
           )}
         </AnimatePresence>
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent" />
+        {overlay}
         {many && (
           <div className="pointer-events-none absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
             {images.map((_, i) => (

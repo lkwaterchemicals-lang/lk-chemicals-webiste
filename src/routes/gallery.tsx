@@ -98,7 +98,7 @@ function GalleryPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 {videoInfo(it.video) && (
                   <span className="absolute inset-0 grid place-items-center">
-                    <span className="grid h-14 w-14 place-items-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                    <span className="icon-orb icon-orb-media h-14 w-14 transition-transform duration-300 group-hover:scale-110">
                       <Play className="h-6 w-6 fill-current translate-x-0.5" />
                     </span>
                   </span>
@@ -123,7 +123,7 @@ function GalleryPage() {
           >
             <button
               aria-label="Close"
-              className="absolute top-6 right-6 z-10 grid h-11 w-11 place-items-center rounded-full glass text-white"
+              className="icon-orb icon-orb-media absolute top-6 right-6 z-10 h-11 w-11"
             >
               <X className="h-5 w-5" />
             </button>
@@ -137,7 +137,7 @@ function GalleryPage() {
                     e.stopPropagation();
                     setOpen((open + filtered.length - 1) % filtered.length);
                   }}
-                  className="hidden sm:grid absolute left-5 top-1/2 -translate-y-1/2 z-10 h-11 w-11 place-items-center rounded-full glass text-white hover:text-cyan-hi"
+                  className="icon-orb icon-orb-media hidden sm:grid absolute left-5 top-1/2 -translate-y-1/2 z-10 h-11 w-11"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
@@ -147,7 +147,7 @@ function GalleryPage() {
                     e.stopPropagation();
                     setOpen((open + 1) % filtered.length);
                   }}
-                  className="hidden sm:grid absolute right-5 top-1/2 -translate-y-1/2 z-10 h-11 w-11 place-items-center rounded-full glass text-white hover:text-cyan-hi"
+                  className="icon-orb icon-orb-media hidden sm:grid absolute right-5 top-1/2 -translate-y-1/2 z-10 h-11 w-11"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>

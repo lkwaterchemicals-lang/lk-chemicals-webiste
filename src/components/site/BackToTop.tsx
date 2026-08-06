@@ -49,7 +49,7 @@ export function BackToTop() {
       tabIndex={visible ? 0 : -1}
       aria-hidden={!visible}
       className={
-        "back-to-top fixed left-4 bottom-4 sm:left-6 sm:bottom-6 z-[60] grid h-11 w-11 sm:h-12 sm:w-12 place-items-center rounded-full " +
+        "back-to-top icon-orb fixed left-4 bottom-4 sm:left-6 sm:bottom-6 z-[60] h-11 w-11 sm:h-12 sm:w-12 " +
         (visible ? "opacity-100" : "opacity-0 translate-y-3 pointer-events-none")
       }
     >

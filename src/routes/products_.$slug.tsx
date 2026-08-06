@@ -226,27 +226,34 @@ function ProductDetail() {
           <h1 className="hidden lg:block display-xl mt-4 text-7xl grad-text max-w-4xl">
             {product.name}
           </h1>
-          <div className="hidden lg:flex mt-5 flex-wrap items-center gap-3">
-            {product.price && <PriceChip price={product.price} />}
-            <ShareButton name={product.name} image={images[0] ?? null} />
-          </div>
+          {product.price && (
+            <div className="hidden lg:flex mt-5 flex-wrap items-center gap-3">
+              <PriceChip price={product.price} />
+            </div>
+          )}
 
           <div className="mt-4 lg:mt-10 grid lg:grid-cols-5 gap-6 lg:gap-10 items-start">
             <div className="lg:col-span-2">
+              {/* Share rides on the photo — that is where people reach for it,
+                  and it is visible on every breakpoint without duplication. */}
               <MediaGallery
                 images={images}
                 name={product.name}
                 fallbackImage={cat.image}
                 fallbackOverlay={drumImg}
+                overlay={
+                  <ShareButton name={product.name} image={images[0] ?? null} variant="orb" />
+                }
               />
             </div>
             <div className="lg:col-span-3 space-y-6">
               <div className="lg:hidden">
                 <h1 className="display-xl text-2xl sm:text-3xl grad-text">{product.name}</h1>
-                <div className="mt-3 flex flex-wrap items-center gap-2.5">
-                  {product.price && <PriceChip price={product.price} />}
-                  <ShareButton name={product.name} image={images[0] ?? null} />
-                </div>
+                {product.price && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2.5">
+                    <PriceChip price={product.price} />
+                  </div>
+                )}
               </div>
               <ClampedText text={product.description} />
               <div className="grid md:grid-cols-2 gap-6">

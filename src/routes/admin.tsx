@@ -50,7 +50,9 @@ function AdminLayout() {
       {!authReady ? (
         <div className="grid min-h-screen place-items-center">
           <div className="flex flex-col items-center gap-3">
-            <img src={logoUrl} alt="" className="h-10 w-10 object-contain" />
+            <span className="brand-plate h-11 w-[3.1rem] rounded-xl p-1">
+              <img src={logoUrl} alt="" className="h-full w-full object-contain" />
+            </span>
             <Loader2 className="h-4 w-4 animate-spin" style={{ color: "var(--a-text3)" }} />
           </div>
         </div>
@@ -118,7 +120,9 @@ function Login() {
           style={{ background: "#3b82f6" }}
         />
         <div className="relative flex items-center gap-3">
-          <img src={logoUrl} alt="" className="h-10 w-10 object-contain" />
+          <span className="brand-plate h-11 w-[3.1rem] shrink-0 rounded-xl p-1">
+            <img src={logoUrl} alt="" className="h-full w-full object-contain" />
+          </span>
           <div>
             <div
               className="text-sm font-bold text-white"
@@ -163,7 +167,9 @@ function Login() {
       {/* Form panel */}
       <div className="grid place-items-center px-5 py-12">
         <form onSubmit={submit} className="w-full max-w-sm a-rise">
-          <img src={logoUrl} alt="" className="h-11 w-11 object-contain lg:hidden" />
+          <span className="brand-plate mb-1 inline-grid h-12 w-[3.4rem] rounded-xl p-1 lg:hidden">
+            <img src={logoUrl} alt="" className="h-full w-full object-contain" />
+          </span>
           <h2 className="mt-4 text-2xl">Welcome back</h2>
           <p className="mt-1 text-[13px]" style={{ color: "var(--a-text2)" }}>
             Sign in to manage the LK Chemicals website.

@@ -144,7 +144,7 @@ export function ApplyDialog({
                 type="button"
                 aria-label="Close"
                 onClick={onClose}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full glass text-white hover:text-cyan-hi"
+                className="icon-orb h-10 w-10 shrink-0"
               >
                 <X className="h-4 w-4" />
               </button>

@@ -145,7 +145,7 @@ export const globalContent: GlobalContent = {
   brandName: "LK Chemicals Pvt. Ltd.",
   brandLine: "Since 2013 · Hyderabad · An ISO 9001:2015 Company",
   footerBlurb:
-    "We provide the best water treatment solution — chemicals, plants and services engineered in Hyderabad, trusted across Telangana, AP, Karnataka, Tamil Nadu and Maharashtra.",
+    "Water treatment chemicals, plants and services engineered in Hyderabad and supplied across Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra.",
   footerNote: "We provide the best water treatment solution.",
 };
 
@@ -161,7 +161,7 @@ export const homeContent: HomeContent = {
   whoHeadingLead: "Hyderabad's specialist in",
   whoHeadingAccent: "industrial water chemistry.",
   whoBody:
-    "We formulate, manufacture and support the chemistry that keeps membranes clean, boilers efficient and cooling loops alive. Every drum leaves our Cherlapally plant with a batch certificate and a phone number that answers.",
+    "We formulate, manufacture and support the chemistry that keeps membranes clean, boilers efficient and cooling systems reliable. Every consignment leaves our Cherlapally plant with a certificate of analysis and a named technical contact.",
   stats: [
     { value: 13, suffix: "+ yrs", label: "In water treatment" },
     { value: 10, suffix: " T", label: "per month capacity" },
@@ -173,7 +173,7 @@ export const homeContent: HomeContent = {
   serviceHeadingLead: "We don't just supply.",
   serviceHeadingAccent: "We service.",
   serviceSubtitle:
-    "Every drum we sell is backed by our own crew — engineers, vehicles and field-proven procedures that keep your plant running at spec.",
+    "Every product we supply is backed by our own field team — qualified engineers, dedicated vehicles and documented procedures that keep your plant running to specification.",
   whereHeading: "Twelve industries. One chemistry.",
   whereSubtitle:
     "Supplying and servicing across Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra.",
@@ -213,36 +213,36 @@ export const homeContent: HomeContent = {
     },
     { title: "Pure Output", body: "Water fit for production. Cycles repeat.", img: hero },
   ],
-  whyHeadingLead: "Chemistry",
-  whyHeadingAccent: "with a spine.",
+  whyHeadingLead: "Chemistry you can",
+  whyHeadingAccent: "standardise on.",
   whyItems: [
     {
       title: "Innovative solutions",
-      body: "Our focus is on providing innovative solutions to the changing needs and requirements of our customers — every batch tested against a technical datasheet before it ships.",
+      body: "We develop formulations around each plant’s water chemistry and operating conditions, and test every batch against its technical data sheet before despatch.",
       img: lab,
       highlight: true,
     },
     {
-      title: "Quality services",
-      body: "Quality services up to the expectations and satisfaction of our customers.",
+      title: "Defined service standards",
+      body: "Scope, dosing and acceptance criteria are agreed in writing, then measured against on every visit.",
     },
     {
-      title: "Technical service manpower",
-      body: "Trained crews dedicated to the R.O., D.M., softener and descaling departments.",
+      title: "Qualified technical teams",
+      body: "Trained engineers dedicated to RO, DM, softener, boiler and descaling operations.",
     },
     {
-      title: "Broad customer network",
-      body: "Power, pharma, steel, aluminium, paper & sugar mills, IT and hotels — across Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra.",
+      title: "Proven across industries",
+      body: "Power, pharmaceutical, steel, aluminium, paper and sugar, IT campuses and hospitality — across Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra.",
     },
     {
-      title: "Competitive on all fronts",
-      body: "We always endeavour to be competitive on all fronts — chemistry, service and price.",
+      title: "Competitive total cost",
+      body: "We compete on chemistry, service response and total cost of treatment — reviewed with you contract by contract.",
       img: plant,
       highlight: true,
     },
     {
-      title: "Reliability",
-      body: "Long-term contracts with pharma and power customers since 2014.",
+      title: "Long-term reliability",
+      body: "Continuous supply and service contracts with pharmaceutical and power customers since 2014.",
     },
   ],
   certs: [
@@ -265,14 +265,14 @@ export const homeContent: HomeContent = {
   talkHeadingTop: "LET'S SOLVE",
   talkHeadingBottom: "YOUR WATER.",
   talkBody:
-    "Send us a note, or reach out on WhatsApp or call. Shiva Krishna answers the phone himself.",
+    "Share your water analysis or a short brief and our technical team will respond within one business day — by email, WhatsApp or phone.",
 };
 
 export const aboutContent: AboutContent = {
   heroLabel: "About · Est. 2013 · An ISO 9001:2015 Company",
   heroHeading: "The story of a formula.",
   heroBody:
-    "LK Chemicals began with one plant, one bore well and one problem to solve. More than a decade on, we're still solving problems — just for a hundred more plants across five states.",
+    "LK Chemicals began in 2013 with a single plant and one water problem to solve. More than a decade on, the same engineering discipline supports over a hundred plants across five states.",
   heroImage: plant,
   milestones: [
     {
@@ -334,16 +334,24 @@ export const aboutContent: AboutContent = {
     {
       title: "Technical Support",
       img: lab,
-      body: "A chemist on the phone, a service crew on the road.",
+      body: "In-house chemists for formulation and dosing queries; field engineers for on-site support.",
     },
   ],
   values: [
-    { title: "Integrity", body: "A datasheet you can hold us to.", img: lab },
-    { title: "Chemistry", body: "Formulations that work, not slogans.", img: drum },
-    { title: "Response", body: "The phone answers. Every time.", img: plant },
-    { title: "Safety", body: "Handling, storage and transport — no shortcuts.", img: boiler },
-    { title: "Consistency", body: "Batch #4501 is identical to #0001.", img: resin },
-    { title: "Partnership", body: "We show up when the plant is down.", img: ct },
+    { title: "Integrity", body: "Published specifications we are accountable to.", img: lab },
+    { title: "Chemistry", body: "Formulations proven in service, not on paper.", img: drum },
+    { title: "Response", body: "A named contact, reachable through the working day.", img: plant },
+    {
+      title: "Safety",
+      body: "Documented handling, storage and transport at every step.",
+      img: boiler,
+    },
+    {
+      title: "Consistency",
+      body: "Every batch manufactured to the same validated specification.",
+      img: resin,
+    },
+    { title: "Partnership", body: "On site when an unplanned shutdown needs resolving.", img: ct },
   ],
   // Achievements / certifications / awards ship empty on purpose: these are
   // claims about the company, and a placeholder certificate is worse than no
@@ -358,9 +366,9 @@ export const aboutContent: AboutContent = {
   awards: [],
   teamHeading: "The people behind the chemistry.",
   teamBody:
-    "Chemists in the lab, engineers on the road and a founder who still answers the phone — meet the crew that keeps a hundred plants running at spec.",
+    "Chemists in the laboratory, engineers in the field and a leadership team close to the work — the people who keep a hundred plants running to specification.",
   ctaHeading: "Want to see it for yourself?",
-  ctaBody: "Schedule a plant visit or an on-site water survey.",
+  ctaBody: "Arrange a plant visit or request an on-site water survey.",
 };
 
 export const servicesContent: ServicesContent = {
@@ -379,7 +387,7 @@ export const servicesContent: ServicesContent = {
 
 export const productsContent: ProductsContent = {
   heroHeading: "Every drum. Every dose.",
-  heroSubtitle: "Pick a category below, or search the whole catalog.",
+  heroSubtitle: "Browse by category, or search the full catalogue.",
   heroImage: resin,
 };
 
@@ -390,6 +398,6 @@ export const galleryContent: GalleryContent = {
 export const contactContent: ContactContent = {
   heroHeading: "Let's talk.",
   heroBody:
-    "Shiva Krishna picks up the phone himself. Or send a note — we reply within a business day.",
+    "Speak to our technical team about chemistry, dosing or a site survey. Every enquiry is answered within one business day.",
   mapEmbed: "",
 };

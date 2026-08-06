@@ -1,12 +1,14 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
-import logoUrl from "@/assets/lk-logo.png";
+import { BrandMark } from "./BrandMark";
+import { SocialRow, useSocialChannels } from "./Social";
 import { Waterline } from "./Waterline";
 import { WhatsAppIcon } from "./WhatsApp";
 import { waLink } from "./WaCluster";
 import { useCategories, useServiceCategories, useSiteSettings } from "@/lib/content";
 import { useGlobalContent, useHomeContent } from "@/lib/pages";
 import { POLICIES } from "@/data/policies";
+import { MAP_PIN } from "@/data/content";
 
 // "Phase-2" vs "Phase-II" etc. — treat cosmetic variants of the same address
 // as duplicates so it never renders twice.
@@ -18,6 +20,28 @@ const normAddr = (s: string) =>
 
 const mapsUrl = (addr: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+
+/** The footer's social band. Given its own row rather than a corner of the
+ * brand block: a line of intent plus three full-size brand buttons is what
+ * turns "we have a Facebook page" into a click. */
+function FollowBand() {
+  const channels = useSocialChannels();
+  if (channels.length === 0) return null;
+  return (
+    // Branded translucent surface rather than `bg-white/x`: in light mode the
+    // white-alpha utilities are remapped to a near-solid white, which turned
+    // this card into an opaque slab over the ghost mark behind it.
+    <div className="mt-12 flex flex-col items-start gap-5 rounded-3xl border border-cyan-hi/20 bg-cyan-hi/[0.06] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+      <div className="min-w-0">
+        <div className="micro-label">Follow LK Chemicals</div>
+        <p className="mt-2 max-w-md text-sm text-white/65">
+          Plant walkthroughs, site reports and new formulations — published as the work happens.
+        </p>
+      </div>
+      <SocialRow size="lg" className="shrink-0" />
+    </div>
+  );
+}
 
 export function Footer() {
   const { data: s } = useSiteSettings();
@@ -33,28 +57,18 @@ export function Footer() {
     <footer className="relative section-dark overflow-hidden pt-16 pb-24 sm:pb-8">
       <Waterline className="absolute top-0 left-0" />
       <div className="pointer-events-none absolute inset-0 caustics opacity-40" />
-      {/* Ghost brand mark — fully inside the footer at every width */}
-      <div className="ghost-word absolute bottom-0 left-1/2 -translate-x-1/2 text-[clamp(5rem,22vw,18rem)] leading-none opacity-40">
-        LK
-      </div>
       <div className="relative mx-auto max-w-7xl px-6 md:px-8">
         {/* Top band: brand story + direct channels */}
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-xl">
-            <div className="flex items-center gap-3">
-              <img
-                src={logoUrl}
-                alt=""
-                width={44}
-                height={44}
-                className="h-11 w-11 object-contain"
-                style={{
-                  filter:
-                    "drop-shadow(0 0 16px color-mix(in oklab, var(--cyan-hi) 45%, transparent))",
-                }}
-              />
-              <div>
-                <div className="font-display text-lg text-white font-bold">{g.brandName}</div>
+            {/* Plate + name + line, locked to one row — the mark never floats
+                free of the words it belongs to. */}
+            <div className="group flex items-center gap-3.5">
+              <BrandMark size="lg" showText={false} />
+              <div className="min-w-0">
+                <div className="font-display text-lg text-white font-bold leading-tight">
+                  {g.brandName}
+                </div>
                 <div className="micro-label mt-1">{g.brandLine}</div>
               </div>
             </div>
@@ -167,9 +181,7 @@ export function Footer() {
                 {/* The registered office has an exact pin in Settings — use it
                     so this link opens the same place as the contact map. */}
                 <a
-                  href={mapsUrl(
-                    s.mapLat && s.mapLng ? `${s.mapLat.trim()},${s.mapLng.trim()}` : s.address,
-                  )}
+                  href={mapsUrl(MAP_PIN)}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-white"
@@ -218,35 +230,50 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Legal & policies */}
-        <div className="mt-12 pt-6 border-t border-white/10 flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 text-xs">
-          {POLICIES.map((p) => (
-            <Link
-              key={p.slug}
-              to={p.path}
-              className="text-white/50 hover:text-cyan-hi transition-colors"
-            >
-              {p.navLabel}
-            </Link>
-          ))}
-        </div>
+        <FollowBand />
 
-        <div className="mt-6 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
-          <p>
-            © {new Date().getFullYear()} {g.brandName} All rights reserved.
-          </p>
-          <p>{g.footerNote}</p>
-          <p>
-            Designed &amp; developed by{" "}
-            <a
-              href="https://www.thedreamteamservices.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-cyan-hi hover:underline underline-offset-4"
-            >
-              Dream Team Services
-            </a>
-          </p>
+        {/* Closing band. The ghost brand mark lives INSIDE this block and is
+            clipped by it, so it can only ever sit behind small legal type —
+            it used to be a footer-wide watermark and the follow card above
+            sliced a hard rectangle straight through the letterforms. */}
+        <div className="relative mt-12 overflow-hidden">
+          <div
+            aria-hidden
+            className="ghost-word pointer-events-none absolute inset-x-0 bottom-[-0.06em] text-center text-[clamp(4rem,13vw,9.5rem)] leading-[0.8] opacity-30"
+          >
+            LK
+          </div>
+
+          {/* Legal & policies */}
+          <div className="relative pt-6 border-t border-white/10 flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 text-xs">
+            {POLICIES.map((p) => (
+              <Link
+                key={p.slug}
+                to={p.path}
+                className="text-white/50 hover:text-cyan-hi transition-colors"
+              >
+                {p.navLabel}
+              </Link>
+            ))}
+          </div>
+
+          <div className="relative mt-6 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
+            <p>
+              © {new Date().getFullYear()} {g.brandName} All rights reserved.
+            </p>
+            <p>{g.footerNote}</p>
+            <p>
+              Designed &amp; developed by{" "}
+              <a
+                href="https://www.thedreamteamservices.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-cyan-hi hover:underline underline-offset-4"
+              >
+                Dream Team Services
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>

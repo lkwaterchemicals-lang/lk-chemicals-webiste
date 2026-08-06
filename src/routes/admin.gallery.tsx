@@ -61,7 +61,11 @@ function GalleryAdmin() {
   const [dragOver, setDragOver] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [ytOpen, setYtOpen] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  // Files waiting for a destination. `null` = the upload dialog is closed.
+  // Uploads NEVER inherit the category filter (an "All" filter used to dump
+  // everything into Products) and never remember the last destination — the
+  // admin picks one every time, before anything leaves the browser.
+  const [pending, setPending] = useState<File[] | null>(null);
 
   const filtered = useMemo(() => {
     let out = rows;
@@ -76,15 +80,19 @@ function GalleryAdmin() {
     return out;
   }, [rows, cat, q]);
 
-  const uploadFiles = async (files: FileList | File[] | null) => {
-    if (!files || files.length === 0) return;
-    const list = Array.from(files).filter(
+  /** Filters a drop/pick down to media and opens the destination dialog. */
+  const stageFiles = (files: FileList | File[] | null) => {
+    const list = Array.from(files ?? []).filter(
       (f) => f.type.startsWith("image/") || f.type.startsWith("video/"),
     );
     if (list.length === 0) {
       toast.error("Only image or video files can go in the gallery.");
       return;
     }
+    setPending(list);
+  };
+
+  const uploadFiles = async (list: File[], destination: string) => {
     for (let i = 0; i < list.length; i++) {
       const f = list[i];
       setUploading(list.length > 1 ? `${i + 1}/${list.length} — ${f.name}` : f.name);
@@ -96,8 +104,8 @@ function GalleryAdmin() {
           // frame as the poster; photos keep src only.
           src: isVideo ? (cloudinaryPoster(res.secure_url) ?? res.secure_url) : res.secure_url,
           video: isVideo ? res.secure_url : "",
-          alt: cleanCaption(f.name, `${cat || "Products"} ${isVideo ? "video" : "photo"}`),
-          cat: cat || "Products",
+          alt: cleanCaption(f.name, `${destination} ${isVideo ? "video" : "photo"}`),
+          cat: destination,
         });
       } catch (e) {
         toast.error(e instanceof Error ? e.message : `Upload failed: ${f.name}`);
@@ -105,7 +113,11 @@ function GalleryAdmin() {
     }
     setUploading(null);
     invalidate("gallery");
-    toast.success(list.length > 1 ? `${list.length} files uploaded` : "Uploaded");
+    toast.success(
+      list.length > 1
+        ? `${list.length} files uploaded to ${destination}`
+        : `Uploaded to ${destination}`,
+    );
   };
 
   const doDelete = async (row: Row) => {
@@ -136,12 +148,12 @@ function GalleryAdmin() {
       onDrop={(e) => {
         e.preventDefault();
         setDragOver(false);
-        void uploadFiles(e.dataTransfer.files);
+        stageFiles(e.dataTransfer.files);
       }}
     >
       <PageHeader
         title="Gallery"
-        sub={`${rows.length} items on the public gallery · drop images or videos anywhere on this page to upload`}
+        sub={`${rows.length} items on the public gallery · drop images or videos anywhere on this page, then pick where they go`}
         actions={
           <>
             <HeadingEditor />
@@ -170,18 +182,10 @@ function GalleryAdmin() {
               variant="primary"
               icon={UploadCloud}
               busy={uploading !== null}
-              onClick={() => fileRef.current?.click()}
+              onClick={() => setPending([])}
             >
               {uploading ? `Uploading ${uploading}` : "Upload"}
             </Btn>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              className="hidden"
-              onChange={(e) => void uploadFiles(e.target.files)}
-            />
           </>
         }
       />
@@ -372,10 +376,20 @@ function GalleryAdmin() {
         }}
       />
 
+      <UploadModal
+        files={pending}
+        busy={uploading}
+        onClose={() => setPending(null)}
+        onPick={stageFiles}
+        onConfirm={async (list, destination) => {
+          setPending(null);
+          await uploadFiles(list, destination);
+        }}
+      />
+
       <YouTubeModal
         open={ytOpen}
         onClose={() => setYtOpen(false)}
-        defaultCat={cat || "Factory"}
         onAdd={async (values) => {
           await saveRow(def, values);
           invalidate("gallery");
@@ -396,28 +410,158 @@ function GalleryAdmin() {
   );
 }
 
+/* ------------------------------------------------------------ upload modal */
+
+/** Destination-first upload.
+ *
+ * The old flow read the page's category FILTER at upload time, so whatever was
+ * last filtered decided where files landed — and "All" silently meant Products.
+ * Here the destination is an explicit, unremembered choice made before the
+ * files move, and nothing uploads until it is set. */
+function UploadModal({
+  files,
+  busy,
+  onClose,
+  onPick,
+  onConfirm,
+}: {
+  /** null = closed. [] = open with no files chosen yet. */
+  files: File[] | null;
+  busy: string | null;
+  onClose: () => void;
+  onPick: (files: FileList | null) => void;
+  onConfirm: (files: File[], destination: string) => Promise<void>;
+}) {
+  const [cat, setCat] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const open = files !== null;
+
+  // Every time the dialog opens it starts blank — the previous destination is
+  // deliberately not carried over.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setCat("");
+  }
+
+  const list = files ?? [];
+  const ready = cat !== "" && list.length > 0;
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Upload to the gallery"
+      footer={
+        <>
+          <Btn onClick={onClose}>Cancel</Btn>
+          <Btn
+            variant="primary"
+            icon={UploadCloud}
+            busy={busy !== null}
+            disabled={!ready}
+            onClick={() => void onConfirm(list, cat)}
+          >
+            {list.length > 1 ? `Upload ${list.length} files` : "Upload"}
+          </Btn>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Field
+          label="Destination category"
+          required
+          hint="Where these appear on the public gallery"
+        >
+          <SelectWrap>
+            <select
+              className="a-select"
+              value={cat}
+              autoFocus
+              onChange={(e) => setCat(e.target.value)}
+            >
+              <option value="">— choose a category —</option>
+              {CATS.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </SelectWrap>
+        </Field>
+
+        <Field label="Files" required hint="Images or videos">
+          <div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              className="hidden"
+              onChange={(e) => onPick(e.target.files)}
+            />
+            <Btn
+              icon={UploadCloud}
+              onClick={(e) => {
+                e.preventDefault();
+                fileRef.current?.click();
+              }}
+            >
+              {list.length === 0 ? "Choose files" : "Choose different files"}
+            </Btn>
+            {list.length > 0 && (
+              <ul className="mt-3 max-h-40 space-y-1 overflow-y-auto">
+                {list.map((f, i) => (
+                  <li
+                    key={f.name + i}
+                    className="flex items-center gap-2 truncate text-[12px]"
+                    style={{ color: "var(--a-text2)" }}
+                  >
+                    <ImageIcon
+                      className="h-3.5 w-3.5 shrink-0"
+                      style={{ color: "var(--a-text3)" }}
+                    />
+                    <span className="truncate">{f.name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Field>
+
+        {cat === "" && list.length > 0 && (
+          <p className="text-[12px]" style={{ color: "var(--a-warn)" }}>
+            Pick a destination category to enable the upload.
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 /* ------------------------------------------------- YouTube link modal */
 
 function YouTubeModal({
   open,
   onClose,
-  defaultCat,
   onAdd,
 }: {
   open: boolean;
   onClose: () => void;
-  defaultCat: string;
   onAdd: (values: Record<string, unknown>) => Promise<void>;
 }) {
   const [url, setUrl] = useState("");
   const [caption, setCaption] = useState("");
-  const [cat, setCat] = useState(defaultCat);
+  // Blank on purpose — the same "choose the destination, every time" rule as
+  // file uploads. No inherited filter, no remembered last choice.
+  const [cat, setCat] = useState("");
   const [busy, setBusy] = useState(false);
   const id = youTubeId(url);
 
   const close = () => {
     setUrl("");
     setCaption("");
+    setCat("");
     onClose();
   };
 
@@ -426,13 +570,17 @@ function YouTubeModal({
       toast.error("That doesn't look like a YouTube link.");
       return;
     }
+    if (!cat) {
+      toast.error("Choose a destination category first.");
+      return;
+    }
     setBusy(true);
     try {
       await onAdd({
         src: youTubeThumb(id),
         video: url.trim(),
         alt: caption.trim() || "Video",
-        cat: cat || "Factory",
+        cat,
       });
       close();
     } catch (e) {
@@ -450,7 +598,7 @@ function YouTubeModal({
       footer={
         <>
           <Btn onClick={close}>Cancel</Btn>
-          <Btn variant="primary" busy={busy} disabled={!id} onClick={add}>
+          <Btn variant="primary" busy={busy} disabled={!id || !cat} onClick={add}>
             Add video
           </Btn>
         </>
@@ -482,9 +630,10 @@ function YouTubeModal({
             onChange={(e) => setCaption(e.target.value)}
           />
         </Field>
-        <Field label="Category">
+        <Field label="Destination category" required>
           <SelectWrap>
             <select className="a-select" value={cat} onChange={(e) => setCat(e.target.value)}>
+              <option value="">— choose a category —</option>
               {CATS.map((c) => (
                 <option key={c} value={c}>
                   {c}

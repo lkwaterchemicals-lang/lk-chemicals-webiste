@@ -120,7 +120,9 @@ function ImageListField({ value, onChange }: { value: unknown; onChange: (v: str
   const add = () => onChange([...items, ""]);
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {/* One per row on the narrowest phones: two columns left each image's
+          action buttons about 150px to live in, which they cannot fit. */}
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 gap-3">
         {items.map((url, i) => (
           <div key={i} className="space-y-1.5">
             <ImageField value={url} onChange={(u) => setAt(i, u)} fieldKey="gallery" />

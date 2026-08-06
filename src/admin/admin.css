@@ -572,12 +572,18 @@
 }
 
 /* ---- public-style leak guard ------------------------------------------
-   styles.css themes `.light form input` etc. with !important for the public
-   site; the admin lives in the same document, so re-assert the admin skin on
-   anything inside .adm that those selectors can reach. */
-.adm form input:not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-.adm form textarea,
-.adm form select {
+   styles.css themes `.light input` etc. for the public site; the admin lives
+   in the same document, so re-assert the admin skin on anything inside .adm
+   those selectors can reach. Not scoped to `form`: the editor drawer and the
+   modals are plain <div>s, and that gap is what let a light public theme
+   paint dark-mode admin fields navy-on-black. The palette input opts out —
+   it is a borderless bar by design. */
+.adm
+  input:not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(
+    .a-cmdk-input
+  ):not([cmdk-input]),
+.adm textarea,
+.adm select {
   background: var(--a-surface) !important;
   border: 1px solid var(--a-border) !important;
   border-radius: var(--a-r) !important;
@@ -585,16 +591,30 @@
   color: var(--a-text) !important;
   box-shadow: var(--a-shadow-sm) !important;
 }
-.adm form input:focus,
-.adm form textarea:focus,
-.adm form select:focus {
+.adm input:not(.a-cmdk-input):not([cmdk-input]):focus,
+.adm textarea:focus,
+.adm select:focus {
   border-color: var(--a-accent) !important;
   box-shadow: 0 0 0 3px var(--a-accent-soft) !important;
   background: var(--a-surface) !important;
 }
-.adm form input::placeholder,
-.adm form textarea::placeholder {
+.adm input::placeholder,
+.adm textarea::placeholder {
   color: var(--a-text3) !important;
+}
+
+/* ---- shrink-to-fit ------------------------------------------------------
+   Grid and flex children default to `min-width: auto`, which means their
+   content sets a floor on how narrow they can get. One wide child — a chart
+   whose SVG was measured at a desktop width, a long unbroken URL, a table —
+   then pushed the whole console sideways on a phone instead of shrinking.
+   Nothing in the admin wants that: cards and layout cells may always shrink,
+   and the few genuinely wide things (tables, pill rows) do their own
+   horizontal scrolling inside. */
+.adm .a-card,
+.adm [class*="grid-cols"] > *,
+.adm .a-pills {
+  min-width: 0;
 }
 
 /* ---- small-screen ergonomics ------------------------------------------ */

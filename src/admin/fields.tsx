@@ -141,9 +141,9 @@ export function ImageField({
       />
 
       {!value || editUrl ? (
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           <input
-            className="a-input !py-1.5 !text-xs"
+            className="a-input !py-1.5 !text-xs min-w-0 flex-1"
             placeholder={value ? "Image URL" : "…or paste an image URL"}
             value={value}
             autoFocus={editUrl}
@@ -162,7 +162,9 @@ export function ImageField({
           )}
         </div>
       ) : (
-        <div className="mt-2 flex items-center gap-1.5">
+        // Wraps: this row also renders inside the narrow cells of an image
+        // grid, where three nowrap buttons on one line overflowed the card.
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <Btn size="sm" icon={UploadCloud} onClick={() => fileRef.current?.click()}>
             Replace
           </Btn>

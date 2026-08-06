@@ -5,7 +5,17 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { collection, doc, getDocs, setDoc } from "firebase/firestore/lite";
 import { toast } from "sonner";
-import { Clock, DatabaseBackup, Mail, MapPin, Phone, RotateCcw, Save, User } from "lucide-react";
+import {
+  Clock,
+  DatabaseBackup,
+  Mail,
+  MapPin,
+  Phone,
+  RotateCcw,
+  Save,
+  Share2,
+  User,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { db } from "@/integrations/firebase/client";
 import { staticSettings } from "@/data/content";
@@ -17,7 +27,13 @@ export const Route = createFileRoute("/admin/settings")({
   component: SettingsAdmin,
 });
 
-type FieldSpec = { key: string; label: string; textarea?: boolean; hint?: string };
+type FieldSpec = {
+  key: string;
+  label: string;
+  textarea?: boolean;
+  hint?: string;
+  placeholder?: string;
+};
 type Group = { title: string; icon: LucideIcon; fields: FieldSpec[] };
 
 const GROUPS: Group[] = [
@@ -50,13 +66,6 @@ const GROUPS: Group[] = [
         label: "Google Maps search query",
         hint: "Used by the Directions / Open in Maps buttons",
       },
-      {
-        key: "mapLat",
-        label: "Map latitude",
-        hint: "Google Maps → right-click the pin → copy coordinates",
-      },
-      { key: "mapLng", label: "Map longitude", hint: "Pins the contact map exactly" },
-      { key: "mapZoom", label: "Map zoom", hint: "1 world … 17 street … 21 building" },
     ],
   },
   {
@@ -68,9 +77,39 @@ const GROUPS: Group[] = [
       { key: "hours", label: "Business hours" },
     ],
   },
+  {
+    title: "Social profiles",
+    icon: Share2,
+    fields: [
+      {
+        key: "facebook",
+        label: "Facebook page",
+        hint: "Paste the full page link",
+        placeholder: "https://www.facebook.com/lk.chemicals.2025",
+      },
+      {
+        key: "instagram",
+        label: "Instagram profile",
+        placeholder: "https://www.instagram.com/lk_chemicals/",
+      },
+      {
+        key: "youtube",
+        label: "YouTube channel",
+        placeholder: "https://www.youtube.com/channel/…",
+      },
+      {
+        key: "linkedin",
+        label: "LinkedIn page (optional)",
+        placeholder: "https://www.linkedin.com/company/…",
+      },
+    ],
+  },
 ];
 
 const ALL_KEYS = GROUPS.flatMap((g) => g.fields.map((f) => f.key));
+
+/** Groups that read better across the full width in a two-column grid. */
+const WIDE_GROUPS = new Set(["Addresses", "Social profiles"]);
 
 /* ---------------------------------------------------------------- backup */
 
@@ -218,7 +257,7 @@ function SettingsAdmin() {
           {GROUPS.map((g, gi) => (
             <Card
               key={g.title}
-              className={`a-rise ${g.title === "Addresses" ? "md:col-span-2" : ""}`}
+              className={`a-rise ${WIDE_GROUPS.has(g.title) ? "md:col-span-2" : ""}`}
               title={
                 <span className="flex items-center gap-2">
                   <g.icon className="h-3.5 w-3.5" style={{ color: "var(--a-accent)" }} /> {g.title}
@@ -226,7 +265,7 @@ function SettingsAdmin() {
               }
             >
               <div
-                className={`grid gap-4 ${g.title === "Addresses" ? "md:grid-cols-2" : ""}`}
+                className={`grid gap-4 ${WIDE_GROUPS.has(g.title) ? "md:grid-cols-2" : ""}`}
                 style={{ animationDelay: `${gi * 50}ms` }}
               >
                 {g.fields.map((f) => (
@@ -242,6 +281,7 @@ function SettingsAdmin() {
                         <input
                           className="a-input"
                           value={values[f.key]}
+                          placeholder={f.placeholder}
                           onChange={(e) => setValues((v) => ({ ...v!, [f.key]: e.target.value }))}
                         />
                       )}

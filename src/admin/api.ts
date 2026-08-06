@@ -5,6 +5,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -92,6 +93,20 @@ function stripMeta(values: Record<string, unknown>): Record<string, unknown> {
   return rest;
 }
 
+/** First free document id in `collection`, appending -2, -3… on collision.
+ *
+ * Slug-keyed modules no longer expose the slug in the editor, so two records
+ * that happen to share a name would otherwise resolve to the same id and the
+ * second save would silently overwrite the first. */
+async function freeId(collectionName: string, base: string): Promise<string> {
+  for (let n = 1; n <= 50; n++) {
+    const candidate = n === 1 ? base : `${base}-${n}`;
+    const snap = await getDoc(doc(db, collectionName, candidate));
+    if (!snap.exists()) return candidate;
+  }
+  return `${base}-${crypto.randomUUID().slice(0, 6)}`;
+}
+
 export async function saveRow(
   def: ModuleDef,
   values: Record<string, unknown>,
@@ -100,9 +115,11 @@ export async function saveRow(
   let id = existingId;
   if (!id) {
     const fromIdField = def.idField ? String(values[def.idField] ?? "") : "";
-    id = fromIdField || slugify(String(values[def.titleField] ?? "")) || crypto.randomUUID();
+    const base = fromIdField || slugify(String(values[def.titleField] ?? ""));
+    // The URL slug is derived here, in the backend, rather than typed by hand.
+    id = base ? await freeId(def.id, base) : crypto.randomUUID();
   }
-  if (def.idField === "slug" && !values.slug) values.slug = id;
+  if (def.idField === "slug") values.slug = id;
   await setDoc(
     doc(db, def.id, id),
     { ...stripMeta(values), _updatedAt: serverTimestamp() },
@@ -154,7 +171,9 @@ export async function deleteRows(def: ModuleDef, rows: Row[]): Promise<() => Pro
 
 export async function duplicateRow(def: ModuleDef, row: Row): Promise<string> {
   const data = stripMeta(row);
-  const newId = def.idField ? `${row.__id}-copy` : crypto.randomUUID();
+  // Duplicating twice used to land on the same "-copy" id and overwrite the
+  // first copy; freeId walks to the next free suffix instead.
+  const newId = def.idField ? await freeId(def.id, `${row.__id}-copy`) : crypto.randomUUID();
   if (def.idField === "slug") data.slug = newId;
   if (def.titleField && typeof data[def.titleField] === "string") {
     data[def.titleField] = `${String(data[def.titleField])} (copy)`;

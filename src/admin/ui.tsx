@@ -271,8 +271,13 @@ export function Drawer({
 }) {
   useEsc(onClose);
   const ref = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (open) ref.current?.querySelector<HTMLElement>("input, textarea, select, button")?.focus();
+    if (!open) return;
+    // Focus the first real field, not the header's close button — a generic
+    // "input, textarea, select, button" query matched Close first, so the
+    // drawer opened with the caret nowhere and Enter dismissed it.
+    bodyRef.current?.querySelector<HTMLElement>("input:not([type='file']), textarea")?.focus();
   }, [open]);
   if (!open) return null;
   return (
@@ -303,7 +308,9 @@ export function Drawer({
             </div>
             <IconBtn label="Close" icon={X} onClick={onClose} />
           </header>
-          <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5">{children}</div>
+          <div ref={bodyRef} className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+            {children}
+          </div>
           {footer && (
             <footer
               className="flex flex-wrap items-center justify-end gap-2 px-5 sm:px-6 py-4 shrink-0"

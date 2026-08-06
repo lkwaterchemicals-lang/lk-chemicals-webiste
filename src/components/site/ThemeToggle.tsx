@@ -15,14 +15,16 @@ function applyTheme(t: Theme) {
 }
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  // Light is the default presentation of the site; only an explicit choice
+  // the visitor made here moves them off it. Must match the inline script in
+  // __root.tsx that sets the class before first paint.
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    let initial: Theme = "dark";
+    let initial: Theme = "light";
     try {
       const saved = localStorage.getItem("lk-theme") as Theme | null;
       if (saved === "light" || saved === "dark") initial = saved;
-      else if (window.matchMedia("(prefers-color-scheme: light)").matches) initial = "light";
     } catch {
       // Ignore storage errors
     }
@@ -64,10 +66,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     <button
       onClick={toggle}
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-      className={
-        "relative grid h-10 w-10 place-items-center rounded-full glass-dark text-white overflow-hidden transition-transform hover:scale-105 " +
-        className
-      }
+      className={"icon-orb h-10 w-10 overflow-hidden " + className}
     >
       <Sun
         className={

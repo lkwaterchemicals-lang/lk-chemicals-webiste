@@ -182,7 +182,7 @@ function EnquiryDialog({
                 type="button"
                 aria-label="Close"
                 onClick={onClose}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-foreground/20 text-foreground/70 hover:text-foreground hover:border-cyan-hi transition-colors"
+                className="icon-orb h-10 w-10 shrink-0"
               >
                 <X className="h-4 w-4" />
               </button>

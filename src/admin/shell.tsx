@@ -222,14 +222,18 @@ function SideNav({
 
 function Brand({ compact }: { compact?: boolean }) {
   return (
-    <Link to="/admin" className="flex items-center gap-2.5 px-1 min-w-0">
-      <img
-        src={logoUrl}
-        alt=""
-        width={30}
-        height={30}
-        className="h-[30px] w-[30px] object-contain shrink-0"
-      />
+    <Link to="/admin" className="group flex items-center gap-2.5 px-1 min-w-0">
+      {/* The artwork is printed on white with black type — on the dark console
+          it needs its own plate to stay legible, same as on the public site. */}
+      <span className="brand-plate h-8 w-[2.3rem] shrink-0 rounded-lg p-[3px]">
+        <img
+          src={logoUrl}
+          alt=""
+          width={320}
+          height={279}
+          className="h-full w-full object-contain"
+        />
+      </span>
       {!compact && (
         <span className="min-w-0 leading-tight">
           <span
@@ -632,7 +636,7 @@ export function AdminShell({
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar */}
         <header
-          className="sticky top-0 z-40 flex items-center gap-2 px-4 sm:px-6 py-2.5"
+          className="sticky top-0 z-40 flex items-center gap-2 px-3 sm:px-6 py-2.5"
           style={{
             background: "color-mix(in oklab, var(--a-bg) 85%, transparent)",
             backdropFilter: "blur(10px)",
@@ -717,12 +721,12 @@ export function AdminShell({
           </div>
         </header>
 
-        <main className="flex-1 px-4 sm:px-6 py-5 sm:py-6 max-w-[1440px] w-full mx-auto">
+        <main className="flex-1 px-3 sm:px-6 py-4 sm:py-6 max-w-[1440px] w-full mx-auto">
           {children}
         </main>
 
         <footer
-          className="px-4 sm:px-6 py-4 text-[11px] flex flex-wrap gap-x-4 gap-y-1 items-center"
+          className="px-3 sm:px-6 py-4 text-[11px] flex flex-wrap gap-x-4 gap-y-1 items-center"
           style={{ color: "var(--a-text3)" }}
         >
           <span>LK Chemicals Admin 3.0</span>

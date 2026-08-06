@@ -171,13 +171,9 @@ export const MODULES: ModuleDef[] = [
         required: true,
         placeholder: "e.g. High Silica RO Antiscalant",
       },
-      {
-        key: "slug",
-        label: "Slug",
-        type: "text",
-        hint: "URL id — auto-generated from the name",
-        slugOf: "name",
-      },
+      // No slug field: "slug" meant nothing to the people editing this site and
+      // a hand-typed one only ever broke links. saveRow derives it from the
+      // name and stores it, so the public URL is still /products/<slug>.
       {
         key: "category",
         label: "Category",
@@ -374,13 +370,8 @@ export const MODULES: ModuleDef[] = [
         required: true,
         placeholder: "e.g. RO Plant Servicing & Repair",
       },
-      {
-        key: "slug",
-        label: "Slug",
-        type: "text",
-        hint: "URL id — auto-generated from the name",
-        slugOf: "name",
-      },
+      // No slug field — same reasoning as products; saveRow generates and
+      // stores it from the name.
       {
         key: "serviceCategory",
         label: "Service category",

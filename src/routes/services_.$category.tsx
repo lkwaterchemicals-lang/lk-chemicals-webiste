@@ -231,7 +231,7 @@ function ServiceCategoryPage() {
                         <div className="absolute bottom-3 left-4 micro-label">
                           {String(i + 1).padStart(2, "0")} · {cat.name}
                         </div>
-                        <div className="absolute top-3 right-3 grid h-9 w-9 place-items-center rounded-full bg-white/10 backdrop-blur text-on-media transition-transform group-hover:rotate-45">
+                        <div className="icon-orb icon-orb-media absolute top-3 right-3 h-9 w-9 transition-transform duration-500 group-hover:rotate-45">
                           <ArrowUpRight className="h-4 w-4" />
                         </div>
                       </div>

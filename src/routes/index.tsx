@@ -186,9 +186,7 @@ function Hero() {
             className="group inline-flex items-center gap-2 text-white/80 hover:text-white text-sm min-h-11"
           >
             <span>Request a formulation</span>
-            <span className="grid h-9 w-9 place-items-center rounded-full border border-white/20 group-hover:bg-white group-hover:text-ink transition-all">
-              →
-            </span>
+            <span className="icon-orb h-9 w-9">→</span>
           </Link>
         </motion.div>
 
@@ -503,7 +501,7 @@ function ViewAllCard() {
       className="group rounded-3xl overflow-hidden glass-dark relative flex flex-col items-center justify-center text-center h-full min-h-[280px] p-8 hover-lift"
     >
       <div className="absolute inset-0 caustics opacity-40" aria-hidden />
-      <span className="relative grid h-16 w-16 place-items-center rounded-full bg-cyan-hi/15 text-cyan-hi transition-transform duration-500 group-hover:scale-110 group-hover:rotate-45">
+      <span className="icon-orb relative h-16 w-16 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-45">
         <span className="text-2xl" aria-hidden>
           →
         </span>

@@ -366,7 +366,7 @@ function CredentialsSection({
             type="button"
             onClick={() => setZoomed(null)}
             aria-label="Close"
-            className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            className="icon-orb icon-orb-media absolute right-5 top-5 h-11 w-11"
           >
             <X className="h-5 w-5" />
           </button>
@@ -420,7 +420,7 @@ function ContactRow({ member, className = "" }: { member: TeamMember; className?
           target={l.href.startsWith("http") ? "_blank" : undefined}
           rel={l.href.startsWith("http") ? "noreferrer" : undefined}
           aria-label={l.label}
-          className="grid h-11 w-11 place-items-center rounded-full bg-cyan-hi/12 border border-cyan-hi/25 text-cyan-hi transition-all hover:bg-cyan-hi hover:text-ink hover:scale-105"
+          className="icon-orb h-11 w-11"
         >
           <l.icon className="h-4 w-4" />
         </a>
@@ -507,26 +507,70 @@ function FounderSection() {
 // Name and role live UNDER the photo, never over it — admin uploads are
 // unpredictable (logos, badges, busy promos) and overlaid text was routinely
 // unreadable. A square window crops any upload predictably.
-function TeamCard({ m, i }: { m: TeamMember; i: number }) {
+//
+// Two shapes, one card. `tile` is the portrait card used inside a grid.
+// `row` is the editorial variant — photo left, copy right — for when there
+// are only one or two people: a lone portrait tile in a 1280px band read as
+// a stranded postage stamp, while a row fills the measure and gives the bio
+// somewhere to breathe. Below `md` both collapse to the same stacked card,
+// so phones keep the layout that already worked.
+function TeamCard({
+  m,
+  i,
+  variant = "tile",
+}: {
+  m: TeamMember;
+  i: number;
+  variant?: "tile" | "row";
+}) {
+  const row = variant === "row";
   return (
     <motion.article
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-8% 0px" }}
       transition={{ delay: (i % 4) * 0.06, duration: 0.55 }}
-      className="group bento-tile flex h-full flex-col overflow-hidden rounded-[1.75rem] hover-lift"
+      className={
+        "group bento-tile flex h-full overflow-hidden rounded-[1.75rem] hover-lift " +
+        (row ? "flex-col md:flex-row" : "flex-col")
+      }
     >
-      <div className="relative aspect-square overflow-hidden">
+      <div
+        className={
+          "relative overflow-hidden " +
+          (row
+            ? "aspect-square shrink-0 md:aspect-auto md:w-[38%] md:min-h-[19rem] md:self-stretch"
+            : "aspect-square")
+        }
+      >
         <Portrait member={m} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
       </div>
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="display-xl text-xl leading-tight text-foreground">{m.name}</h3>
+      <div className={"flex flex-1 flex-col " + (row ? "p-6 md:justify-center md:p-8" : "p-5")}>
+        <h3
+          className={
+            "display-xl leading-tight text-foreground " + (row ? "text-2xl md:text-3xl" : "text-xl")
+          }
+        >
+          {m.name}
+        </h3>
         <div className="mt-1.5 text-[10px] font-semibold tracking-[0.18em] uppercase text-royal">
           {m.role}
         </div>
-        {m.bio && <p className="mt-3 text-sm leading-relaxed text-ink/70 line-clamp-3">{m.bio}</p>}
-        <ContactRow member={m} className="mt-auto pt-4 !gap-2 [&>a]:h-10 [&>a]:w-10" />
+        {m.bio && (
+          <p
+            className={
+              "mt-3 leading-relaxed text-ink/70 " +
+              (row ? "text-[15px] md:line-clamp-none" : "text-sm line-clamp-3")
+            }
+          >
+            {m.bio}
+          </p>
+        )}
+        <ContactRow
+          member={m}
+          className={row ? "mt-6 !gap-2.5" : "mt-auto pt-4 !gap-2 [&>a]:h-10 [&>a]:w-10"}
+        />
       </div>
     </motion.article>
   );
@@ -554,29 +598,79 @@ function TeamSection({ heading, body }: { heading: string; body: string }) {
             {body && <p className="mt-4 max-w-2xl text-ink/70">{body}</p>}
           </div>
           <span className="bento-tile hidden sm:inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] uppercase tracking-widest text-ink/70">
-            <UsersRound className="h-3.5 w-3.5 text-cyan-hi" /> {members.length} people
+            <UsersRound className="h-3.5 w-3.5 text-cyan-hi" /> {members.length}{" "}
+            {members.length === 1 ? "person" : "people"}
           </span>
         </div>
 
-        {/* Phones: a swipeable snap rail — one big card in view, the next one
-            peeking in to invite the thumb (the old 2-col grid crushed both
-            the photos and the contact buttons). */}
-        <div className="mt-10 -mx-6 flex gap-4 overflow-x-auto px-6 pb-3 snap-x snap-mandatory md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {members.map((m, i) => (
-            <div key={m.name + i} className="w-[74vw] max-w-[330px] shrink-0 snap-center">
-              <TeamCard m={m} i={i} />
-            </div>
-          ))}
-        </div>
-
-        {/* Desktop / tablet: airy grid */}
-        <div className="mt-12 hidden md:grid md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {members.map((m, i) => (
-            <TeamCard key={m.name + i} m={m} i={i} />
-          ))}
-        </div>
+        <TeamLayout members={members} />
       </div>
     </section>
+  );
+}
+
+/* The team is admin-managed, so its size is unknown at build time and changes
+   over the life of the site. A fixed 3/4-column grid handled a full roster and
+   nothing else: one person sat marooned in the top-left of a four-slot row,
+   two left a gaping hole. So the layout is chosen from the count.
+
+   The rule is about which SHAPE reads best at that size, not just how many
+   columns to draw:
+
+     1–2 people  editorial rows — photo left, name/role/bio right. A single
+                 portrait tile centred in a 1280px band is a postage stamp
+                 marooned in white space; a row fills the measure, lets the
+                 whole bio show instead of clamping to three lines, and reads
+                 like a leadership page rather than a half-built grid.
+     3          a 3-up grid of portrait tiles, centred.
+     4+         a filling grid whose column count divides the roster so the
+                 last row is never left half-empty.
+
+   Phones ignore all of it: 1–2 stack full width, 3+ become a peeking snap
+   rail (a swipe rail holding one card is a rail with nowhere to swipe). */
+function TeamLayout({ members }: { members: TeamMember[] }) {
+  const n = members.length;
+
+  if (n <= 2) {
+    return (
+      <div className="mx-auto mt-10 grid max-w-4xl gap-6 md:mt-12">
+        {members.map((m, i) => (
+          <TeamCard key={m.name + i} m={m} i={i} variant="row" />
+        ))}
+      </div>
+    );
+  }
+
+  // Three or more: a peeking snap rail on phones, and a desktop grid whose
+  // widest column count is chosen to leave the shortest possible gap in the
+  // last row — 5 people read far better as 3+2 than as 4+1. Four beats three
+  // on a tie, so bigger rosters stay compact. Class strings are written out in
+  // full because Tailwind scans source text, not computed values.
+  const gap = (c: number) => (c - (n % c)) % c;
+  const cols =
+    n === 3
+      ? "mx-auto max-w-5xl md:grid-cols-3"
+      : n === 4
+        ? "md:grid-cols-2 lg:grid-cols-4"
+        : gap(4) <= gap(3)
+          ? "md:grid-cols-2 lg:grid-cols-4"
+          : "md:grid-cols-2 lg:grid-cols-3";
+
+  return (
+    <>
+      <div className="mt-10 -mx-6 flex gap-4 overflow-x-auto px-6 pb-3 snap-x snap-mandatory md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {members.map((m, i) => (
+          <div key={m.name + i} className="w-[74vw] max-w-[330px] shrink-0 snap-center">
+            <TeamCard m={m} i={i} />
+          </div>
+        ))}
+      </div>
+      <div className={"mt-12 hidden gap-6 md:grid " + cols}>
+        {members.map((m, i) => (
+          <TeamCard key={m.name + i} m={m} i={i} />
+        ))}
+      </div>
+    </>
   );
 }
 

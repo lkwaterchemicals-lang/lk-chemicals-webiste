@@ -156,10 +156,10 @@ export function DataTable<T extends { __id: string }>({
     <div className="a-card overflow-hidden">
       {/* Toolbar */}
       <div
-        className="flex flex-wrap items-center gap-2 px-4 py-3"
+        className="flex flex-wrap items-center gap-2 px-3 py-3 sm:px-4"
         style={{ borderBottom: "1px solid var(--a-border)" }}
       >
-        <div className="relative flex-1 min-w-[160px] max-w-xs">
+        <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[160px] sm:max-w-xs">
           <Search
             className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2"
             style={{ color: "var(--a-text3)" }}
@@ -344,7 +344,7 @@ export function DataTable<T extends { __id: string }>({
             {pageRows.map((r) => (
               <div
                 key={r.__id}
-                className="flex items-center gap-3 px-4 py-3"
+                className="flex items-center gap-2.5 px-3 py-3"
                 onClick={onRow ? () => onRow(r) : undefined}
               >
                 {bulkActions && (
@@ -366,11 +366,11 @@ export function DataTable<T extends { __id: string }>({
                 )}
                 <div className="flex-1 min-w-0">{mobileCard(r)}</div>
                 {rowActions && (
-                  // max-w caps the strip at two icon buttons per row, so
-                  // action-heavy modules wrap into a 2×2 block instead of
-                  // squeezing the card text off a narrow phone.
+                  // Phones keep only the two actions that matter (the rest
+                  // hide themselves below sm), so the strip stays one row and
+                  // the record title keeps its width.
                   <div
-                    className="flex max-w-[80px] shrink-0 flex-wrap items-center justify-end gap-1"
+                    className="flex shrink-0 items-center justify-end gap-0.5"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {rowActions(r)}
@@ -382,7 +382,7 @@ export function DataTable<T extends { __id: string }>({
 
           {/* Footer */}
           <div
-            className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5"
+            className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 sm:px-4"
             style={{ borderTop: "1px solid var(--a-border)" }}
           >
             <span className="text-xs" style={{ color: "var(--a-text3)" }}>

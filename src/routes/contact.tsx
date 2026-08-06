@@ -7,9 +7,11 @@ import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { waLink } from "@/components/site/WaCluster";
 import { Waterline } from "@/components/site/Waterline";
+import { SocialPanel, useSocialChannels } from "@/components/site/Social";
 import { useSiteSettings } from "@/lib/content";
 import { useContactContent } from "@/lib/pages";
 import { extractMapEmbedSrc } from "@/lib/media";
+import { MAP_PIN } from "@/data/content";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -42,9 +44,9 @@ function ContactPage() {
   const { data: s } = useSiteSettings();
   const { data: c } = useContactContent();
   const showAddress2 = Boolean(s.address2 && normAddr(s.address2) !== normAddr(s.address));
-  // "lat,lng" when Settings carries a pin — every map link then points at the
-  // exact gate instead of letting Google guess from the address text.
-  const pin = s.mapLat && s.mapLng ? `${s.mapLat.trim()},${s.mapLng.trim()}` : "";
+  // Every map link points at the exact gate rather than letting Google guess
+  // from the address text (see MAP_PIN — a fixed fact, not a settings field).
+  const pin = MAP_PIN;
   return (
     <>
       <section className="section-dark relative pt-32 sm:pt-40 pb-16 overflow-hidden">
@@ -136,6 +138,7 @@ function ContactPage() {
               </div>
               <RequestCallButton source="contact-page" />
             </div>
+            <FollowCard />
           </div>
           <div>
             <EnquiryForm source="contact-page" />
@@ -164,6 +167,24 @@ function AddressLink({ query, label, muted }: { query: string; label: string; mu
       {label}
       <ArrowUpRight className="ml-1 inline h-3.5 w-3.5 shrink-0 align-[-2px] text-cyan-hi opacity-70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
     </a>
+  );
+}
+
+/** Follow-us card — hidden entirely until at least one profile is configured
+ * in Settings, so an empty channel list never leaves a dead panel behind. */
+function FollowCard() {
+  const channels = useSocialChannels();
+  if (channels.length === 0) return null;
+  return (
+    <div className="glass-dark rounded-2xl p-5 hover-lift">
+      <div className="micro-label flex items-center gap-2 text-cyan-hi">Follow the work</div>
+      <p className="mt-2 text-white/70 text-sm">
+        Site reports, plant walkthroughs and new formulations — posted as they happen.
+      </p>
+      {/* One per row here: this card sits in a narrow column and a 3-up grid
+          clipped every caption to "Plant updates &…". */}
+      <SocialPanel className="mt-4 !grid-cols-1" />
+    </div>
   );
 }
 
@@ -261,7 +282,7 @@ function SignatureMap() {
   // Coordinates beat a text query in every way that matters here: Google can't
   // wander to a similarly-named business, the zoom is ours to choose, and the
   // Directions button routes to the gate rather than to the suburb.
-  const point = s.mapLat && s.mapLng ? `${s.mapLat.trim()},${s.mapLng.trim()}` : "";
+  const point = MAP_PIN;
   const q = encodeURIComponent(s.mapQuery);
   const destination = point || q;
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;

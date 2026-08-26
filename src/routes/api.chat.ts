@@ -14,13 +14,105 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { listDocsRest } from "@/lib/firestore-rest";
 
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
+// A CHAIN, not one model. Measured against this key on 2026-08-27:
+// gemini-flash-latest answered 0/6 (all 503 "high demand", ~15s just to fail),
+// while the lite models answered 6/6 in under a second. Google's capacity moves
+// around, so the route tries each in turn rather than betting on one — and a
+// grounded, tightly-scripted sales qualifier does not need a frontier model.
+// Override with a comma-separated list in GEMINI_MODEL.
+const MODELS = (
+  process.env.GEMINI_MODEL ?? "gemini-flash-lite-latest,gemini-3.5-flash-lite,gemini-flash-latest"
+)
+  .split(",")
+  .map((m) => m.trim())
+  .filter(Boolean);
 // Overridable so the route can be pointed at a regional endpoint or an
 // egress proxy without a code change (and so it can be exercised locally).
 const BASE = process.env.GEMINI_BASE_URL ?? "https://generativelanguage.googleapis.com/v1beta";
 const ENDPOINT = (model: string) => `${BASE}/models/${model}:generateContent`;
 
 const apiKey = () => process.env.GEMINI_API_KEY ?? "";
+
+/** Upstream statuses worth trying again — capacity and transient faults. */
+const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+/** Nothing we can do by asking a different model or waiting. */
+const FATAL = new Set([400, 401, 403]);
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+type GenResult =
+  | { kind: "ok"; reply: string; model: string }
+  | { kind: "blocked" }
+  | { kind: "truncated" }
+  | { kind: "busy" }
+  | { kind: "failed" };
+
+/** Calls Gemini across the model chain, retrying transient failures.
+ *
+ * Each model gets two attempts with a short backoff; a model that is gone
+ * (404) or overloaded hands over to the next one. Only when the whole chain is
+ * exhausted does the caller hear about it. */
+async function generate(payload: Record<string, unknown>): Promise<GenResult> {
+  let sawBusy = false;
+
+  for (const model of MODELS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let res: Response;
+      try {
+        res = await fetch(ENDPOINT(model), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-goog-api-key": apiKey() },
+          body: JSON.stringify(payload),
+          // Per attempt, not per request: an overloaded model can sit for 15s
+          // before refusing, and the visitor is watching a typing indicator.
+          signal: AbortSignal.timeout(20_000),
+        });
+      } catch (err) {
+        console.error(`[chat] ${model} attempt ${attempt + 1} threw`, err);
+        if (attempt === 0) {
+          await sleep(400);
+          continue;
+        }
+        break;
+      }
+
+      if (res.ok) {
+        const data = (await res.json()) as {
+          candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+          promptFeedback?: { blockReason?: string };
+        };
+        const reply = (data.candidates?.[0]?.content?.parts ?? [])
+          .map((p) => p.text ?? "")
+          .join("")
+          .trim();
+        if (reply) return { kind: "ok", reply, model };
+
+        const finish = data.candidates?.[0]?.finishReason;
+        if (data.promptFeedback?.blockReason || finish === "SAFETY") return { kind: "blocked" };
+        // Thinking models spend the output budget on reasoning; an empty reply
+        // with MAX_TOKENS means the answer never got written, not that the
+        // question was unanswerable.
+        if (finish === "MAX_TOKENS") return { kind: "truncated" };
+        console.error(`[chat] ${model} returned no text (finish=${finish})`);
+        break;
+      }
+
+      const detail = (await res.text()).slice(0, 300);
+      console.error(`[chat] ${model} responded ${res.status}`, detail);
+      if (FATAL.has(res.status)) return { kind: "failed" };
+      if (RETRYABLE.has(res.status)) {
+        sawBusy = true;
+        if (attempt === 0) {
+          await sleep(500);
+          continue;
+        }
+      }
+      break; // 404 and friends: move on to the next model
+    }
+  }
+
+  return sawBusy ? { kind: "busy" } : { kind: "failed" };
+}
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -116,10 +208,21 @@ an ISO 9001:2015 manufacturer of industrial water-treatment chemicals in Cherlap
 Hyderabad, serving Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra since 2013.
 
 LANGUAGE
-Reply in the language the visitor writes in. You must handle English, Hindi, and Telugu
-written in Roman letters ("Telugu ela unnaru", "meeru ee product ivvagalara"). Mirror their
-script: if they write Telugu or Hindi in Roman letters, answer the same way — never switch
-them to Devanagari or Telugu script unless they used it first.
+Reply in the visitor's own language, and mirror their script: if they wrote an Indian
+language in Roman letters, reply in Roman letters too — never switch them into Devanagari
+or Telugu script unless they used it first.
+
+Telugu and Hindi are DIFFERENT languages and must never be swapped for each other. Romanised
+Telugu is the one people in Hyderabad most often use here, and answering it in Hindi reads as
+though you did not understand.
+  Telugu markers: meeku, meeru, unnaya, undha, kavali, ela, entha, cheppandi, chesthara, maa,
+    naaku, emi, edi, ekkada, tarvata, chala, sarigga, telusa.
+  Hindi markers: aapko, aapke, chahiye, hai, kya, kaise, kitna, mujhe, hamare, karna, batao.
+  A Telugu opener answered in Telugu, for shape:
+    Visitor: "Meeku boiler chemicals unnaya? Maa plant 5 TPH boiler."
+    You: "Namaskaram! Avunu, boiler treatment chemicals unnayi. Mee feed water TDS ledha
+    hardness enta undho cheppandi — appudu sarained product suggest chestanu."
+If a message genuinely mixes both, follow whichever language most of the words come from.
 
 WHAT YOU ARE FOR
 Qualify the enquiry, then recommend the right LK Chemicals products. To recommend well you
@@ -141,9 +244,14 @@ HARD RULES
 
 STYLE
 Warm, brief, technical when it helps. Two or three short paragraphs at most, or a short list.
-Plain text only — no markdown headings, no asterisks, no tables. Name products exactly as the
-catalog spells them. When you recommend one, mention its page path so the visitor can open it.
-End a recommendation by offering to connect them to the team on WhatsApp.
+Name products exactly as the catalog spells them. When you recommend one, write its page path
+on its own — bare, like /products/lk-1001-ro-antiscalant, with no backticks or brackets around
+it — so the visitor can tap it. End a recommendation by offering to connect them to the team
+on WhatsApp.
+
+FORMATTING — this renders as plain text in a small chat bubble, so markdown does not format,
+it just shows up as clutter. Never use asterisks for bold or italic, never use backticks or
+code fences, never use markdown headings, links or tables. Write "LK 1001" not "**LK 1001**".
 
 ${catalog}`;
 }
@@ -187,7 +295,7 @@ export const Route = createFileRoute("/api/chat")({
     handlers: {
       // Health/config check for deploys — reports whether the key is present
       // WITHOUT revealing any part of it.
-      GET: async () => json({ ok: true, configured: Boolean(apiKey()), model: MODEL }),
+      GET: async () => json({ ok: true, configured: Boolean(apiKey()), models: MODELS }),
 
       POST: async ({ request }) => {
         if (!apiKey()) {
@@ -227,59 +335,47 @@ export const Route = createFileRoute("/api/chat")({
           catalog = "PRODUCTS: (catalog unavailable right now — do not name specific products)";
         }
 
-        try {
-          const res = await fetch(ENDPOINT(MODEL), {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-goog-api-key": apiKey() },
-            body: JSON.stringify({
-              contents,
-              systemInstruction: { parts: [{ text: systemPrompt(catalog) }] },
-              generationConfig: {
-                temperature: 0.6,
-                topP: 0.9,
-                maxOutputTokens: 800,
-              },
-              safetySettings: [
-                "HARM_CATEGORY_HARASSMENT",
-                "HARM_CATEGORY_HATE_SPEECH",
-                "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                "HARM_CATEGORY_DANGEROUS_CONTENT",
-              ].map((category) => ({ category, threshold: "BLOCK_ONLY_HIGH" })),
-            }),
-            signal: AbortSignal.timeout(30_000),
-          });
+        const result = await generate({
+          contents,
+          systemInstruction: { parts: [{ text: systemPrompt(catalog) }] },
+          generationConfig: {
+            temperature: 0.6,
+            topP: 0.9,
+            // Headroom for models that spend part of the budget thinking —
+            // at 800 a normal answer could finish as MAX_TOKENS with no text.
+            maxOutputTokens: 1600,
+          },
+          safetySettings: [
+            "HARM_CATEGORY_HARASSMENT",
+            "HARM_CATEGORY_HATE_SPEECH",
+            "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            "HARM_CATEGORY_DANGEROUS_CONTENT",
+          ].map((category) => ({ category, threshold: "BLOCK_ONLY_HIGH" })),
+        });
 
-          if (!res.ok) {
-            // Log the upstream detail server-side; return nothing that could
-            // echo the key or Google's internals back to the browser.
-            console.error("[chat] Gemini responded", res.status, (await res.text()).slice(0, 400));
-            return json({ error: "The assistant is unavailable right now." }, 502);
-          }
-
-          const data = (await res.json()) as {
-            candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
-            promptFeedback?: { blockReason?: string };
-          };
-
-          const reply = (data.candidates?.[0]?.content?.parts ?? [])
-            .map((p) => p.text ?? "")
-            .join("")
-            .trim();
-
-          if (!reply) {
-            const blocked =
-              data.promptFeedback?.blockReason || data.candidates?.[0]?.finishReason === "SAFETY";
+        switch (result.kind) {
+          case "ok":
+            return json({ reply: result.reply });
+          case "blocked":
             return json({
-              reply: blocked
-                ? "I can't help with that one. Ask me about water treatment and I'm all yours — or tap Contact Sales and the team will pick it up."
-                : "I didn't catch that. Could you put it another way?",
+              reply:
+                "I can't help with that one. Ask me about water treatment and I'm all yours — or tap Contact Sales and the team will pick it up.",
             });
-          }
-
-          return json({ reply });
-        } catch (err) {
-          console.error("[chat] request failed", err);
-          return json({ error: "The assistant is unavailable right now." }, 502);
+          case "truncated":
+            return json({
+              reply: "That answer ran long — could you narrow the question a little?",
+            });
+          case "busy":
+            // Honest and actionable: this clears on its own, unlike a fault.
+            return json(
+              {
+                error:
+                  "Our assistant is busy right now. Try again in a few seconds — or tap Contact Sales to reach the team directly.",
+              },
+              503,
+            );
+          default:
+            return json({ error: "The assistant is unavailable right now." }, 502);
         }
       },
     },

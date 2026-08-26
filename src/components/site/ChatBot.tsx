@@ -35,11 +35,27 @@ const STARTERS = [
 
 /* ------------------------------------------------------------- rendering */
 
+/** Strips the markdown a model reaches for out of habit.
+ *
+ * The bubbles render plain text, so `**LK 1001**` would show its asterisks and
+ * a backticked path would sit inside stray quotes. The system prompt asks for
+ * plain text; this makes it true regardless of whether the model complied. */
+function plain(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, "$1") // **bold**
+    .replace(/__([^_]+)__/g, "$1") // __bold__
+    .replace(/```[a-z]*\n?/gi, "") // fences
+    .replace(/`([^`]+)`/g, "$1") // `inline code`
+    .replace(/^#{1,6}\s+/gm, "") // headings
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 $2"); // [label](url)
+}
+
 // The model is told to answer in plain text and to cite pages as /products/…
 // paths. Turn those into real links so a recommendation is one tap from the
 // product page; everything else is rendered as text, never as HTML.
-function MessageBody({ text }: { text: string }) {
+function MessageBody({ text: raw }: { text: string }) {
   const parts = useMemo(() => {
+    const text = plain(raw);
     const out: (string | { path: string })[] = [];
     const re = /\/(?:products|services)\/[a-z0-9\-/]+/gi;
     let last = 0;
@@ -51,7 +67,7 @@ function MessageBody({ text }: { text: string }) {
     }
     if (last < text.length) out.push(text.slice(last));
     return out;
-  }, [text]);
+  }, [raw]);
 
   return (
     <>

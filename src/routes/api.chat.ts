@@ -293,9 +293,31 @@ const MAX_CHARS = 2000;
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
-      // Health/config check for deploys — reports whether the key is present
-      // WITHOUT revealing any part of it.
-      GET: async () => json({ ok: true, configured: Boolean(apiKey()), models: MODELS }),
+      // Health check for deploys — reports whether the key is present WITHOUT
+      // revealing any part of it. `?check=env` adds enough to tell the two
+      // failure modes apart when a host says the variable is set but the
+      // function disagrees: no variables reaching the function at all, versus
+      // variables arriving under a different name. Values are never returned,
+      // and only Gemini/Google-shaped names are ever listed.
+      GET: async ({ request }) => {
+        const base = { ok: true, configured: Boolean(apiKey()), models: MODELS };
+        if (new URL(request.url).searchParams.get("check") !== "env") return json(base);
+
+        const env: Record<string, string | undefined> =
+          typeof process !== "undefined" && process.env ? process.env : {};
+        const keys = Object.keys(env);
+        return json({
+          ...base,
+          runtimeSeesEnv: keys.length,
+          onVercel: keys.some((k) => k.startsWith("VERCEL")),
+          vercelEnv: env.VERCEL_ENV ?? null,
+          geminiKeySet: Boolean(env.GEMINI_API_KEY),
+          geminiKeyLength: (env.GEMINI_API_KEY ?? "").length,
+          // Catches the usual slips: a VITE_ prefix (which would also mean the
+          // key shipped to the browser), a typo, or a trailing space in the name.
+          lookalikeNames: keys.filter((k) => /GEMINI|GOOGLE|GENAI/i.test(k)),
+        });
+      },
 
       POST: async ({ request }) => {
         if (!apiKey()) {

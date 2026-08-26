@@ -21,8 +21,7 @@ import {
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { ApplyDialog } from "@/components/site/ApplyDialog";
-import { waLink } from "@/components/site/WaCluster";
-import { useCareers, type CareerOpening } from "@/lib/content";
+import { type CareerOpening, useCareers, useWaLink } from "@/lib/content";
 
 export const Route = createFileRoute("/careers")({
   head: () => ({
@@ -67,6 +66,7 @@ const PERKS = [
 ];
 
 function CareersPage() {
+  const waHref = useWaLink();
   const { data: openings } = useCareers();
   // The apply dialog target: a specific opening, "general" for a speculative
   // application, or null when closed.
@@ -166,7 +166,7 @@ function CareersPage() {
                   Send your resume
                 </LiquidButton>
                 <LiquidButton
-                  href={waLink(
+                  href={waHref(
                     "Hi LK Chemicals, I'd like to share my profile for future openings.",
                   )}
                   external
@@ -239,7 +239,7 @@ function CareersPage() {
                       <Send className="h-4 w-4" /> Apply now
                     </button>
                     <a
-                      href={waLink(`Hi LK Chemicals, I'd like to apply for ${job.title}.`)}
+                      href={waHref(`Hi LK Chemicals, I'd like to apply for ${job.title}.`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm text-white/80 transition-colors hover:border-cyan-hi hover:text-white"

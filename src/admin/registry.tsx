@@ -26,6 +26,7 @@ export type FieldType =
   | "textarea"
   | "list"
   | "image"
+  | "file"
   | "boolean"
   | "select"
   | "group" // repeatable rows of sub-fields (specs, etc.)

@@ -15,10 +15,10 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { MessageSquareText, Phone, X } from "lucide-react";
-import { useSiteSettings } from "@/lib/content";
+import { useSiteSettings, useWaLink } from "@/lib/content";
 import { EnquiryForm } from "./EnquiryForm";
 import { WhatsAppIcon } from "./WhatsApp";
-import { waLink } from "./WaCluster";
+import { telHref } from "@/lib/contact";
 
 export function ContactDock({
   source,
@@ -35,10 +35,11 @@ export function ContactDock({
   /** optional context chip shown inside the pill on desktop, e.g. "Enquire · LK-1001" */
   label?: string;
 }) {
+  const waHref = useWaLink();
   const { data: settings } = useSiteSettings();
   const reduced = useReducedMotion();
   const [enquiryOpen, setEnquiryOpen] = useState(false);
-  const tel = `tel:${settings.phone.replace(/\s+/g, "")}`;
+  const tel = telHref(settings.phone);
   // Portal target — rendered in-route the dock would sit inside <main>, and
   // any transformed ancestor (e.g. the page-rise animation) would turn
   // "fixed" into "pinned to main's bottom edge". (Client-only.)
@@ -71,7 +72,7 @@ export function ContactDock({
             </span>
           )}
           <a
-            href={waLink(message)}
+            href={waHref(message)}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Chat with LK Chemicals on WhatsApp"

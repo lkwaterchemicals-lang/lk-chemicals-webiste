@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { firestoreLite } from "@/integrations/firebase/lite";
 import { optimizeImagesDeep } from "@/lib/media";
 import { type Category, type Product, type ServiceCategory, type Service } from "@/data/products";
+import { primeContactSettings, waNumber } from "@/lib/contact";
 import {
   staticGallery,
   staticTestimonials,
@@ -181,7 +182,14 @@ export function useSiteSettings() {
         const { fs, db } = await firestoreLite();
         const snap = await fs.getDoc(fs.doc(db, "settings", "site"));
         if (!snap.exists()) return staticSettings;
-        return optimizeImagesDeep({ ...staticSettings, ...(snap.data() as Partial<SiteSettings>) });
+        const merged = optimizeImagesDeep({
+          ...staticSettings,
+          ...(snap.data() as Partial<SiteSettings>),
+        });
+        // Keep the plain link builders (waLink/telHref/mailHref) in step with
+        // the dashboard — they are called from JSX that has no hook of its own.
+        primeContactSettings(merged);
+        return merged;
       } catch (err) {
         console.warn("[content] falling back to built-in settings:", err);
         return staticSettings;
@@ -190,4 +198,18 @@ export function useSiteSettings() {
     initialData: staticSettings,
     ...common,
   });
+}
+
+/** Reactive WhatsApp link builder.
+ *
+ * The plain `waLink()` reads a module-level cache, so a component that renders
+ * a chat button WITHOUT subscribing to settings (the careers page did) keeps
+ * whatever number was cached at first paint — which is how half the site's
+ * WhatsApp buttons pointed at the old built-in number. This hook subscribes,
+ * so every button re-renders the moment the dashboard's number resolves. */
+export function useWaLink() {
+  const { data: s } = useSiteSettings();
+  const number = waNumber(s.whatsapp);
+  return (msg = "Hi LK Chemicals, I would like to enquire.") =>
+    `https://wa.me/${number}?text=${encodeURIComponent(msg)}`;
 }

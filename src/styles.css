@@ -1536,9 +1536,13 @@ html.lenis body {
   opacity: 1;
 }
 
-/* Ensure content sits above decorative layers by default */
-section > .relative,
-section > .mx-auto {
+/* Ensure content sits above decorative layers by default.
+   Scoped to elements that DON'T set their own z-index: this rule is unlayered,
+   and unlayered CSS outranks Tailwind's layered utilities, so it was silently
+   overriding `z-10` on the hero content and letting a z-5 decorative layer
+   paint (and hit-test) above it. It is a floor, not a ceiling. */
+section > .relative:not([class*="z-"]),
+section > .mx-auto:not([class*="z-"]) {
   position: relative;
   z-index: 1;
 }

@@ -108,6 +108,41 @@ function buildEntries(files: ScannedFile[], ledger: Row[]): Entry[] {
 
 /* --------------------------------------------------------------------- page */
 
+/** Is Cloudinary STILL refusing to serve the uploaded documents?
+ *
+ * `deliveryBlocked` is written onto an import row at the moment that row ran,
+ * so once the account setting is fixed the flag lingers on old rows and this
+ * warning keeps shouting about a problem that no longer exists. Re-probe one
+ * flagged URL and believe the network, not the history. */
+function useDeliveryStillBlocked(
+  entries: { record?: { deliveryBlocked?: boolean; documentUrl?: string } }[],
+) {
+  const flagged = entries.find((e) => e.record?.deliveryBlocked);
+  const probeUrl = flagged?.record?.documentUrl ?? "";
+  const [blocked, setBlocked] = useState(Boolean(flagged));
+
+  useEffect(() => {
+    if (!flagged) {
+      setBlocked(false);
+      return;
+    }
+    if (!probeUrl) {
+      setBlocked(true);
+      return;
+    }
+    let alive = true;
+    // A HEAD costs nothing; any 2xx means delivery is working again.
+    fetch(probeUrl, { method: "HEAD" })
+      .then((r) => alive && setBlocked(!r.ok))
+      .catch(() => alive && setBlocked(true));
+    return () => {
+      alive = false;
+    };
+  }, [flagged, probeUrl]);
+
+  return blocked;
+}
+
 function ImportCenter() {
   const invalidate = useInvalidate();
   const categories = useCol("categories");
@@ -243,7 +278,7 @@ function ImportCenter() {
   const folderMissing = scan.data && !scan.data.available;
   // One account setting can block every download link at once; say it once,
   // above the list, instead of repeating it on every row.
-  const deliveryBlocked = entries.some((e) => e.record?.deliveryBlocked);
+  const deliveryBlocked = useDeliveryStillBlocked(entries);
 
   return (
     <div className="space-y-4">

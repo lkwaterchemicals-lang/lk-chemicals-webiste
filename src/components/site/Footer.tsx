@@ -4,11 +4,11 @@ import { BrandMark } from "./BrandMark";
 import { SocialRow, useSocialChannels } from "./Social";
 import { Waterline } from "./Waterline";
 import { WhatsAppIcon } from "./WhatsApp";
-import { waLink } from "./WaCluster";
-import { useCategories, useServiceCategories, useSiteSettings } from "@/lib/content";
+import { useCategories, useServiceCategories, useSiteSettings, useWaLink } from "@/lib/content";
 import { useGlobalContent, useHomeContent } from "@/lib/pages";
 import { POLICIES } from "@/data/policies";
-import { MAP_PIN } from "@/data/content";
+import { mailHref, telHref } from "@/lib/contact";
+import { mapsViewUrl } from "@/lib/maps";
 
 // "Phase-2" vs "Phase-II" etc. — treat cosmetic variants of the same address
 // as duplicates so it never renders twice.
@@ -17,9 +17,6 @@ const normAddr = (s: string) =>
     .toLowerCase()
     .replace(/phase[\s-]*ii/g, "phase 2")
     .replace(/[^a-z0-9]/g, "");
-
-const mapsUrl = (addr: string) =>
-  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
 
 /** The footer's social band. Given its own row rather than a corner of the
  * brand block: a line of intent plus three full-size brand buttons is what
@@ -44,6 +41,7 @@ function FollowBand() {
 }
 
 export function Footer() {
+  const waHref = useWaLink();
   const { data: s } = useSiteSettings();
   const { data: g } = useGlobalContent();
   const { data: home } = useHomeContent();
@@ -51,7 +49,7 @@ export function Footer() {
   const { data: serviceCategories } = useServiceCategories();
   const pathname = useRouterState({ select: (st) => st.location.pathname });
   const showAddress2 = Boolean(s.address2 && normAddr(s.address2) !== normAddr(s.address));
-  const phone = s.phone.replace(/\s+/g, "");
+  const phone = s.phone;
 
   return (
     <footer className="relative section-dark overflow-hidden pt-16 pb-24 sm:pb-8">
@@ -87,7 +85,7 @@ export function Footer() {
           </div>
           <div className="flex flex-wrap gap-2.5 shrink-0">
             <a
-              href={waLink()}
+              href={waHref()}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "#fff" }}
@@ -96,7 +94,7 @@ export function Footer() {
               <WhatsAppIcon className="h-4 w-4" /> WhatsApp
             </a>
             <a
-              href={`tel:${phone}`}
+              href={telHref(phone)}
               className="inline-flex min-h-11 items-center gap-2 rounded-full bg-cyan-hi px-5 py-2.5 text-sm font-semibold text-ink shadow-[0_10px_30px_-12px_var(--cyan-hi)] transition-all hover:brightness-110"
             >
               <Phone className="h-4 w-4" /> {s.phone}
@@ -181,7 +179,7 @@ export function Footer() {
                 {/* The registered office has an exact pin in Settings — use it
                     so this link opens the same place as the contact map. */}
                 <a
-                  href={mapsUrl(MAP_PIN)}
+                  href={mapsViewUrl(s)}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-white"
@@ -193,7 +191,7 @@ export function Footer() {
                 <li className="flex gap-2">
                   <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />
                   <a
-                    href={mapsUrl(s.address2!)}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address2!)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="hover:text-white"
@@ -204,21 +202,21 @@ export function Footer() {
               )}
               <li className="flex gap-2">
                 <Phone className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />{" "}
-                <a href={`tel:${phone}`} className="hover:text-white">
+                <a href={telHref(phone)} className="hover:text-white">
                   {s.phone}
                 </a>
               </li>
               {s.phone2 && (
                 <li className="flex gap-2">
                   <Phone className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />{" "}
-                  <a href={`tel:${s.phone2.replace(/\s+/g, "")}`} className="hover:text-white">
+                  <a href={telHref(s.phone2)} className="hover:text-white">
                     {s.phone2}
                   </a>
                 </li>
               )}
               <li className="flex gap-2">
                 <Mail className="h-4 w-4 shrink-0 mt-0.5 text-cyan-hi" />{" "}
-                <a href={`mailto:${s.email}`} className="hover:text-white">
+                <a href={mailHref(s.email)} className="hover:text-white">
                   {s.email}
                 </a>
               </li>
@@ -232,14 +230,19 @@ export function Footer() {
 
         <FollowBand />
 
-        {/* Closing band. The ghost brand mark lives INSIDE this block and is
-            clipped by it, so it can only ever sit behind small legal type —
-            it used to be a footer-wide watermark and the follow card above
-            sliced a hard rectangle straight through the letterforms. */}
+        {/* Closing band. The ghost brand mark is clipped to this block so it
+            can never run under the follow card above — but clipping alone left
+            a hard horizontal cut across the tops of the letters. It is now
+            sized to sit inside the band AND masked so whatever still reaches
+            the top edge dissolves instead of being sliced. */}
         <div className="relative mt-12 overflow-hidden">
           <div
             aria-hidden
-            className="ghost-word pointer-events-none absolute inset-x-0 bottom-[-0.06em] text-center text-[clamp(4rem,13vw,9.5rem)] leading-[0.8] opacity-30"
+            className="ghost-word pointer-events-none absolute inset-x-0 bottom-[-0.06em] text-center text-[clamp(3rem,8.5vw,6.5rem)] leading-[0.8] opacity-30"
+            style={{
+              maskImage: "linear-gradient(to bottom, transparent 0%, #000 42%, #000 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, #000 42%, #000 100%)",
+            }}
           >
             LK
           </div>

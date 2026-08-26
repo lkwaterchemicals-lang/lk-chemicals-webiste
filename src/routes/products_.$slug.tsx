@@ -100,8 +100,13 @@ function ProductDetail() {
   );
 
   if (!product) {
-    // Firestore may still be loading an admin-added product; only 404 once settled.
-    return isFetching ? <div className="min-h-[60vh] pt-40" /> : <ProductNotFound />;
+    // The server cannot tell "this record does not exist" from "my REST read
+    // timed out", so it must never commit to a 404: doing so rendered the
+    // not-found markup on the server while the client rendered the real record,
+    // which React reports as a hydration mismatch. Only the browser, once the
+    // catalog query has settled, decides it is really missing.
+    const settled = typeof document !== "undefined" && !isFetching;
+    return settled ? <ProductNotFound /> : <div className="min-h-[60vh] pt-40" />;
   }
 
   const cat = categories.find((c) => c.slug === product.category) ?? {

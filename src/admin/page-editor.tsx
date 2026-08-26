@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Clock, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { db } from "@/integrations/firebase/client";
 import { logActivity, useInvalidate } from "./api";
-import { ImageField } from "./editor";
+import { FileField, ImageField } from "./editor";
 import { RecordContext } from "./record-context";
 import { Btn, Card, Field, PageHeader, SelectWrap, SkeletonRows } from "./ui";
 import type { ContentField, PageSchema } from "./content-schema";
@@ -67,6 +67,8 @@ function LeafInput({
       );
     case "image":
       return <ImageField value={String(value ?? "")} onChange={onChange} fieldKey={field.key} />;
+    case "file":
+      return <FileField value={String(value ?? "")} onChange={onChange} />;
     case "select":
       return (
         <SelectWrap>
@@ -226,7 +228,11 @@ function GroupField({
               {sub.map((sf) => (
                 <div
                   key={sf.key}
-                  className={sf.type === "textarea" || sf.type === "image" ? "sm:col-span-2" : ""}
+                  className={
+                    sf.type === "textarea" || sf.type === "image" || sf.type === "file"
+                      ? "sm:col-span-2"
+                      : ""
+                  }
                 >
                   <Field label={sf.label} hint={sf.hint}>
                     <LeafInput
@@ -381,7 +387,8 @@ export function PageContentEditor({ schema }: { schema: PageSchema }) {
                         f.type === "imagelist" ||
                         f.type === "list" ||
                         f.type === "textarea" ||
-                        f.type === "image"
+                        f.type === "image" ||
+                        f.type === "file"
                           ? "sm:col-span-2"
                           : ""
                       }

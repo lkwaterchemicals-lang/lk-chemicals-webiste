@@ -671,3 +671,106 @@ export function MultiRefInput({
     </div>
   );
 }
+
+/* -------------------------------------------------------------- file field */
+
+/** A single uploaded document (certificate, datasheet, brochure).
+ *
+ * Distinct from DocumentsInput, which manages a labelled LIST: this is one
+ * slot on a record that already has its own title and issuer, so the only
+ * thing worth storing is the URL. Uploads go through Cloudinary's `auto`
+ * endpoint, so the same control accepts a PDF today and a scan tomorrow. */
+export function FileField({
+  value,
+  onChange,
+  accept = "application/pdf",
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  accept?: string;
+}) {
+  const [progress, setProgress] = useState<number | null>(null);
+  const [editUrl, setEditUrl] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const pick = async (file: File | undefined | null) => {
+    if (!file) return;
+    setProgress(0);
+    try {
+      const res = await uploadToCloudinary(file, setProgress);
+      onChange(res.secure_url);
+      setEditUrl(false);
+      toast.success(`Uploaded ${file.name}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setProgress(null);
+    }
+  };
+
+  const name = value ? decodeURIComponent(value.split("/").pop() ?? "document") : "";
+
+  return (
+    <div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => void pick(e.target.files?.[0])}
+      />
+
+      {value && !editUrl ? (
+        <div
+          className="flex flex-wrap items-center gap-2 rounded-xl px-3 py-2.5"
+          style={{ border: "1px solid var(--a-border)", background: "var(--a-surface2)" }}
+        >
+          <FileIcon className="h-4 w-4 shrink-0" style={{ color: "var(--a-accent)" }} />
+          <span className="min-w-0 flex-1 truncate text-[12px]" title={name}>
+            {name}
+          </span>
+          <a
+            href={value}
+            target="_blank"
+            rel="noreferrer"
+            className="a-btn a-btn-bare a-btn-sm"
+            title="Open in a new tab"
+          >
+            View
+          </a>
+          <Btn size="sm" onClick={() => fileRef.current?.click()}>
+            Replace
+          </Btn>
+          <Btn size="sm" variant="bare" onClick={() => onChange("")}>
+            <Trash2 className="h-3.5 w-3.5" style={{ color: "var(--a-danger)" }} />
+          </Btn>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <Btn size="sm" icon={UploadCloud} onClick={() => fileRef.current?.click()}>
+            {progress !== null ? `Uploading ${progress}%` : "Upload PDF"}
+          </Btn>
+          <input
+            className="a-input !py-1.5 !text-xs flex-1 min-w-[10rem]"
+            placeholder="…or paste a document URL"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={() => setEditUrl(false)}
+          />
+        </div>
+      )}
+
+      {progress !== null && (
+        <div
+          className="mt-2 h-1 w-full overflow-hidden rounded"
+          style={{ background: "var(--a-surface2)" }}
+        >
+          <div
+            className="h-full transition-[width]"
+            style={{ width: `${progress}%`, background: "var(--a-accent)" }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}

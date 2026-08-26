@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, ArrowUpRight, Wrench } from "lucide-react";
-import { useServiceCategories, useServices, useSiteSettings } from "@/lib/content";
+import { useServiceCategories, useServices, useSiteSettings, useWaLink } from "@/lib/content";
 import { type ServiceCategory } from "@/data/products";
 import { fetchDocRest } from "@/lib/firestore-rest";
 import { absUrl, useLiveMeta } from "@/lib/site";
@@ -9,7 +9,6 @@ import { iconByName } from "@/lib/icons";
 import { MicroLabel } from "@/components/site/GhostWord";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
-import { waLink } from "@/components/site/WaCluster";
 
 export const Route = createFileRoute("/services_/$category")({
   // Categories live only in Firestore — resolve on the server so crawlers get
@@ -44,6 +43,7 @@ export const Route = createFileRoute("/services_/$category")({
 });
 
 function ServiceCategoryPage() {
+  const waHref = useWaLink();
   const { category } = Route.useParams();
   const { category: ssrCat } = Route.useLoaderData();
   const { data: categories, isFetching: catsFetching } = useServiceCategories();
@@ -176,7 +176,7 @@ function ServiceCategoryPage() {
               </p>
               <div className="mt-4 flex flex-wrap gap-2.5">
                 <RequestCallButton source={`service-category:${cat.slug}`} />
-                <WhatsAppButton href={waLink(msg)}>WhatsApp</WhatsAppButton>
+                <WhatsAppButton href={waHref(msg)}>WhatsApp</WhatsAppButton>
               </div>
               <p className="mt-3 text-[11px] text-white/40">{settings.hours}</p>
             </div>

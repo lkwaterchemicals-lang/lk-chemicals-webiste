@@ -12,6 +12,8 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Check, PhoneCall, X } from "lucide-react";
 import { firestoreLite } from "@/integrations/firebase/lite";
 import { getRecaptchaToken, honeypotProps, isLikelySpam } from "@/lib/spam";
+import { useWhatsAppHandoff } from "@/lib/wa-handoff";
+import { WhatsAppButton } from "./WhatsApp";
 
 const SLOTS = ["Morning 9–12", "Afternoon 12–4", "Evening 4–7", "Anytime"] as const;
 
@@ -68,8 +70,12 @@ export function RequestCallDialog({
   const [honeypot, setHoneypot] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  // Kept so the success panel can offer a tap-to-send link when the browser
+  // blocked the automatic WhatsApp hand-off.
+  const [waUrl, setWaUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const openedAt = useRef(Date.now());
+  const handoff = useWhatsAppHandoff();
   // Portal target — trigger buttons live inside hover-lift cards whose
   // transform would otherwise trap this fixed overlay. (Client-only.)
   const [mounted, setMounted] = useState(false);
@@ -102,6 +108,8 @@ export function RequestCallDialog({
       setSent(true);
       return;
     }
+    // Reserved synchronously — see the note in src/lib/wa-handoff.ts.
+    const tab = handoff.reserve();
     setBusy(true);
     try {
       const recaptcha = await getRecaptchaToken("request_call");
@@ -116,11 +124,19 @@ export function RequestCallDialog({
         recaptcha: recaptcha ?? null,
         createdAt: fs.serverTimestamp(),
       });
+      const { url } = handoff.deliver(tab, "Call-back request", [
+        ["Name", name.trim()],
+        ["Phone", phone.trim()],
+        ["Preferred time", slot],
+        ["Topic", note.trim()],
+      ]);
+      setWaUrl(url);
       setSent(true);
       setName("");
       setPhone("");
       setNote("");
     } catch {
+      tab.cancel();
       setError("Couldn't send just now — please call or WhatsApp us instead.");
     } finally {
       setBusy(false);
@@ -175,8 +191,14 @@ export function RequestCallDialog({
                 </motion.div>
                 <h3 className="display-xl mt-5 text-2xl text-white">We'll call you.</h3>
                 <p className="mt-2 text-sm text-white/70">
-                  Your request is with our team — expect a call {slot.toLowerCase()}.
+                  Your request is with our team — expect a call {slot.toLowerCase()}. WhatsApp
+                  should have opened with your details; send it to reach us sooner.
                 </p>
+                {waUrl && (
+                  <div className="mt-5 flex justify-center">
+                    <WhatsAppButton href={waUrl}>Send on WhatsApp</WhatsAppButton>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={onClose}

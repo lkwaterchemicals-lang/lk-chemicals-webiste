@@ -5,13 +5,12 @@ import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { LiquidButton } from "@/components/site/LiquidButton";
-import { waLink } from "@/components/site/WaCluster";
 import { Waterline } from "@/components/site/Waterline";
 import { SocialPanel, useSocialChannels } from "@/components/site/Social";
-import { useSiteSettings } from "@/lib/content";
+import { useSiteSettings, useWaLink } from "@/lib/content";
 import { useContactContent } from "@/lib/pages";
-import { extractMapEmbedSrc } from "@/lib/media";
-import { MAP_PIN } from "@/data/content";
+import { mapsDirectionsUrl, mapsEmbedSrc, mapsViewUrl } from "@/lib/maps";
+import { mailHref, telHref } from "@/lib/contact";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -41,12 +40,14 @@ const normAddr = (v: string) =>
     .replace(/[^a-z0-9]/g, "");
 
 function ContactPage() {
+  const waHref = useWaLink();
   const { data: s } = useSiteSettings();
   const { data: c } = useContactContent();
   const showAddress2 = Boolean(s.address2 && normAddr(s.address2) !== normAddr(s.address));
-  // Every map link points at the exact gate rather than letting Google guess
-  // from the address text (see MAP_PIN — a fixed fact, not a settings field).
-  const pin = MAP_PIN;
+  // Every map destination now comes from Site settings — the postal address and
+  // the Google Maps link the admin pasted — so a move is a dashboard edit.
+  const viewUrl = mapsViewUrl(s);
+  const directionsUrl = mapsDirectionsUrl(s);
   return (
     <>
       <section className="section-dark relative pt-32 sm:pt-40 pb-16 overflow-hidden">
@@ -75,15 +76,19 @@ function ContactPage() {
                   rather than leaving the text looking like plain copy. The
                   registered office links to the exact pin; the second unit has
                   no pin of its own, so it still searches by address. */}
-              <AddressLink query={pin || s.mapQuery} label={s.address} />
+              <AddressLink href={viewUrl} label={s.address} />
               {showAddress2 && (
                 <div className="mt-2">
                   <span className="text-white/50">Unit: </span>
-                  <AddressLink query={s.address2!} label={s.address2!} muted />
+                  <AddressLink
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address2!)}`}
+                    label={s.address2!}
+                    muted
+                  />
                 </div>
               )}
               <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pin || s.mapQuery)}`}
+                href={directionsUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border border-cyan-hi/30 bg-cyan-hi/10 px-4 py-2 text-xs font-medium text-cyan-hi transition-colors hover:bg-cyan-hi hover:text-ink"
@@ -100,7 +105,7 @@ function ContactPage() {
               {[s.phone, s.phone2, s.phone3].filter(Boolean).map((p, i) => (
                 <span key={p}>
                   {i > 0 && <br />}
-                  <a className="hover:text-cyan-hi" href={`tel:${p!.replace(/\s+/g, "")}`}>
+                  <a className="hover:text-cyan-hi" href={telHref(p!)}>
                     {p}
                   </a>
                 </span>
@@ -110,7 +115,7 @@ function ContactPage() {
               {[s.email, s.email2].filter(Boolean).map((e, i) => (
                 <span key={e}>
                   {i > 0 && <br />}
-                  <a className="hover:text-cyan-hi" href={`mailto:${e}`}>
+                  <a className="hover:text-cyan-hi" href={mailHref(e!)}>
                     {e}
                   </a>
                 </span>
@@ -129,7 +134,7 @@ function ContactPage() {
                   <span className="inline-block h-2 w-2 rounded-full bg-leaf animate-pulse-soft ml-1 align-middle" />
                 </div>
               </div>
-              <WhatsAppButton href={waLink()}>WhatsApp</WhatsAppButton>
+              <WhatsAppButton href={waHref()}>WhatsApp</WhatsAppButton>
             </div>
             <div className="glass-dark rounded-2xl p-5 flex items-center justify-between gap-4 hover-lift">
               <div>
@@ -153,10 +158,10 @@ function ContactPage() {
 }
 
 /** An address that reads as a link and opens Google Maps in a new tab. */
-function AddressLink({ query, label, muted }: { query: string; label: string; muted?: boolean }) {
+function AddressLink({ href, label, muted }: { href: string; label: string; muted?: boolean }) {
   return (
     <a
-      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`}
+      href={href}
       target="_blank"
       rel="noreferrer"
       className={
@@ -279,24 +284,13 @@ function MapInfoCard({
 function SignatureMap() {
   const { data: s } = useSiteSettings();
   const { data: c } = useContactContent();
-  // Coordinates beat a text query in every way that matters here: Google can't
-  // wander to a similarly-named business, the zoom is ours to choose, and the
-  // Directions button routes to the gate rather than to the suburb.
-  const point = MAP_PIN;
-  const q = encodeURIComponent(s.mapQuery);
-  const destination = point || q;
-  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
-  const viewUrl = point
-    ? `https://www.google.com/maps/search/?api=1&query=${point}`
-    : `https://www.google.com/maps/search/?api=1&query=${q}`;
-  // Order of preference: an admin-pasted "Embed a map" URL (they chose the
-  // exact frame), then our pinned coordinates, then a plain search.
-  const zoom = (s.mapZoom ?? "17").trim() || "17";
-  const embedUrl =
-    extractMapEmbedSrc(c.mapEmbed) ??
-    (point
-      ? `https://www.google.com/maps?q=${point}&z=${zoom}&hl=en&output=embed`
-      : `https://www.google.com/maps?q=${q}&output=embed`);
+  // All three URLs come from the dashboard: the Google Maps link drives the
+  // two buttons, and the embedded frame uses the admin's "Embed a map" URL if
+  // they pasted one, otherwise the postal address (a share link cannot be
+  // framed — Google refuses it with X-Frame-Options).
+  const directionsUrl = mapsDirectionsUrl(s);
+  const viewUrl = mapsViewUrl(s);
+  const embedUrl = mapsEmbedSrc(s, c.mapEmbed);
   return (
     <section className="section-dark pb-24">
       <div className="mx-auto max-w-7xl px-6 md:px-8">

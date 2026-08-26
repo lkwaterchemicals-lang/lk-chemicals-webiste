@@ -71,7 +71,13 @@ export type SiteSettings = {
   contactPerson: string;
   contactRole: string;
   hours: string;
-  mapQuery: string;
+  /** The link Google's own Share button produces for the business — a
+   * share.google / maps.app.goo.gl short link or a full maps URL. Drives the
+   * directions and "open in Maps" buttons. */
+  mapsLink?: string;
+  /** @deprecated Superseded by `mapsLink`. Kept so settings documents saved
+   * before that field existed keep type-checking. */
+  mapQuery?: string;
   /** Google Maps zoom level — 17 frames the plot and its street. */
   mapZoom?: string;
   /** Public social profiles. Blank hides that channel everywhere. */
@@ -80,15 +86,6 @@ export type SiteSettings = {
   youtube?: string;
   linkedin?: string;
 };
-
-/** Exact pin for the contact map, as "lat,lng".
- *
- * Deliberately NOT a dashboard field: raw coordinates meant nothing to the
- * people who actually edit this site, and a mistyped digit silently moved the
- * marker to another state. It is a fixed property of the registered office, so
- * it lives in code — the editable knobs stay the address and the search query.
- * From the company's Google listing (maps.app.goo.gl/FfLtLTvtLPeTWQwc6). */
-export const MAP_PIN = "17.4634083,78.5944718";
 
 export const staticGallery: GalleryItem[] = [
   { src: plant, alt: "Manufacturing plant floor", cat: "Factory", wide: true },
@@ -153,18 +150,18 @@ export const staticTestimonials: Testimonial[] = [
 ];
 
 export const staticSettings: SiteSettings = {
-  phone: "+91 98666 00699",
-  phone2: "+91 73311 34031",
-  phone3: "+91 88867 99941",
-  whatsapp: "919866600699",
-  email: "shiva.lkchemicals@gmail.com",
-  email2: "lk.waterchemicals@gmail.com",
-  address: "Plot No. 157, Officers Colony, Cherlapally, Hyderabad – 500051",
+  phone: "+91 90304 08041",
+  phone2: "+91 73311 65231",
+  phone3: "+91 73311 34031",
+  whatsapp: "917331134031",
+  email: "lk.waterchemicals@gmail.com",
+  email2: "sales.lkchemicals@gmail.com",
+  address: "Plot No. 157, Officers Colony, Cherlapally, Hyderabad – 500 051",
   address2: "Plot No. 58, Phase-II, EC Nagar, Cherlapally, Hyderabad – 500051",
   contactPerson: "Shiva Krishna Kangadekar",
   contactRole: "Founder & Director",
-  hours: "Monday – Saturday · 9:30 AM – 7:00 PM",
-  mapQuery: "LK Chemicals Cherlapally Hyderabad 500051",
+  hours: "Monday – Saturday · 9:30 AM – 6:00 PM",
+  mapsLink: "https://share.google/E9AjkE6Z3syp6SEWt",
   mapZoom: "17",
   facebook: "https://www.facebook.com/lk.chemicals.2025",
   instagram: "https://www.instagram.com/lk_chemicals/",

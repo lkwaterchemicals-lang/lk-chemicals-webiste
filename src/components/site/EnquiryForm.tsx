@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
 import { firestoreLite } from "@/integrations/firebase/lite";
 import { getRecaptchaToken, honeypotProps, isLikelySpam } from "@/lib/spam";
+import { useWhatsAppHandoff } from "@/lib/wa-handoff";
 import { LiquidButton } from "./LiquidButton";
+import { WhatsAppButton } from "./WhatsApp";
 import { Check } from "lucide-react";
 
 export function EnquiryForm({
@@ -24,7 +26,11 @@ export function EnquiryForm({
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState("");
+  // Kept so the success panel can offer a tap-to-send link if the browser
+  // blocked the automatic hand-off.
+  const [waUrl, setWaUrl] = useState<string | null>(null);
   const openedAt = useRef(Date.now());
+  const handoff = useWhatsAppHandoff();
 
   const update =
     (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -42,6 +48,9 @@ export function EnquiryForm({
       setSent(true);
       return;
     }
+    // Reserved HERE, synchronously: after the first await the click is no
+    // longer a trusted gesture and the popup would be blocked.
+    const tab = handoff.reserve();
     setSubmitting(true);
     try {
       const recaptcha = await getRecaptchaToken("enquiry");
@@ -57,8 +66,19 @@ export function EnquiryForm({
         recaptcha: recaptcha ?? null,
         createdAt: fs.serverTimestamp(),
       });
+      const { url } = handoff.deliver(tab, "New enquiry", [
+        ["Name", form.name],
+        ["Company", form.company],
+        ["Phone", form.phone],
+        ["Email", form.email],
+        ["Product", productRef],
+        ["Requirement", form.requirement],
+      ]);
+      setWaUrl(url);
       setSent(true);
     } catch {
+      // Nothing was saved, so there is nothing to send on.
+      tab.cancel();
       setError("Couldn't send just now — please try WhatsApp or call.");
     } finally {
       setSubmitting(false);
@@ -73,8 +93,14 @@ export function EnquiryForm({
         </div>
         <h3 className="mt-4 font-display text-2xl text-white">Received.</h3>
         <p className="mt-2 text-sm text-white/70">
-          Shiva Krishna will call you back shortly with a technical response.
+          Our technical team will call you back shortly. WhatsApp should have opened with your
+          details — send it to reach us straight away.
         </p>
+        {waUrl && (
+          <div className="mt-5 flex justify-center">
+            <WhatsAppButton href={waUrl}>Send on WhatsApp</WhatsAppButton>
+          </div>
+        )}
       </div>
     );
   }

@@ -1,7 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState, type ComponentType } from "react";
-import { BadgeCheck, Linkedin, Mail, Phone, Trophy, UsersRound, X } from "lucide-react";
+import {
+  BadgeCheck,
+  Download,
+  ExternalLink,
+  FileText,
+  Linkedin,
+  Mail,
+  Phone,
+  Trophy,
+  UsersRound,
+  X,
+} from "lucide-react";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
 import { Waterline } from "@/components/site/Waterline";
@@ -9,6 +20,7 @@ import { Coverflow3D } from "@/components/site/Coverflow3D";
 import { useAboutContent } from "@/lib/pages";
 import { useTeam } from "@/lib/content";
 import { imgFallback } from "@/lib/assets";
+import { downloadUrl, pdfThumbUrl } from "@/lib/media";
 import {
   aboutContent,
   type Achievement,
@@ -17,6 +29,7 @@ import {
   type Facility,
 } from "@/data/site";
 import type { TeamMember } from "@/data/content";
+import { mailHref, telHref } from "@/lib/contact";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -248,6 +261,135 @@ function AchievementsSection({ heading, items = [] }: { heading?: string; items?
   );
 }
 
+/** Preview tile for a certificate card.
+ *
+ * Three states, because the dashboard allows all three: a scan (zoom it), a
+ * PDF with no scan (open it — a dead tile would read as broken), or neither
+ * (a quiet icon). */
+function PreviewTile({
+  item,
+  light,
+  Icon,
+  onZoom,
+}: {
+  item: Credential;
+  light: boolean;
+  Icon: ComponentType<{ className?: string }>;
+  onZoom: () => void;
+}) {
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const tile = `relative block w-full aspect-[4/3] overflow-hidden ${
+    light ? "bg-ink/[0.04]" : "bg-white/[0.04]"
+  }`;
+  const art = light ? "text-royal/30" : "text-cyan-hi/30";
+
+  if (item.img) {
+    return (
+      <button
+        type="button"
+        onClick={onZoom}
+        className={`${tile} cursor-zoom-in`}
+        aria-label={`Enlarge ${item.title}`}
+      >
+        <img
+          src={item.img}
+          alt={item.title}
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
+        />
+      </button>
+    );
+  }
+
+  if (item.pdf) {
+    // Cloudinary renders page one of the PDF, so the card shows the actual
+    // certificate — seal, issuer, reference number — instead of a file icon.
+    // If that render ever fails the icon is swapped back in by onError.
+    const thumb = pdfThumbUrl(item.pdf);
+    return (
+      <a
+        href={item.pdf}
+        target="_blank"
+        rel="noreferrer"
+        className={`${tile} block`}
+        aria-label={`Open ${item.title} (PDF)`}
+      >
+        {thumb && !thumbFailed ? (
+          <img
+            src={thumb}
+            alt={item.title}
+            loading="lazy"
+            onError={() => setThumbFailed(true)}
+            className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <span className="absolute inset-0 grid place-items-center">
+            <span className="flex flex-col items-center gap-2">
+              <FileText className={`h-10 w-10 ${art}`} />
+              <span
+                className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                  light ? "text-ink/45" : "text-white/45"
+                }`}
+              >
+                PDF document
+              </span>
+            </span>
+          </span>
+        )}
+        <span
+          className={`absolute bottom-2 right-2 rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] ${
+            light ? "bg-ink/70 text-white" : "bg-ink-2/80 text-white/85"
+          }`}
+        >
+          PDF
+        </span>
+      </a>
+    );
+  }
+
+  return (
+    <div className={`${tile} grid place-items-center`}>
+      <Icon className={`h-10 w-10 ${art}`} />
+    </div>
+  );
+}
+
+/** View / Download actions. Download uses Cloudinary's `fl_attachment` flag so
+ * the browser saves the file instead of previewing it in a tab. */
+function CredentialActions({ pdf, title, light }: { pdf: string; title: string; light: boolean }) {
+  const base =
+    "inline-flex min-h-10 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-medium transition-colors";
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      <a
+        href={pdf}
+        target="_blank"
+        rel="noreferrer"
+        className={`${base} ${
+          light
+            ? "bg-royal/10 text-royal hover:bg-royal hover:text-white"
+            : "bg-cyan-hi/15 text-cyan-hi hover:bg-cyan-hi hover:text-ink"
+        }`}
+      >
+        <ExternalLink className="h-3.5 w-3.5" /> View PDF
+      </a>
+      <a
+        href={downloadUrl(pdf, title)}
+        // `download` alone cannot rename a cross-origin file; the attribute is
+        // kept as a hint and Cloudinary's flag does the real work.
+        download
+        className={`${base} border ${
+          light
+            ? "border-ink/15 text-ink/70 hover:border-royal hover:text-royal"
+            : "border-white/20 text-white/75 hover:border-cyan-hi hover:text-white"
+        }`}
+      >
+        <Download className="h-3.5 w-3.5" /> Download
+      </a>
+    </div>
+  );
+}
+
 /** Certificates and awards share a shape: a title, who issued it, a year and a
  * scan worth enlarging — so they share a component and differ only in tone. */
 function CredentialsSection({
@@ -303,28 +445,10 @@ function CredentialsSection({
               } hover-lift`}
             >
               {/* Certificates are portrait documents: contain, never crop, so
-                  the seal and signature stay in frame. */}
-              <button
-                type="button"
-                onClick={() => c.img && setZoomed(c)}
-                className={`relative block w-full aspect-[4/3] ${
-                  light ? "bg-ink/[0.04]" : "bg-white/[0.04]"
-                } ${c.img ? "cursor-zoom-in" : "cursor-default"}`}
-                aria-label={c.img ? `Enlarge ${c.title}` : undefined}
-              >
-                {c.img ? (
-                  <img
-                    src={c.img}
-                    alt={c.title}
-                    loading="lazy"
-                    className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
-                ) : (
-                  <span className="absolute inset-0 grid place-items-center">
-                    <Icon className={`h-10 w-10 ${light ? "text-royal/30" : "text-cyan-hi/30"}`} />
-                  </span>
-                )}
-              </button>
+                  the seal and signature stay in frame. A record uploaded as a
+                  PDF with no scan still gets a real preview tile — tapping it
+                  opens the document rather than doing nothing. */}
+              <PreviewTile item={c} light={light} Icon={Icon} onZoom={() => setZoomed(c)} />
               <div className="p-6">
                 <h3 className={`text-base font-semibold ${light ? "text-ink" : "text-white"}`}>
                   {c.title}
@@ -347,6 +471,7 @@ function CredentialsSection({
                     {c.body}
                   </p>
                 )}
+                {c.pdf && <CredentialActions pdf={c.pdf} title={c.title} light={light} />}
               </div>
             </motion.div>
           ))}
@@ -403,9 +528,9 @@ function ContactRow({ member, className = "" }: { member: TeamMember; className?
       icon: Linkedin,
       label: `${member.name} on LinkedIn`,
     },
-    member.email && { href: `mailto:${member.email}`, icon: Mail, label: `Email ${member.name}` },
+    member.email && { href: mailHref(member.email), icon: Mail, label: `Email ${member.name}` },
     member.phone && {
-      href: `tel:${member.phone.replace(/\s+/g, "")}`,
+      href: telHref(member.phone),
       icon: Phone,
       label: `Call ${member.name}`,
     },

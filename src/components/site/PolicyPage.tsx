@@ -7,6 +7,7 @@ import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { useSiteSettings } from "@/lib/content";
 import { POLICIES, type Policy } from "@/data/policies";
+import { telHref } from "@/lib/contact";
 
 export function PolicyPage({ policy }: { policy: Policy }) {
   const { data: s } = useSiteSettings();
@@ -114,7 +115,7 @@ export function PolicyPage({ policy }: { policy: Policy }) {
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <LiquidButton to="/contact">Contact us</LiquidButton>
-                <LiquidButton href={`tel:${s.phone.replace(/\s+/g, "")}`} variant="ghost">
+                <LiquidButton href={telHref(s.phone)} variant="ghost">
                   {s.phone}
                 </LiquidButton>
               </div>

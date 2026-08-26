@@ -51,7 +51,8 @@ export function cloudinaryPoster(videoUrl: string): string | null {
 // makes the CDN do the work: f_auto picks AVIF/WebP per browser, q_auto
 // compresses to visual quality, and w_<cap>,c_limit downscales without ever
 // upscaling. 1600px covers the largest slot on the site (~820 CSS px @2x).
-const CLOUDINARY_DELIVERY = /^(https?:\/\/res\.cloudinary\.com\/[^/]+\/(image|video)\/upload\/)(.+)$/i;
+const CLOUDINARY_DELIVERY =
+  /^(https?:\/\/res\.cloudinary\.com\/[^/]+\/(image|video)\/upload\/)(.+)$/i;
 
 /** Cloudinary image delivery URL → same image via f_auto,q_auto with a width
  * cap. Video URLs are only rewritten for derived poster frames (image
@@ -108,4 +109,36 @@ export function extractMapEmbedSrc(input: string | undefined | null): string | n
       : `${url}${url.includes("?") ? "&" : "?"}output=embed`;
   }
   return null;
+}
+
+/** Turns a Cloudinary document URL into one the browser saves instead of
+ * previewing, by inserting Cloudinary's `fl_attachment` delivery flag.
+ * Non-Cloudinary URLs are returned untouched — a plain link still works, it
+ * just opens in the viewer. */
+export function downloadUrl(url: string, filename?: string): string {
+  const raw = (url ?? "").trim();
+  if (!raw) return "";
+  const marker = "/upload/";
+  const at = raw.indexOf(marker);
+  if (!raw.includes("res.cloudinary.com") || at === -1) return raw;
+  const flag = filename
+    ? `fl_attachment:${encodeURIComponent(filename.replace(/[^\w.-]+/g, "-"))}`
+    : "fl_attachment";
+  return `${raw.slice(0, at + marker.length)}${flag}/${raw.slice(at + marker.length)}`;
+}
+
+/** First page of an uploaded PDF, rendered as an image by Cloudinary.
+ *
+ * A certificate card showing a generic file icon tells a visitor nothing; the
+ * rasterised first page shows the seal, the issuing body and the reference
+ * number at a glance. Returns "" for anything that isn't a Cloudinary PDF, so
+ * callers can fall back to an icon. */
+export function pdfThumbUrl(url: string, width = 640): string {
+  const raw = (url ?? "").trim();
+  const marker = "/upload/";
+  const at = raw.indexOf(marker);
+  if (!raw.includes("res.cloudinary.com") || at === -1 || !/\.pdf($|\?)/i.test(raw)) return "";
+  const head = raw.slice(0, at + marker.length);
+  const tail = raw.slice(at + marker.length).replace(/\.pdf($|\?)/i, ".jpg$1");
+  return `${head}pg_1,f_auto,q_auto,w_${width},c_limit/${tail}`;
 }

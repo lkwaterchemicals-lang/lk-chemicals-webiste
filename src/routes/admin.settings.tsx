@@ -62,10 +62,12 @@ const GROUPS: Group[] = [
       { key: "address", label: "Registered office", textarea: true },
       { key: "address2", label: "Unit / works (optional)", textarea: true },
       {
-        key: "mapQuery",
-        label: "Google Maps search query",
-        hint: "Used by the Directions / Open in Maps buttons",
+        key: "mapsLink",
+        label: "Google Maps link",
+        hint: "Google Maps → your business → Share → Copy link",
+        placeholder: "https://share.google/…",
       },
+      { key: "mapZoom", label: "Map zoom", hint: "1 world · 17 street · 21 building" },
     ],
   },
   {

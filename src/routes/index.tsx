@@ -2,10 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useInView } from "motion/react";
 import { ArrowDown, ArrowLeft, ArrowRight, Droplets, Quote, Star } from "lucide-react";
-import { useCategories, useTestimonials, useSiteSettings } from "@/lib/content";
+import { useCategories, useSiteSettings, useTestimonials, useWaLink } from "@/lib/content";
 import { useHomeContent } from "@/lib/pages";
 import { iconByName } from "@/lib/icons";
 import { homeContent, type WhyItem } from "@/data/site";
+import { fetchDocRest } from "@/lib/firestore-rest";
+import { optimizedImageUrl } from "@/lib/media";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { Waterline } from "@/components/site/Waterline";
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
@@ -13,13 +15,26 @@ import { ServiceIndex } from "@/components/site/ServiceIndex";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
-import { waLink } from "@/components/site/WaCluster";
 import { WaterCore } from "@/components/site/WaterCore";
 
 import { InfiniteReviewCarousel } from "@/components/site/InfiniteReviewCarousel";
+import { telHref } from "@/lib/contact";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
+  // The hero photo is admin-managed (pages/home.heroImage) but the content
+  // hooks are browser-only, so the first paint used to show the BUILT-IN photo
+  // and swap to the real one a moment later — a visible flicker on every cold
+  // load, made worse by preloading the built-in at high priority. Resolving it
+  // on the server means the markup, the preload and the first paint all agree.
+  loader: async () => {
+    if (typeof document !== "undefined") return { heroImage: null };
+    const doc = await fetchDocRest("pages", "home");
+    const stored = typeof doc?.heroImage === "string" ? doc.heroImage : "";
+    // Same transform the client hook applies, so the two never disagree and
+    // trigger a second fetch of the identical photo.
+    return { heroImage: stored ? optimizedImageUrl(stored) : null };
+  },
+  head: ({ loaderData }) => ({
     meta: [
       { title: "LK Chemicals — We Engineer Water" },
       {
@@ -36,8 +51,16 @@ export const Route = createFileRoute("/")({
     ],
     // The hero photo is the LCP element (painted as a CSS background, which
     // browsers discover late) — preload it at high priority so first paint
-    // doesn't wait a full network round-trip.
-    links: [{ rel: "preload", as: "image", href: homeContent.heroImage, fetchPriority: "high" }],
+    // doesn't wait a full network round-trip. Preloading the built-in when the
+    // dashboard has replaced it would download a photo nobody ever sees.
+    links: [
+      {
+        rel: "preload",
+        as: "image",
+        href: loaderData?.heroImage || homeContent.heroImage,
+        fetchPriority: "high",
+      },
+    ],
   }),
   component: HomePage,
 });
@@ -73,16 +96,26 @@ function Hero() {
   // it, yet stays clipped to the hero box — a `position: fixed` layer would
   // escape `overflow` and bleed through the translucent sections below.
   //
+  // The server already resolved the stored photo (see the route loader), so
+  // the very first paint uses it — no built-in placeholder flashing first.
+  const ssrHero = Route.useLoaderData().heroImage;
+  // `c.heroImage` is seeded with the BUILT-IN photo (useHomeContent uses it as
+  // initialData), so on mount it is not yet an answer from Firestore — it just
+  // looks like one. Trusting it overwrote the real photo the server had already
+  // resolved, which is the built-in flashing over the hero for a second on
+  // every load. Only a value that DIFFERS from the built-in is a real override.
+  const stored = c.heroImage && c.heroImage !== homeContent.heroImage ? c.heroImage : "";
+  const hero = stored || ssrHero || homeContent.heroImage;
   // Background images can't use onError, so probe the URL and fall back to the
   // built-in photo if the stored one 404s (a stale hashed asset URL).
-  const [src, setSrc] = useState(c.heroImage);
+  const [src, setSrc] = useState(hero);
   useEffect(() => {
-    setSrc(c.heroImage);
-    if (!c.heroImage || c.heroImage === homeContent.heroImage) return;
+    setSrc(hero);
+    if (hero === homeContent.heroImage) return;
     const probe = new Image();
     probe.onerror = () => setSrc(homeContent.heroImage);
-    probe.src = c.heroImage;
-  }, [c.heroImage]);
+    probe.src = hero;
+  }, [hero]);
 
   return (
     <section
@@ -120,7 +153,11 @@ function Hero() {
 
       {/* Corner-anchored category chips — jump straight to that category's
           catalog. Only at ultra-wide where the safe zones exist. */}
-      <div className="absolute inset-0 hidden 2xl:block z-[5]">
+      {/* Decorative layer: it spans the whole hero, so it MUST stay
+          transparent to the pointer — each chip opts back in below. Without
+          this it sat over the headline and both CTAs on wide screens and
+          swallowed every click in the hero. */}
+      <div className="pointer-events-none absolute inset-0 hidden 2xl:block z-[5]">
         {categories.slice(0, 4).map((cat, i) => {
           const positions = [
             { top: "7rem", left: "1.25rem" },
@@ -685,7 +722,13 @@ function WhereWeWork() {
 
 function HowWaterGetsTreated() {
   const { data: c } = useHomeContent();
-  const stations = c.journey;
+  // Clearing a photo in the dashboard leaves an empty string, and <img src="">
+  // makes the browser re-request the whole page. Fall back to the built-in
+  // photo for that step instead of rendering a broken element.
+  const stations = c.journey.map((s, i) => ({
+    ...s,
+    img: s.img || homeContent.journey[i]?.img || homeContent.journey[0].img,
+  }));
   return (
     <section className="section-dark relative overflow-hidden py-24 md:py-28">
       <div className="mx-auto max-w-7xl w-full px-6 md:px-8">
@@ -1014,9 +1057,10 @@ function SeeThePlant() {
 /* =============== 09 TALK TO US =============== */
 
 function TalkToUs() {
+  const waHref = useWaLink();
   const { data: c } = useHomeContent();
   const { data: s } = useSiteSettings();
-  const tel = `tel:${s.phone.replace(/\s+/g, "")}`;
+  const tel = telHref(s.phone);
   return (
     <section className="section-dark relative overflow-hidden py-28">
       <div className="absolute inset-0 caustics opacity-40" />
@@ -1034,7 +1078,7 @@ function TalkToUs() {
           </h2>
           <p className="mt-6 max-w-md text-white/70">{c.talkBody}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <WhatsAppButton href={waLink()}>WhatsApp us</WhatsAppButton>
+            <WhatsAppButton href={waHref()}>WhatsApp us</WhatsAppButton>
             <RequestCallButton source="home:talk-to-us" />
             <LiquidButton href={tel} variant="ghost">
               {s.phone}

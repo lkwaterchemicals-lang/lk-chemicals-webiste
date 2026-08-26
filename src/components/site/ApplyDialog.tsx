@@ -8,6 +8,8 @@ import { Check, FileText, Loader2, Paperclip, Send, Trash2, X } from "lucide-rea
 import { firestoreLite } from "@/integrations/firebase/lite";
 import { uploadToCloudinary } from "@/integrations/cloudinary";
 import { getRecaptchaToken, honeypotProps, isLikelySpam } from "@/lib/spam";
+import { useWhatsAppHandoff } from "@/lib/wa-handoff";
+import { WhatsAppButton } from "./WhatsApp";
 import type { CareerOpening } from "@/lib/content";
 
 export function ApplyDialog({
@@ -27,7 +29,11 @@ export function ApplyDialog({
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState("");
+  // Kept so the success panel can offer a tap-to-send link when the browser
+  // blocked the automatic WhatsApp hand-off.
+  const [waUrl, setWaUrl] = useState<string | null>(null);
   const openedAt = useRef(Date.now());
+  const handoff = useWhatsAppHandoff();
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Fresh sheet every time the dialog opens.
@@ -81,6 +87,8 @@ export function ApplyDialog({
       setSent(true);
       return;
     }
+    // Reserved synchronously — see the note in src/lib/wa-handoff.ts.
+    const tab = handoff.reserve();
     setSubmitting(true);
     try {
       const recaptcha = await getRecaptchaToken("application");
@@ -99,8 +107,19 @@ export function ApplyDialog({
         recaptcha: recaptcha ?? null,
         createdAt: fs.serverTimestamp(),
       });
+      const { url } = handoff.deliver(tab, "Job application", [
+        ["Position", job?.title ?? "General application"],
+        ["Name", form.name.trim()],
+        ["Phone", form.phone.trim()],
+        ["Email", form.email.trim()],
+        ["Current role", form.role.trim()],
+        ["Message", form.message.trim()],
+        ["Resume", resume?.url],
+      ]);
+      setWaUrl(url);
       setSent(true);
     } catch {
+      tab.cancel();
       setError("Couldn't send just now — please try WhatsApp or call us.");
     } finally {
       setSubmitting(false);
@@ -157,8 +176,14 @@ export function ApplyDialog({
                 </div>
                 <h3 className="mt-4 font-display text-2xl text-white">Application received.</h3>
                 <p className="mt-2 text-sm text-white/70">
-                  We read every application — expect a call or an email if there's a fit.
+                  We read every application — expect a call or an email if there's a fit. WhatsApp
+                  should have opened with your details; send it to reach us sooner.
                 </p>
+                {waUrl && (
+                  <div className="mt-5 flex justify-center">
+                    <WhatsAppButton href={waUrl}>Send on WhatsApp</WhatsAppButton>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={onClose}

@@ -7,10 +7,17 @@ import { toast } from "sonner";
 import { slugify, type FieldDef, type ModuleDef } from "./registry";
 import { RecordContext } from "./record-context";
 import { Btn, Confirm, Drawer, Field, SelectWrap } from "./ui";
-import { ImageField, GroupInput, GalleryInput, DocumentsInput, MultiRefInput } from "./fields";
+import {
+  ImageField,
+  FileField,
+  GroupInput,
+  GalleryInput,
+  DocumentsInput,
+  MultiRefInput,
+} from "./fields";
 
 // Re-exported so existing importers (page-editor.tsx) keep working.
-export { ImageField } from "./fields";
+export { FileField, ImageField } from "./fields";
 
 // Field types whose value is an array (default to [] on a new record).
 const ARRAY_TYPES = new Set<FieldDef["type"]>([
@@ -186,6 +193,9 @@ export function EditorDrawer({
               )}
               {f.type === "image" && (
                 <ImageField value={String(values[f.key] ?? "")} onChange={(url) => set(f, url)} />
+              )}
+              {f.type === "file" && (
+                <FileField value={String(values[f.key] ?? "")} onChange={(url) => set(f, url)} />
               )}
               {f.type === "boolean" && (
                 <label

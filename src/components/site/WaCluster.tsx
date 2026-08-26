@@ -10,17 +10,10 @@ import { useEffect, useRef, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Headset, Mail, Phone, PhoneCall, X } from "lucide-react";
-import { useSiteSettings } from "@/lib/content";
+import { useSiteSettings, useWaLink } from "@/lib/content";
+import { mailHref, telHref } from "@/lib/contact";
 import { RequestCallDialog } from "./RequestCall";
 import { WhatsAppIcon } from "./WhatsApp";
-
-// Module-level so plain call sites (waLink in route files) pick up admin
-// changes once the settings query resolves anywhere in the app.
-let WHATSAPP = "919866600699";
-
-export function waLink(msg = "Hi LK Chemicals, I would like to enquire.") {
-  return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
-}
 
 type Tone = "glass" | "accent" | "whatsapp";
 
@@ -74,9 +67,9 @@ function ClusterItem({
 /* ----------------------------------------------------------------- cluster */
 
 export function WaCluster() {
+  const waHref = useWaLink();
   const { data: settings } = useSiteSettings();
-  WHATSAPP = settings.whatsapp || WHATSAPP;
-  const phone = settings.phone.replace(/\s+/g, "");
+  const phone = telHref(settings.phone);
 
   const [open, setOpen] = useState(false);
   const [callOpen, setCallOpen] = useState(false);
@@ -133,7 +126,7 @@ export function WaCluster() {
       hint: "Email LK Chemicals",
       icon: <Mail className="h-[18px] w-[18px]" />,
       tone: "glass" as Tone,
-      href: `mailto:${settings.email}?subject=${encodeURIComponent("Enquiry — LK Chemicals")}`,
+      href: mailHref(settings.email, "Enquiry — LK Chemicals"),
       onClick: close,
     },
     {
@@ -153,7 +146,7 @@ export function WaCluster() {
       hint: `Call LK Chemicals on ${settings.phone}`,
       icon: <Phone className="h-[18px] w-[18px]" />,
       tone: "accent" as Tone,
-      href: `tel:${phone}`,
+      href: phone,
       onClick: close,
     },
     {
@@ -162,7 +155,7 @@ export function WaCluster() {
       hint: "Chat with LK Chemicals on WhatsApp",
       icon: <WhatsAppIcon className="h-[19px] w-[19px]" />,
       tone: "whatsapp" as Tone,
-      href: waLink(),
+      href: waHref(),
       external: true,
       onClick: close,
     },

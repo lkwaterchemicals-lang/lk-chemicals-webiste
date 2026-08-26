@@ -15,7 +15,7 @@ import {
 } from "@/data/site";
 
 export type ContentFieldType =
-  "text" | "textarea" | "image" | "imagelist" | "list" | "group" | "select" | "boolean";
+  "text" | "textarea" | "image" | "imagelist" | "list" | "group" | "select" | "boolean" | "file"; // single uploaded document (PDF certificate, datasheet…)
 
 export type ContentField = {
   key: string;
@@ -351,7 +351,13 @@ export const PAGE_SCHEMAS: PageSchema[] = [
               { key: "issuer", label: "Issued by", type: "text" },
               { key: "year", label: "Year / valid until", type: "text" },
               { key: "body", label: "Scope (optional)", type: "textarea" },
-              { key: "img", label: "Certificate scan", type: "image" },
+              { key: "img", label: "Certificate scan (optional)", type: "image" },
+              {
+                key: "pdf",
+                label: "Certificate PDF",
+                type: "file",
+                hint: "Uploaded to Cloudinary; the About page links View & Download",
+              },
             ],
           },
         ],
@@ -373,6 +379,7 @@ export const PAGE_SCHEMAS: PageSchema[] = [
               { key: "year", label: "Year", type: "text" },
               { key: "body", label: "What for (optional)", type: "textarea" },
               { key: "img", label: "Photo / trophy", type: "image" },
+              { key: "pdf", label: "Document (optional)", type: "file" },
             ],
           },
         ],

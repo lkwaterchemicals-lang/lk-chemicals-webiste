@@ -82,6 +82,10 @@ export type Credential = {
   body?: string;
   /** Scan or photo of the certificate / trophy. */
   img?: string;
+  /** The certificate itself, uploaded from the dashboard. Renders View and
+   * Download actions on the About page; nothing is hard-coded, so a document
+   * added tomorrow appears without a deploy. */
+  pdf?: string;
 };
 
 export type AboutContent = {

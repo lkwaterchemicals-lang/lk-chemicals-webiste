@@ -1568,10 +1568,13 @@ section > .mx-auto:not([class*="z-"]) {
   opacity: 0.85 !important;
 }
 
-/* --- LIGHT MODE: form fields must be self-evidently interactive ---- */
-.light form input:not([type="submit"]),
-.light form textarea,
-.light form select {
+/* --- LIGHT MODE: form fields must be self-evidently interactive ----
+   Fenced off the chat composer (.lkc-composer): it is a <form> too, but it
+   carries its own skin, and `min-height: 8rem` below made its one-line input
+   128px tall. */
+.light form input:not([type="submit"]):not(.lkc-composer *),
+.light form textarea:not(.lkc-composer *),
+.light form select:not(.lkc-composer *) {
   background: color-mix(in oklab, white 92%, var(--ink) 3%) !important;
   border: 1px solid oklch(0.3 0.08 258 / 0.22) !important;
   border-bottom-width: 1px !important;
@@ -1583,15 +1586,15 @@ section > .mx-auto:not([class*="z-"]) {
     box-shadow 0.2s,
     background 0.2s;
 }
-.light form textarea {
+.light form textarea:not(.lkc-composer *) {
   min-height: 8rem;
 }
-.light form input::placeholder,
-.light form textarea::placeholder {
+.light form input:not(.lkc-composer *)::placeholder,
+.light form textarea:not(.lkc-composer *)::placeholder {
   color: color-mix(in oklab, var(--ink) 45%, transparent) !important;
 }
-.light form input:focus,
-.light form textarea:focus {
+.light form input:not(.lkc-composer *):focus,
+.light form textarea:not(.lkc-composer *):focus {
   outline: none !important;
   border-color: var(--cyan-deep) !important;
   box-shadow: 0 0 0 3px oklch(0.62 0.17 232 / 0.18) !important;
@@ -2265,6 +2268,499 @@ html.light .lk-boot {
     display: none !important;
   }
   .site-shell main.lk-page-enter {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   LK Assist — the AI sales engineer.
+   Branded glass in both themes. Colours come from tokens, never from the
+   `text-white` utilities (the light theme remaps those to ink), so the panel
+   stays legible whichever way the visitor has the site set.
+   ========================================================================== */
+
+/* ---- launcher ---------------------------------------------------------- */
+
+/* Takes the primary bottom-right slot; the contact speed-dial stacks above it
+   (see the .wa-cluster override below) so the two never overlap. */
+.lkc-launcher {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  height: 3.5rem;
+  width: 3.5rem;
+  border-radius: 9999px;
+  color: #fff;
+  background: linear-gradient(140deg, var(--royal) 0%, var(--cyan-hi) 100%);
+  border: 1px solid color-mix(in oklab, white 22%, transparent);
+  box-shadow:
+    0 16px 40px -12px color-mix(in oklab, var(--cyan-hi) 70%, transparent),
+    0 6px 18px -8px oklch(0.1 0.04 250 / 0.6);
+  transition:
+    transform 0.32s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.32s ease;
+}
+.lkc-launcher:hover,
+.lkc-launcher:focus-visible {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow:
+    0 22px 52px -12px color-mix(in oklab, var(--cyan-hi) 88%, transparent),
+    0 8px 22px -8px oklch(0.1 0.04 250 / 0.65);
+}
+.lkc-launcher:active {
+  transform: translateY(0) scale(0.95);
+}
+.lkc-launcher:focus-visible {
+  outline: 2px solid var(--cyan-hi);
+  outline-offset: 3px;
+}
+.lkc-launcher.is-open {
+  background: color-mix(in oklab, var(--ink-2) 88%, transparent);
+  border-color: color-mix(in oklab, white 18%, transparent);
+}
+.light .lkc-launcher.is-open {
+  background: #ffffff;
+  color: var(--cyan-deep);
+  border-color: var(--hairline);
+}
+/* One slow spark, not a badge: says "AI" without competing with the CTAs. */
+.lkc-launcher-spark {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
+  opacity: 0.9;
+  animation: lkc-spark 3.2s ease-in-out infinite;
+}
+@keyframes lkc-spark {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (min-width: 640px) {
+  .lkc-launcher {
+    right: 1.5rem;
+    bottom: 1.5rem;
+  }
+}
+
+/* The contact speed-dial yields the corner to the assistant. */
+.wa-cluster {
+  bottom: 5.25rem !important;
+}
+@media (min-width: 640px) {
+  .wa-cluster {
+    bottom: 5.75rem !important;
+  }
+}
+
+/* Detail pages show a fixed action dock on phones, and the nav takeover covers
+   the page — the launcher steps aside for both, exactly like the cluster. */
+@media (max-width: 1023px) {
+  body[data-dock="1"] .lkc-launcher {
+    display: none;
+  }
+}
+body[data-menu="1"] .lkc-launcher {
+  display: none;
+}
+
+/* While the panel is open it owns this corner: the speed-dial sat right on the
+   panel's bottom edge, and the panel already offers Contact Sales itself. */
+body[data-chat="1"] .wa-cluster {
+  display: none;
+}
+
+/* ---- panel ------------------------------------------------------------- */
+
+.lkc-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: oklch(0.1 0.04 250 / 0.5);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+@media (min-width: 640px) {
+  .lkc-scrim {
+    display: none;
+  }
+}
+
+.lkc-panel {
+  position: fixed;
+  z-index: 61;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #fff;
+  background:
+    linear-gradient(160deg, color-mix(in oklab, var(--royal) 26%, transparent), transparent 45%),
+    color-mix(in oklab, var(--ink-2) 92%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid color-mix(in oklab, var(--cyan-hi) 26%, transparent);
+  box-shadow: 0 34px 90px -28px oklch(0.08 0.04 250 / 0.85);
+}
+/* Phones: a full sheet. Desktop: a floating card clear of the launcher. */
+@media (min-width: 640px) {
+  .lkc-panel {
+    inset: auto 1.5rem 6rem auto;
+    width: min(26.5rem, calc(100vw - 3rem));
+    height: min(38rem, calc(100vh - 9rem));
+    border-radius: 1.5rem;
+  }
+}
+@media (max-width: 639px) {
+  .lkc-panel {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+.light .lkc-panel {
+  color: var(--ink);
+  background:
+    linear-gradient(160deg, color-mix(in oklab, var(--cyan-hi) 14%, transparent), transparent 42%),
+    color-mix(in oklab, white 94%, transparent);
+  border-color: color-mix(in oklab, var(--cyan-hi) 30%, transparent);
+  box-shadow: 0 34px 90px -30px oklch(0.3 0.1 258 / 0.45);
+}
+
+/* ---- header ------------------------------------------------------------ */
+
+.lkc-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid color-mix(in oklab, white 10%, transparent);
+  flex-shrink: 0;
+}
+.light .lkc-head {
+  border-bottom-color: var(--hairline);
+}
+
+/* The mark keeps its porcelain plate here too — the artwork is printed on
+   white with black type and is unreadable straight on the dark panel. */
+.lkc-head-mark {
+  display: grid;
+  place-items: center;
+  height: 2.25rem;
+  width: 2.55rem;
+  flex-shrink: 0;
+  padding: 3px;
+  border-radius: 0.6rem;
+  overflow: hidden;
+  background: linear-gradient(158deg, #ffffff 0%, #eef5fb 100%);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--cyan-hi) 35%, transparent);
+}
+.lkc-head-mark img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
+.lkc-head-text {
+  min-width: 0;
+  flex: 1;
+  line-height: 1.2;
+}
+.lkc-head-title {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.lkc-head-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  opacity: 0.62;
+}
+.lkc-dot {
+  height: 0.4rem;
+  width: 0.4rem;
+  border-radius: 9999px;
+  background: var(--leaf);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--leaf) 25%, transparent);
+}
+
+.lkc-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+.lkc-icon {
+  display: grid;
+  place-items: center;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 9999px;
+  color: inherit;
+  opacity: 0.65;
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
+}
+.lkc-icon:hover {
+  opacity: 1;
+  background: color-mix(in oklab, white 10%, transparent);
+}
+.light .lkc-icon:hover {
+  background: color-mix(in oklab, var(--ink) 7%, transparent);
+}
+
+/* ---- contact sales ----------------------------------------------------- */
+
+.lkc-sales {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.75rem 1rem 0;
+  min-height: 2.75rem;
+  border-radius: 9999px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  background: #25d366;
+  box-shadow: 0 10px 26px -12px rgba(37, 211, 102, 0.8);
+  transition:
+    filter 0.2s ease,
+    transform 0.2s ease;
+  flex-shrink: 0;
+}
+.lkc-sales:hover {
+  filter: brightness(1.07);
+  transform: translateY(-1px);
+}
+.lkc-sales-hint {
+  font-weight: 400;
+  opacity: 0.78;
+  font-size: 0.72rem;
+}
+
+/* ---- transcript -------------------------------------------------------- */
+
+.lkc-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  scrollbar-width: thin;
+}
+.lkc-msg {
+  max-width: 88%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 1rem;
+  font-size: 0.865rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.lkc-msg-bot {
+  align-self: flex-start;
+  border-bottom-left-radius: 0.3rem;
+  background: color-mix(in oklab, white 9%, transparent);
+  border: 1px solid color-mix(in oklab, white 8%, transparent);
+}
+.light .lkc-msg-bot {
+  background: #ffffff;
+  border-color: var(--hairline);
+  box-shadow: 0 6px 18px -14px oklch(0.3 0.1 258 / 0.5);
+}
+.lkc-msg-user {
+  align-self: flex-end;
+  border-bottom-right-radius: 0.3rem;
+  color: #fff;
+  background: linear-gradient(140deg, var(--royal), var(--cyan-hi));
+  border: 1px solid transparent;
+}
+.lkc-link {
+  color: var(--cyan-hi);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.light .lkc-msg-bot .lkc-link {
+  color: var(--cyan-deep);
+}
+.lkc-msg-user .lkc-link {
+  color: #fff;
+}
+
+.lkc-typing {
+  display: flex;
+  gap: 0.28rem;
+  align-items: center;
+  padding: 0.85rem;
+}
+.lkc-typing span {
+  height: 0.4rem;
+  width: 0.4rem;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.4;
+  animation: lkc-bounce 1.25s ease-in-out infinite;
+}
+.lkc-typing span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+.lkc-typing span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+@keyframes lkc-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-0.28rem);
+    opacity: 0.95;
+  }
+}
+
+.lkc-error {
+  align-self: flex-start;
+  font-size: 0.78rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  color: oklch(0.72 0.17 25);
+  background: color-mix(in oklab, oklch(0.65 0.24 25) 14%, transparent);
+}
+
+.lkc-starters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+.lkc-chip {
+  padding: 0.45rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  text-align: left;
+  color: var(--cyan-hi);
+  background: color-mix(in oklab, var(--cyan-hi) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cyan-hi) 28%, transparent);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+.lkc-chip:hover {
+  background: color-mix(in oklab, var(--cyan-hi) 22%, transparent);
+  transform: translateY(-1px);
+}
+.light .lkc-chip {
+  color: var(--cyan-deep);
+}
+
+/* ---- composer ---------------------------------------------------------- */
+
+.lkc-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0.5rem;
+  border-top: 1px solid color-mix(in oklab, white 10%, transparent);
+  flex-shrink: 0;
+}
+.light .lkc-composer {
+  border-top-color: var(--hairline);
+}
+.lkc-input {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  max-height: 6rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 1rem;
+  font-size: 0.865rem;
+  line-height: 1.45;
+  color: inherit;
+  background: color-mix(in oklab, white 8%, transparent);
+  border: 1px solid color-mix(in oklab, white 12%, transparent);
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.lkc-input::placeholder {
+  color: currentColor;
+  opacity: 0.45;
+}
+.lkc-input:focus {
+  border-color: color-mix(in oklab, var(--cyan-hi) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--cyan-hi) 18%, transparent);
+}
+.light .lkc-input {
+  background: #ffffff;
+  border-color: var(--hairline);
+}
+/* iOS zooms the page for any focused control under 16px. */
+@media (pointer: coarse) {
+  .lkc-input {
+    font-size: 1rem;
+  }
+}
+
+.lkc-send {
+  display: grid;
+  place-items: center;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  color: #fff;
+  background: linear-gradient(140deg, var(--royal), var(--cyan-hi));
+  box-shadow: 0 8px 20px -10px color-mix(in oklab, var(--cyan-hi) 80%, transparent);
+  transition:
+    filter 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+.lkc-send:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.lkc-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.lkc-legal {
+  padding: 0 1rem 0.85rem;
+  font-size: 0.66rem;
+  text-align: center;
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lkc-launcher,
+  .lkc-launcher:hover,
+  .lkc-sales:hover,
+  .lkc-chip:hover,
+  .lkc-send:hover {
+    transform: none;
+  }
+  .lkc-launcher-spark,
+  .lkc-typing span {
     animation: none;
   }
 }

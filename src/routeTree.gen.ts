@@ -27,6 +27,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ServicesCategoryRouteImport } from './routes/services_.$category'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as ApiPdfImportRouteImport } from './routes/api.pdf-import'
+import { Route as ApiChatRouteImport } from './routes/api.chat'
 import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
 import { Route as AdminTeamRouteImport } from './routes/admin.team'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
@@ -132,6 +133,11 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
 const ApiPdfImportRoute = ApiPdfImportRouteImport.update({
   id: '/api/pdf-import',
   path: '/api/pdf-import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminTestimonialsRoute = AdminTestimonialsRouteImport.update({
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/team': typeof AdminTeamRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
+  '/api/chat': typeof ApiChatRoute
   '/api/pdf-import': typeof ApiPdfImportRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -279,6 +286,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/team': typeof AdminTeamRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
+  '/api/chat': typeof ApiChatRoute
   '/api/pdf-import': typeof ApiPdfImportRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/services/$category': typeof ServicesCategoryRoute
@@ -316,6 +324,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/team': typeof AdminTeamRoute
   '/admin/testimonials': typeof AdminTestimonialsRoute
+  '/api/chat': typeof ApiChatRoute
   '/api/pdf-import': typeof ApiPdfImportRoute
   '/products_/$slug': typeof ProductsSlugRoute
   '/services_/$category': typeof ServicesCategoryRoute
@@ -354,6 +363,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/team'
     | '/admin/testimonials'
+    | '/api/chat'
     | '/api/pdf-import'
     | '/products/$slug'
     | '/services/$category'
@@ -389,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/team'
     | '/admin/testimonials'
+    | '/api/chat'
     | '/api/pdf-import'
     | '/products/$slug'
     | '/services/$category'
@@ -425,6 +436,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/team'
     | '/admin/testimonials'
+    | '/api/chat'
     | '/api/pdf-import'
     | '/products_/$slug'
     | '/services_/$category'
@@ -448,6 +460,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   WarrantyPolicyRoute: typeof WarrantyPolicyRoute
+  ApiChatRoute: typeof ApiChatRoute
   ApiPdfImportRoute: typeof ApiPdfImportRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   ServicesCategoryRoute: typeof ServicesCategoryRoute
@@ -580,6 +593,13 @@ declare module '@tanstack/react-router' {
       path: '/api/pdf-import'
       fullPath: '/api/pdf-import'
       preLoaderRoute: typeof ApiPdfImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/testimonials': {
@@ -752,6 +772,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   WarrantyPolicyRoute: WarrantyPolicyRoute,
+  ApiChatRoute: ApiChatRoute,
   ApiPdfImportRoute: ApiPdfImportRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   ServicesCategoryRoute: ServicesCategoryRoute,

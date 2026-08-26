@@ -21,6 +21,7 @@ import { SmoothScroll } from "../components/site/SmoothScroll";
 import { WaterCanvas } from "../components/site/WaterCanvas";
 import { BackToTop } from "../components/site/BackToTop";
 import { BootVeil } from "../components/site/BootVeil";
+import { ChatBot } from "../components/site/ChatBot";
 import { PageFx } from "../components/site/PageFx";
 
 function NotFoundComponent() {
@@ -314,6 +315,9 @@ function RootComponent() {
             <Footer />
             <WaCluster />
             <BackToTop />
+            {/* Mounted once here so the assistant is on every public page —
+                the framework's equivalent of a script before </body>. */}
+            <ChatBot />
           </div>
         </>
       )}

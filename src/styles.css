@@ -2764,3 +2764,231 @@ body[data-chat="1"] .wa-cluster {
     animation: none;
   }
 }
+
+/* ---- LK Assist v2: tap-first layout ------------------------------------
+   Rebuilt around a visitor on a phone who is not going to type "10 m3/hr,
+   2200 ppm TDS". Everything below serves that: bigger tap targets, a shorter
+   header so the conversation gets the screen, product cards instead of raw
+   URLs, and the WhatsApp handover moved under the composer where it stops
+   competing with the chat for the top of the panel. */
+
+/* Phones: dvh, so the panel tracks the browser chrome collapsing instead of
+   hiding the composer under it. */
+@media (max-width: 639px) {
+  .lkc-panel {
+    height: 100dvh;
+    border: none;
+    border-radius: 0;
+  }
+}
+
+/* Compact header — was eating ~15% of a phone screen before a word was read. */
+.lkc-head {
+  padding: 0.7rem 0.85rem;
+  gap: 0.6rem;
+}
+.lkc-head-mark {
+  height: 2rem;
+  width: 2.3rem;
+}
+.lkc-head-title {
+  font-size: 0.9rem;
+}
+.lkc-head-sub {
+  font-size: 0.66rem;
+}
+.lkc-icon {
+  height: 2.5rem;
+  width: 2.5rem; /* 40px: a real touch target, not a 32px guess */
+}
+
+.lkc-log {
+  padding: 0.85rem;
+  gap: 0.5rem;
+}
+
+/* A turn groups the bubble with anything attached to it (product cards), so
+   they animate in together and stay visually one answer. */
+.lkc-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lkc-msg {
+  max-width: 90%;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* ---- suggested replies -------------------------------------------------
+   The primary input on a phone. Sized to be tapped without aiming. */
+.lkc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+.lkc-chip-lg {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.83rem;
+  font-weight: 500;
+  border-radius: 1.25rem;
+}
+.lkc-chip-quiet {
+  min-height: 2.25rem;
+  font-size: 0.78rem;
+  color: inherit;
+  opacity: 0.75;
+  background: transparent;
+  border-color: color-mix(in oklab, currentColor 22%, transparent);
+}
+.lkc-chip-quiet:hover {
+  opacity: 1;
+  background: color-mix(in oklab, currentColor 8%, transparent);
+}
+
+.lkc-lang {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid color-mix(in oklab, currentColor 10%, transparent);
+}
+.lkc-lang-label {
+  font-size: 0.72rem;
+  opacity: 0.55;
+}
+
+/* ---- product card ------------------------------------------------------
+   What a recommendation should look like: a photo, the name, and one obvious
+   next step. Replaces the bare "/products/scale-master-lk-5020-antiscalant"
+   that a non-technical reader could make nothing of. */
+.lkc-card {
+  display: flex;
+  gap: 0.7rem;
+  align-items: stretch;
+  padding: 0.6rem;
+  border-radius: 1rem;
+  text-decoration: none;
+  color: inherit;
+  background: color-mix(in oklab, var(--cyan-hi) 10%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cyan-hi) 30%, transparent);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+.lkc-card:hover {
+  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--cyan-hi) 16%, transparent);
+  border-color: color-mix(in oklab, var(--cyan-hi) 55%, transparent);
+}
+.light .lkc-card {
+  background: #ffffff;
+  border-color: color-mix(in oklab, var(--cyan-hi) 32%, transparent);
+  box-shadow: 0 8px 22px -16px oklch(0.3 0.1 258 / 0.55);
+}
+.lkc-card-img {
+  height: 4.6rem;
+  width: 4.6rem;
+  flex-shrink: 0;
+  border-radius: 0.7rem;
+  object-fit: cover;
+  background: color-mix(in oklab, currentColor 8%, transparent);
+}
+.lkc-card-img-empty {
+  display: block;
+}
+.lkc-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.lkc-card-cat {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+.lkc-card-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.88rem;
+  line-height: 1.25;
+}
+.lkc-card-blurb {
+  font-size: 0.74rem;
+  line-height: 1.4;
+  opacity: 0.68;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lkc-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cyan-hi);
+}
+.light .lkc-card-cta {
+  color: var(--cyan-deep);
+}
+
+/* ---- footer: composer, then the human ---------------------------------- */
+
+.lkc-foot {
+  flex-shrink: 0;
+  padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in oklab, white 10%, transparent);
+}
+.light .lkc-foot {
+  border-top-color: var(--hairline);
+}
+.lkc-composer {
+  border-top: none;
+  padding: 0.6rem 0.85rem 0.5rem;
+}
+.lkc-send {
+  height: 2.75rem;
+  width: 2.75rem;
+}
+.lkc-input {
+  min-height: 2.75rem;
+  padding: 0.7rem 0.9rem;
+}
+
+/* Full-width, unmissable, and no longer stealing the top of the panel. */
+.lkc-sales {
+  margin: 0 0.85rem 0.15rem;
+  min-height: 2.6rem;
+  font-size: 0.8rem;
+}
+
+.lkc-error {
+  align-self: stretch;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* The old legal line is gone from the markup; keep the rule harmless. */
+.lkc-legal {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lkc-card,
+  .lkc-card:hover {
+    transform: none;
+  }
+}

@@ -1,86 +1,76 @@
 // LK Assist — the site's AI sales engineer.
 //
-// One self-contained module, mounted once in __root.tsx so it is present on
-// every public page (the React equivalent of dropping a script before </body>,
-// but without a second DOM tree fighting hydration or a duplicate copy of the
-// design system).
+// Mounted once in __root.tsx so it is present on every public page. The Gemini
+// key is never here: this talks to /api/chat, which holds it server-side.
 //
-// The Gemini key is never here: this talks to /api/chat, which holds the key
-// server-side. Nothing in this file can leak it, even in a sourcemap.
+// The design target is a maintenance in-charge on a phone, mid-shift, who is
+// not an engineer and may not type English comfortably. So the interface is
+// built around TAPPING, not typing: every answer arrives with two to four
+// suggested replies, and a recommendation arrives as a real product card with
+// a photo — never a bare URL buried in a paragraph.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Link } from "@tanstack/react-router";
-import { MessageSquareText, RefreshCw, Send, Sparkles, X } from "lucide-react";
+import { ArrowRight, MessageSquareText, RefreshCw, Send, Sparkles, X } from "lucide-react";
 import logoUrl from "@/assets/lk-logo.png";
 import { useWaLink } from "@/lib/content";
 import { WhatsAppIcon } from "./WhatsApp";
 
-type Msg = { role: "user" | "model"; text: string };
+type ProductCard = {
+  slug: string;
+  name: string;
+  category: string;
+  image: string | null;
+  blurb: string;
+  url: string;
+};
+
+type Msg = {
+  role: "user" | "model";
+  text: string;
+  suggestions?: string[];
+  products?: ProductCard[];
+};
 
 const STORAGE_KEY = "lk-assist-thread";
 const MAX_STORED = 30;
 
-const GREETING =
-  "Hi! I'm LK Assist — I help match plants to the right LK Chemicals treatment.\n\n" +
-  "Tell me what you're treating and I'll narrow it down. English, Hindi or Telugu, whichever you prefer.";
+const GREETING = "Hi! I'm LK Assist. Tell me what you're treating and I'll find the right product.";
 
-/** Openers that also teach the visitor what this thing is good at. */
+/** First tap. Phrased the way a customer would say it, not the way a chemist
+ * would — "water is hard" beats "elevated feed-water hardness". */
 const STARTERS = [
-  "RO antiscalant for high TDS borewell water",
-  "Boiler treatment for a 5 TPH boiler",
-  "Cooling tower chemicals for a pharma plant",
-  "Meeku ETP chemicals unnaya?",
+  "RO plant water problem",
+  "Boiler scale",
+  "Cooling tower",
+  "Hard water in my hotel",
+];
+
+/** An explicit way in for people who would not guess they can just type Telugu. */
+const LANGUAGES = [
+  { label: "English", seed: "Hello, I need help choosing a product." },
+  { label: "తెలుగు", seed: "Namaskaram, naaku oka product kavali." },
+  { label: "हिंदी", seed: "Namaste, mujhe ek product chahiye." },
 ];
 
 /* ------------------------------------------------------------- rendering */
 
-/** Strips the markdown a model reaches for out of habit.
- *
- * The bubbles render plain text, so `**LK 1001**` would show its asterisks and
- * a backticked path would sit inside stray quotes. The system prompt asks for
- * plain text; this makes it true regardless of whether the model complied. */
+/** Strips the markdown a model reaches for out of habit. The bubbles render
+ * plain text, so `**LK 1001**` would otherwise show its asterisks. */
 function plain(text: string): string {
-  return text
-    .replace(/\*\*([^*]+)\*\*/g, "$1") // **bold**
-    .replace(/__([^_]+)__/g, "$1") // __bold__
-    .replace(/```[a-z]*\n?/gi, "") // fences
-    .replace(/`([^`]+)`/g, "$1") // `inline code`
-    .replace(/^#{1,6}\s+/gm, "") // headings
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 $2"); // [label](url)
-}
-
-// The model is told to answer in plain text and to cite pages as /products/…
-// paths. Turn those into real links so a recommendation is one tap from the
-// product page; everything else is rendered as text, never as HTML.
-function MessageBody({ text: raw }: { text: string }) {
-  const parts = useMemo(() => {
-    const text = plain(raw);
-    const out: (string | { path: string })[] = [];
-    const re = /\/(?:products|services)\/[a-z0-9\-/]+/gi;
-    let last = 0;
-    for (const m of text.matchAll(re)) {
-      const at = m.index ?? 0;
-      if (at > last) out.push(text.slice(last, at));
-      out.push({ path: m[0].replace(/[.,;:)]+$/, "") });
-      last = at + m[0].length;
-    }
-    if (last < text.length) out.push(text.slice(last));
-    return out;
-  }, [raw]);
-
   return (
-    <>
-      {parts.map((p, i) =>
-        typeof p === "string" ? (
-          <span key={i}>{p}</span>
-        ) : (
-          <Link key={i} to={p.path} className="lkc-link">
-            {p.path}
-          </Link>
-        ),
-      )}
-    </>
+    text
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/__([^_]+)__/g, "$1")
+      .replace(/```[a-z]*\n?/gi, "")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/^#{1,6}\s+/gm, "")
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
+      // Paths belong in productSlugs, which become cards. If one slips into the
+      // prose anyway, drop it — a raw URL means nothing to a non-technical reader.
+      .replace(/\s*\/(?:products|services)\/[a-z0-9\-/]+/gi, "")
+      .trim()
   );
 }
 
@@ -100,7 +90,7 @@ export function ChatBot() {
 
   useEffect(() => setMounted(true), []);
 
-  // Restore the thread so a reload (or a hard navigation) doesn't lose context.
+  // Restore the thread so a reload doesn't lose the context they just gave.
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -118,7 +108,6 @@ export function ChatBot() {
     }
   }, [messages]);
 
-  // Keep the newest message in view, including while the reply streams in.
   useEffect(() => {
     const el = logRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: reduced ? "auto" : "smooth" });
@@ -133,9 +122,9 @@ export function ChatBot() {
     if (!open) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     addEventListener("keydown", esc);
-    // Phones: don't steal focus, or the keyboard covers the whole panel.
+    // Phones: never autofocus, or the keyboard swallows the panel on open.
     if (matchMedia("(min-width: 640px)").matches) {
-      setTimeout(() => inputRef.current?.focus(), 260);
+      setTimeout(() => inputRef.current?.focus(), 280);
     }
     return () => removeEventListener("keydown", esc);
   }, [open]);
@@ -153,13 +142,27 @@ export function ChatBot() {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: next }),
+          // Only role/text go up: suggestions and cards are presentation.
+          body: JSON.stringify({ messages: next.map((m) => ({ role: m.role, text: m.text })) }),
         });
-        const data = (await res.json()) as { reply?: string; error?: string };
+        const data = (await res.json()) as {
+          reply?: string;
+          suggestions?: string[];
+          products?: ProductCard[];
+          error?: string;
+        };
         if (!res.ok || data.error) {
           setError(data.error ?? "The assistant is unavailable right now.");
         } else if (data.reply) {
-          setMessages((m) => [...m, { role: "model", text: data.reply! }]);
+          setMessages((m) => [
+            ...m,
+            {
+              role: "model",
+              text: data.reply!,
+              suggestions: data.suggestions ?? [],
+              products: data.products ?? [],
+            },
+          ]);
         }
       } catch {
         setError("Couldn't reach the assistant — check your connection and try again.");
@@ -170,8 +173,7 @@ export function ChatBot() {
     [busy, messages],
   );
 
-  /** Hands the whole qualified conversation to the sales team on WhatsApp, so
-   * nobody has to repeat what they already typed here. */
+  /** Hands the qualified conversation to sales, so nobody repeats themselves. */
   const handoffHref = useMemo(() => {
     const transcript = messages
       .slice(-12)
@@ -196,11 +198,16 @@ export function ChatBot() {
 
   if (!mounted) return null;
 
+  // Only the newest assistant turn offers choices — older chips would let
+  // someone answer a question three messages out of date.
+  const live = messages[messages.length - 1];
+  const chips =
+    !busy && live?.role === "model" && live.suggestions?.length ? live.suggestions : null;
+
   const panel = (
     <AnimatePresence>
       {open && (
         <>
-          {/* Phones get a scrim; on desktop the panel floats over the page. */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -211,7 +218,6 @@ export function ChatBot() {
           />
           <motion.div
             role="dialog"
-            aria-modal="false"
             aria-label="LK Assist — chat with our sales engineer"
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -219,7 +225,6 @@ export function ChatBot() {
             transition={{ type: "spring", stiffness: 260, damping: 26 }}
             className="lkc-panel"
           >
-            {/* ---- header: the brand, then the two things they might want ---- */}
             <header className="lkc-head">
               <span className="lkc-head-mark">
                 <img src={logoUrl} alt="" width={320} height={279} />
@@ -227,7 +232,7 @@ export function ChatBot() {
               <span className="lkc-head-text">
                 <span className="lkc-head-title">LK Assist</span>
                 <span className="lkc-head-sub">
-                  <i className="lkc-dot" aria-hidden /> Answers in English · हिंदी · Telugu
+                  <i className="lkc-dot" aria-hidden /> Usually replies instantly
                 </span>
               </span>
               <div className="lkc-head-actions">
@@ -248,30 +253,45 @@ export function ChatBot() {
                   className="lkc-icon"
                   aria-label="Close chat"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
             </header>
 
-            <a
-              href={handoffHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="lkc-sales"
-              // Brand rules: white on WhatsApp green, and the light theme's
-              // `text-white` remap must not touch it.
-              style={{ color: "#fff" }}
-            >
-              <WhatsAppIcon className="h-4 w-4" />
-              Contact Sales
-              <span className="lkc-sales-hint">sends this chat</span>
-            </a>
-
-            {/* ---- transcript ---- */}
             <div className="lkc-log" ref={logRef}>
-              <div className="lkc-msg lkc-msg-bot">
-                <MessageBody text={GREETING} />
-              </div>
+              <div className="lkc-msg lkc-msg-bot">{GREETING}</div>
+
+              {messages.length === 0 && (
+                <>
+                  <div className="lkc-chips" role="group" aria-label="Common topics">
+                    {STARTERS.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => void send(s)}
+                        className="lkc-chip lkc-chip-lg"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="lkc-lang">
+                    <span className="lkc-lang-label">Prefer another language?</span>
+                    <span className="lkc-chips">
+                      {LANGUAGES.map((l) => (
+                        <button
+                          key={l.label}
+                          type="button"
+                          onClick={() => void send(l.seed)}
+                          className="lkc-chip lkc-chip-quiet"
+                        >
+                          {l.label}
+                        </button>
+                      ))}
+                    </span>
+                  </div>
+                </>
+              )}
 
               {messages.map((m, i) => (
                 <motion.div
@@ -279,9 +299,29 @@ export function ChatBot() {
                   initial={reduced ? undefined : { opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.22 }}
-                  className={`lkc-msg ${m.role === "user" ? "lkc-msg-user" : "lkc-msg-bot"}`}
+                  className="lkc-turn"
                 >
-                  <MessageBody text={m.text} />
+                  <div className={`lkc-msg ${m.role === "user" ? "lkc-msg-user" : "lkc-msg-bot"}`}>
+                    {m.role === "user" ? m.text : plain(m.text)}
+                  </div>
+
+                  {m.products?.map((p) => (
+                    <Link key={p.slug} to={p.url} className="lkc-card">
+                      {p.image ? (
+                        <img src={p.image} alt="" loading="lazy" className="lkc-card-img" />
+                      ) : (
+                        <span className="lkc-card-img lkc-card-img-empty" aria-hidden />
+                      )}
+                      <span className="lkc-card-body">
+                        {p.category && <span className="lkc-card-cat">{p.category}</span>}
+                        <span className="lkc-card-name">{p.name}</span>
+                        {p.blurb && <span className="lkc-card-blurb">{p.blurb}</span>}
+                        <span className="lkc-card-cta">
+                          View product <ArrowRight className="h-3.5 w-3.5" />
+                        </span>
+                      </span>
+                    </Link>
+                  ))}
                 </motion.div>
               ))}
 
@@ -293,12 +333,21 @@ export function ChatBot() {
                 </div>
               )}
 
-              {error && <p className="lkc-error">{error}</p>}
+              {error && (
+                <div className="lkc-error" role="alert">
+                  {error}
+                </div>
+              )}
 
-              {messages.length === 0 && (
-                <div className="lkc-starters">
-                  {STARTERS.map((s) => (
-                    <button key={s} type="button" onClick={() => void send(s)} className="lkc-chip">
+              {chips && (
+                <div className="lkc-chips" role="group" aria-label="Suggested replies">
+                  {chips.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => void send(s)}
+                      className="lkc-chip lkc-chip-lg"
+                    >
                       {s}
                     </button>
                   ))}
@@ -306,41 +355,52 @@ export function ChatBot() {
               )}
             </div>
 
-            {/* ---- composer ---- */}
-            <form
-              className="lkc-composer"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void send(draft);
-              }}
-            >
-              <textarea
-                ref={inputRef}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    void send(draft);
-                  }
+            <div className="lkc-foot">
+              <form
+                className="lkc-composer"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void send(draft);
                 }}
-                rows={1}
-                placeholder="Industry, capacity, TDS, application…"
-                aria-label="Message LK Assist"
-                className="lkc-input"
-              />
-              <button
-                type="submit"
-                disabled={busy || !draft.trim()}
-                className="lkc-send"
-                aria-label="Send message"
               >
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
-            <p className="lkc-legal">
-              AI assistant — confirm dosage and pricing with our technical team.
-            </p>
+                <textarea
+                  ref={inputRef}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void send(draft);
+                    }
+                  }}
+                  rows={1}
+                  placeholder="Type your question…"
+                  aria-label="Message LK Assist"
+                  className="lkc-input"
+                />
+                <button
+                  type="submit"
+                  disabled={busy || !draft.trim()}
+                  className="lkc-send"
+                  aria-label="Send message"
+                >
+                  <Send className="h-[18px] w-[18px]" />
+                </button>
+              </form>
+
+              {/* Below the composer, not above it: the conversation gets the
+                  room, and the human handover stays one tap away throughout. */}
+              <a
+                href={handoffHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lkc-sales"
+                style={{ color: "#fff" }}
+              >
+                <WhatsAppIcon className="h-4 w-4" />
+                Talk to a person on WhatsApp
+              </a>
+            </div>
           </motion.div>
         </>
       )}

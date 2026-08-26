@@ -3,55 +3,293 @@
 // The API key lives ONLY here. Anything named `VITE_*` is inlined into the
 // browser bundle by Vite, so the key is deliberately read from an unprefixed
 // variable that never leaves the server: the browser talks to /api/chat, this
-// route talks to Google. That also means the model, the system prompt and the
-// product grounding can change without shipping new frontend code.
+// route talks to Google.
 //
-// The assistant is grounded on the LIVE catalog (read over Firestore's REST
-// API, the same way the sitemap and route loaders do) so it can only ever
-// recommend products LK Chemicals actually sells — and a product added in the
-// dashboard today is recommendable within the cache window, with no deploy.
+// The model answers in STRUCTURED JSON, not prose. That is the single decision
+// that makes this usable by a plant manager who is not a typist: every reply
+// comes back as a short sentence plus two to four tappable answers, so the
+// visitor picks instead of composing "10 m3/hr, 2200 ppm TDS". Product
+// recommendations come back as catalog slugs, resolved here into real cards
+// (name, photo, link) rather than a bare URL buried in a paragraph.
+//
+// It is grounded on the LIVE Firestore catalog, so it can only recommend
+// products LK Chemicals actually sells, and a product published in the
+// dashboard is recommendable without a deploy.
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { listDocsRest } from "@/lib/firestore-rest";
 
-// A CHAIN, not one model. Measured against this key on 2026-08-27:
-// gemini-flash-latest answered 0/6 (all 503 "high demand", ~15s just to fail),
-// while the lite models answered 6/6 in under a second. Google's capacity moves
-// around, so the route tries each in turn rather than betting on one — and a
-// grounded, tightly-scripted sales qualifier does not need a frontier model.
-// Override with a comma-separated list in GEMINI_MODEL.
+// A CHAIN, not one model. Measured against this key: gemini-flash-latest
+// answered 0/6 (all 503 "high demand", ~15s just to fail) while the lite models
+// answered 6/6 in under a second. Google's capacity moves around, so the route
+// tries each in turn. Override with a comma-separated list in GEMINI_MODEL.
 const MODELS = (
   process.env.GEMINI_MODEL ?? "gemini-flash-lite-latest,gemini-3.5-flash-lite,gemini-flash-latest"
 )
   .split(",")
   .map((m) => m.trim())
   .filter(Boolean);
-// Overridable so the route can be pointed at a regional endpoint or an
-// egress proxy without a code change (and so it can be exercised locally).
+
 const BASE = process.env.GEMINI_BASE_URL ?? "https://generativelanguage.googleapis.com/v1beta";
 const ENDPOINT = (model: string) => `${BASE}/models/${model}:generateContent`;
 
 const apiKey = () => process.env.GEMINI_API_KEY ?? "";
 
-/** Upstream statuses worth trying again — capacity and transient faults. */
-const RETRYABLE = new Set([429, 500, 502, 503, 504]);
-/** Nothing we can do by asking a different model or waiting. */
-const FATAL = new Set([400, 401, 403]);
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
 
+const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+const list = (v: unknown, max = 6) =>
+  Array.isArray(v)
+    ? v
+        .filter((x) => typeof x === "string")
+        .slice(0, max)
+        .join("; ")
+    : "";
+
+/* --------------------------------------------------------------- grounding */
+
+/** Everything the client needs to draw a product card. */
+type ProductCard = {
+  slug: string;
+  name: string;
+  category: string;
+  image: string | null;
+  blurb: string;
+  url: string;
+};
+
+type Catalog = { text: string; cards: Map<string, ProductCard>; at: number; ttl: number };
+let catalogCache: Catalog | null = null;
+const CATALOG_TTL = 10 * 60 * 1000;
+// listDocsRest swallows its own failures and returns [], so a timed-out read
+// looks exactly like an empty collection. Caching that for the full ten minutes
+// would leave the assistant blind to half the catalog long after the blip
+// passed, so a suspiciously empty build is kept briefly and retried.
+const CATALOG_RETRY_TTL = 45 * 1000;
+
+/** Cloudinary originals are multi-MB; a card only needs a thumbnail. */
+function thumb(url: string): string | null {
+  const raw = str(url);
+  if (!raw) return null;
+  const marker = "/upload/";
+  const at = raw.indexOf(marker);
+  if (!raw.includes("res.cloudinary.com") || at === -1) return raw;
+  return `${raw.slice(0, at + marker.length)}f_auto,q_auto,w_320,c_limit/${raw.slice(at + marker.length)}`;
+}
+
+async function catalog(): Promise<Catalog> {
+  if (catalogCache && Date.now() - catalogCache.at < catalogCache.ttl) return catalogCache;
+
+  const [products, categories, services, serviceCategories] = await Promise.all([
+    listDocsRest("products"),
+    listDocsRest("categories"),
+    listDocsRest("services"),
+    listDocsRest("serviceCategories"),
+  ]);
+
+  const catName = new Map(categories.map((c) => [str(c.slug) || str(c.__id), str(c.name)]));
+  const catImage = new Map(categories.map((c) => [str(c.slug) || str(c.__id), str(c.image)]));
+  const svcCatName = new Map(
+    serviceCategories.map((c) => [str(c.slug) || str(c.__id), str(c.name)]),
+  );
+
+  const cards = new Map<string, ProductCard>();
+  const productLines = products.map((p) => {
+    const slug = str(p.slug) || str(p.__id);
+    const category = catName.get(str(p.category)) || str(p.category) || "";
+    cards.set(slug, {
+      slug,
+      name: str(p.name),
+      category,
+      image: thumb(str(p.image) || catImage.get(str(p.category)) || ""),
+      blurb: (str(p.shortDescription) || str(p.description)).slice(0, 110),
+      url: `/products/${slug}`,
+    });
+    return [
+      `- slug:${slug} | ${str(p.name)}${str(p.code) ? ` (code ${str(p.code)})` : ""}`,
+      `category: ${category || "—"}`,
+      str(p.shortDescription) || str(p.description).slice(0, 200),
+      list(p.applications) && `applications: ${list(p.applications)}`,
+      list(p.industries) && `industries: ${list(p.industries)}`,
+      str(p.dosage) && `dosage: ${str(p.dosage)}`,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+  });
+
+  const serviceLines = services.map((s) => {
+    const cat = str(s.serviceCategory);
+    return [
+      `- ${str(s.name)}`,
+      `category: ${svcCatName.get(cat) || cat || "—"}`,
+      (str(s.shortDescription) || str(s.description)).slice(0, 160),
+    ]
+      .filter(Boolean)
+      .join(" | ");
+  });
+
+  const text = [
+    "PRODUCTS — the ONLY products you may recommend. Put the slug: value verbatim in productSlugs.",
+    productLines.join("\n") || "(none published)",
+    "",
+    "SERVICES:",
+    serviceLines.join("\n") || "(none published)",
+  ].join("\n");
+
+  const complete = productLines.length > 0 && serviceLines.length > 0;
+  catalogCache = { text, cards, at: Date.now(), ttl: complete ? CATALOG_TTL : CATALOG_RETRY_TTL };
+  return catalogCache;
+}
+
+/* ------------------------------------------------------------ instructions */
+
+function systemPrompt(catalogText: string): string {
+  return `You are "LK Assist", the sales engineer on the website of LK Chemicals Pvt. Ltd. —
+an ISO 9001:2015 manufacturer of industrial water-treatment chemicals in Cherlapally,
+Hyderabad, serving Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra since 2013.
+
+WHO YOU ARE TALKING TO
+A plant owner, maintenance in-charge or hotel manager, on a phone, often mid-shift. Many are
+not engineers and do not know their TDS. Assume nothing. Never make anyone feel tested.
+
+HOW TO ANSWER — this matters more than anything else
+1. Keep "reply" SHORT: at most two sentences, roughly 40 words. No preamble, no repeating
+   their question back at them, no "great question".
+2. Ask ONE thing at a time. Never two questions in one message.
+3. ALWAYS fill "suggestions" with 2-4 tappable answers to the question you just asked, each at
+   most 4 words, in the visitor's language. This is how most people will reply — typing is the
+   fallback, not the default.
+   - Asking about industry? ["Pharma", "Hotel", "Power plant", "Something else"]
+   - Asking about capacity? ["Under 5 m3/hr", "5-20 m3/hr", "Over 20 m3/hr", "Not sure"]
+   - Asking about water? ["Borewell", "Municipal", "Don't know"]
+   - ALWAYS include an escape like "Not sure" or "Don't know" whenever you ask for a number.
+     Never leave someone stuck because they lack a figure — recommend on what you do know.
+4. When you recommend, put the slug(s) in "productSlugs". The site draws a proper product card,
+   so do NOT paste URLs or paths into the reply text. Name the product, let the card do the
+   rest. One product is better than three.
+5. After a recommendation, "suggestions" become next steps, for example
+   ["How much to dose?", "Talk to sales", "Show another option"].
+
+JARGON
+Mirror the visitor's level. If they wrote "water is hard", say "hard water" — do not answer
+with "feed water hardness and silica loading". Expand an abbreviation the first time you need
+one: "TDS (how salty the water is)".
+
+LANGUAGE
+Reply in the visitor's own language and mirror their script: if they wrote an Indian language
+in Roman letters, reply in Roman letters — never switch them into Devanagari or Telugu script
+unless they used it first. Suggestions must be in that same language.
+
+Telugu and Hindi are DIFFERENT languages and must never be swapped for each other. Romanised
+Telugu is the one people in Hyderabad most often use here, and answering it in Hindi reads as
+though you did not understand.
+  Telugu markers: meeku, meeru, unnaya, undha, kavali, ela, entha, cheppandi, chesthara, maa,
+    naaku, emi, edi, ekkada, chala, telusa.
+  Hindi markers: aapko, aapke, chahiye, hai, kya, kaise, kitna, mujhe, hamare, karna, batao.
+  Telugu example — Visitor: "Meeku boiler chemicals unnaya?"
+    reply: "Avunu, unnayi. Mee boiler lo ekkuva samasya emiti?"
+    suggestions: ["Scale", "Rust", "Teliyadu"]
+If a message genuinely mixes both, follow whichever language most of the words come from.
+
+HARD RULES
+- Recommend ONLY products from the catalog below, by their exact slug. Never invent one.
+- If nothing fits, say so plainly and offer the team.
+- Quote dosage only when the catalog states it, always as a starting point that the technical
+  team confirms against a water analysis.
+- Never quote a price, promise delivery, or offer discounts — those belong to the sales team.
+- Plain text only in "reply": no markdown, asterisks, backticks or bullet characters.
+
+${catalogText}`;
+}
+
+/** Structured output is what makes the tappable UI possible. */
+const RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    reply: { type: "string" },
+    suggestions: { type: "array", items: { type: "string" } },
+    productSlugs: { type: "array", items: { type: "string" } },
+  },
+  required: ["reply", "suggestions"],
+};
+
+/* --------------------------------------------------------------- rate limit */
+
+// Per-IP token bucket. One instance's view of the world, so a speed bump
+// against a single abusive client rather than a global quota.
+const buckets = new Map<string, { tokens: number; at: number }>();
+const LIMIT = 20;
+const WINDOW = 60 * 1000;
+
+function allow(ip: string): boolean {
+  const now = Date.now();
+  const b = buckets.get(ip);
+  if (!b || now - b.at > WINDOW) {
+    buckets.set(ip, { tokens: LIMIT - 1, at: now });
+    if (buckets.size > 5000) buckets.clear();
+    return true;
+  }
+  if (b.tokens <= 0) return false;
+  b.tokens -= 1;
+  return true;
+}
+
+const clientIp = (request: Request) =>
+  request.headers.get("cf-connecting-ip") ??
+  request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+  "local";
+
+/* ------------------------------------------------------------ model calling */
+
+const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+const FATAL = new Set([400, 401, 403]);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+type Answer = { reply: string; suggestions: string[]; productSlugs: string[] };
 type GenResult =
-  | { kind: "ok"; reply: string; model: string }
-  | { kind: "blocked" }
-  | { kind: "truncated" }
-  | { kind: "busy" }
-  | { kind: "failed" };
+  { kind: "ok"; answer: Answer } | { kind: "blocked" } | { kind: "busy" } | { kind: "failed" };
 
-/** Calls Gemini across the model chain, retrying transient failures.
- *
- * Each model gets two attempts with a short backoff; a model that is gone
- * (404) or overloaded hands over to the next one. Only when the whole chain is
- * exhausted does the caller hear about it. */
+/** Salvages an answer even if a model wraps its JSON in prose or a code fence. */
+function parseAnswer(raw: string): Answer | null {
+  const text = raw.trim();
+  if (!text) return null;
+
+  const candidates = [text];
+  const fenced = text.match(/```(?:json)?\s*([\s\S]+?)```/i);
+  if (fenced) candidates.push(fenced[1]);
+  const open = text.indexOf("{");
+  const close = text.lastIndexOf("}");
+  if (open !== -1 && close > open) candidates.push(text.slice(open, close + 1));
+
+  for (const c of candidates) {
+    try {
+      const o = JSON.parse(c) as Partial<Answer>;
+      if (typeof o.reply === "string" && o.reply.trim()) {
+        return {
+          reply: o.reply.trim(),
+          suggestions: (Array.isArray(o.suggestions) ? o.suggestions : [])
+            .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+            .map((s) => s.trim().slice(0, 40))
+            .slice(0, 4),
+          productSlugs: (Array.isArray(o.productSlugs) ? o.productSlugs : [])
+            .filter((s): s is string => typeof s === "string")
+            .map((s) => s.trim())
+            .slice(0, 3),
+        };
+      }
+    } catch {
+      /* try the next shape */
+    }
+  }
+  // A model that ignored the schema entirely still said something useful, and a
+  // plain answer beats an error message.
+  return { reply: text, suggestions: [], productSlugs: [] };
+}
+
 async function generate(payload: Record<string, unknown>): Promise<GenResult> {
   let sawBusy = false;
 
@@ -63,8 +301,8 @@ async function generate(payload: Record<string, unknown>): Promise<GenResult> {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-goog-api-key": apiKey() },
           body: JSON.stringify(payload),
-          // Per attempt, not per request: an overloaded model can sit for 15s
-          // before refusing, and the visitor is watching a typing indicator.
+          // Per attempt: an overloaded model can sit for 15s before refusing,
+          // and the visitor is watching a typing indicator.
           signal: AbortSignal.timeout(20_000),
         });
       } catch (err) {
@@ -81,19 +319,16 @@ async function generate(payload: Record<string, unknown>): Promise<GenResult> {
           candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
           promptFeedback?: { blockReason?: string };
         };
-        const reply = (data.candidates?.[0]?.content?.parts ?? [])
+        const raw = (data.candidates?.[0]?.content?.parts ?? [])
           .map((p) => p.text ?? "")
           .join("")
           .trim();
-        if (reply) return { kind: "ok", reply, model };
+        const answer = raw ? parseAnswer(raw) : null;
+        if (answer) return { kind: "ok", answer };
 
         const finish = data.candidates?.[0]?.finishReason;
         if (data.promptFeedback?.blockReason || finish === "SAFETY") return { kind: "blocked" };
-        // Thinking models spend the output budget on reasoning; an empty reply
-        // with MAX_TOKENS means the answer never got written, not that the
-        // question was unanswerable.
-        if (finish === "MAX_TOKENS") return { kind: "truncated" };
-        console.error(`[chat] ${model} returned no text (finish=${finish})`);
+        console.error(`[chat] ${model} returned nothing usable (finish=${finish})`);
         break;
       }
 
@@ -114,175 +349,6 @@ async function generate(payload: Record<string, unknown>): Promise<GenResult> {
   return sawBusy ? { kind: "busy" } : { kind: "failed" };
 }
 
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-  });
-
-/* --------------------------------------------------------------- grounding */
-
-type Catalog = { text: string; at: number; ttl: number };
-let catalogCache: Catalog | null = null;
-const CATALOG_TTL = 10 * 60 * 1000;
-// listDocsRest swallows its own failures and returns [], so a timed-out read
-// looks exactly like an empty collection. Caching that for the full ten
-// minutes would leave the assistant blind to half the catalog long after the
-// blip passed — so a build that came back suspiciously empty is kept only
-// briefly and retried.
-const CATALOG_RETRY_TTL = 45 * 1000;
-
-const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
-const list = (v: unknown, max = 6) =>
-  Array.isArray(v)
-    ? v
-        .filter((x) => typeof x === "string")
-        .slice(0, max)
-        .join("; ")
-    : "";
-
-/** A compact, token-cheap description of everything the company sells. */
-async function catalogText(): Promise<string> {
-  if (catalogCache && Date.now() - catalogCache.at < catalogCache.ttl) return catalogCache.text;
-
-  const [products, categories, services, serviceCategories] = await Promise.all([
-    listDocsRest("products"),
-    listDocsRest("categories"),
-    listDocsRest("services"),
-    listDocsRest("serviceCategories"),
-  ]);
-
-  const catName = new Map(categories.map((c) => [str(c.slug) || str(c.__id), str(c.name)]));
-  const svcCatName = new Map(
-    serviceCategories.map((c) => [str(c.slug) || str(c.__id), str(c.name)]),
-  );
-
-  const productLines = products.map((p) => {
-    const slug = str(p.slug) || str(p.__id);
-    const bits = [
-      `- ${str(p.name)}${str(p.code) ? ` (code ${str(p.code)})` : ""}`,
-      `category: ${catName.get(str(p.category)) || str(p.category) || "—"}`,
-      str(p.shortDescription) || str(p.description).slice(0, 220),
-      list(p.applications) && `applications: ${list(p.applications)}`,
-      list(p.industries) && `industries: ${list(p.industries)}`,
-      str(p.dosage) && `dosage: ${str(p.dosage)}`,
-      list(p.packing, 4) && `packing: ${list(p.packing, 4)}`,
-      `url: /products/${slug}`,
-    ].filter(Boolean);
-    return bits.join(" | ");
-  });
-
-  const serviceLines = services.map((s) => {
-    const slug = str(s.slug) || str(s.__id);
-    const cat = str(s.serviceCategory);
-    return [
-      `- ${str(s.name)}`,
-      `category: ${svcCatName.get(cat) || cat || "—"}`,
-      str(s.shortDescription) || str(s.description).slice(0, 200),
-      `url: /services/${cat}/${slug}`,
-    ]
-      .filter(Boolean)
-      .join(" | ");
-  });
-
-  const text = [
-    "PRODUCTS (the ONLY products you may recommend):",
-    productLines.join("\n") || "(none published)",
-    "",
-    "SERVICES:",
-    serviceLines.join("\n") || "(none published)",
-  ].join("\n");
-
-  // A read that produced no products at all is far more likely to be a failed
-  // request than a genuinely empty catalog — retry it soon.
-  const complete = productLines.length > 0 && serviceLines.length > 0;
-  catalogCache = { text, at: Date.now(), ttl: complete ? CATALOG_TTL : CATALOG_RETRY_TTL };
-  return text;
-}
-
-/* ------------------------------------------------------------ instructions */
-
-function systemPrompt(catalog: string): string {
-  return `You are "LK Assist", the sales engineer on the website of LK Chemicals Pvt. Ltd. —
-an ISO 9001:2015 manufacturer of industrial water-treatment chemicals in Cherlapally,
-Hyderabad, serving Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra since 2013.
-
-LANGUAGE
-Reply in the visitor's own language, and mirror their script: if they wrote an Indian
-language in Roman letters, reply in Roman letters too — never switch them into Devanagari
-or Telugu script unless they used it first.
-
-Telugu and Hindi are DIFFERENT languages and must never be swapped for each other. Romanised
-Telugu is the one people in Hyderabad most often use here, and answering it in Hindi reads as
-though you did not understand.
-  Telugu markers: meeku, meeru, unnaya, undha, kavali, ela, entha, cheppandi, chesthara, maa,
-    naaku, emi, edi, ekkada, tarvata, chala, sarigga, telusa.
-  Hindi markers: aapko, aapke, chahiye, hai, kya, kaise, kitna, mujhe, hamare, karna, batao.
-  A Telugu opener answered in Telugu, for shape:
-    Visitor: "Meeku boiler chemicals unnaya? Maa plant 5 TPH boiler."
-    You: "Namaskaram! Avunu, boiler treatment chemicals unnayi. Mee feed water TDS ledha
-    hardness enta undho cheppandi — appudu sarained product suggest chestanu."
-If a message genuinely mixes both, follow whichever language most of the words come from.
-
-WHAT YOU ARE FOR
-Qualify the enquiry, then recommend the right LK Chemicals products. To recommend well you
-need four things. Ask for whichever are still missing, ONE OR TWO AT A TIME, never as a form:
-  1. Industry (pharma, power, steel, paper, sugar, hotel, textile, food, apartments…)
-  2. Plant capacity (m3/hr, KLD, or TPH for boilers)
-  3. Feed water TDS / hardness / silica if they know it
-  4. Application (RO antiscalant, boiler treatment, cooling tower, descaling, ETP/STP, DM…)
-If the visitor clearly already knows what they want, skip straight to the recommendation.
-
-HARD RULES
-- Recommend ONLY products from the catalog below. Never invent a product, code, or spec.
-- If nothing in the catalog fits, say so plainly and offer to put them in touch with the team.
-- Quote dosage only when the catalog states it, and always frame it as a starting point that
-  the technical team confirms against a water analysis.
-- Never quote a price. Prices are commercial — hand those to the sales team.
-- Never promise delivery dates, discounts, or contractual terms.
-- You are not a laboratory. For anything safety-critical, defer to the datasheet and the team.
-
-STYLE
-Warm, brief, technical when it helps. Two or three short paragraphs at most, or a short list.
-Name products exactly as the catalog spells them. When you recommend one, write its page path
-on its own — bare, like /products/lk-1001-ro-antiscalant, with no backticks or brackets around
-it — so the visitor can tap it. End a recommendation by offering to connect them to the team
-on WhatsApp.
-
-FORMATTING — this renders as plain text in a small chat bubble, so markdown does not format,
-it just shows up as clutter. Never use asterisks for bold or italic, never use backticks or
-code fences, never use markdown headings, links or tables. Write "LK 1001" not "**LK 1001**".
-
-${catalog}`;
-}
-
-/* --------------------------------------------------------------- rate limit */
-
-// Per-IP token bucket. This is one instance's view of the world, so it is a
-// speed bump against a single abusive client rather than a global quota — the
-// real ceiling is the Gemini key's own quota.
-const buckets = new Map<string, { tokens: number; at: number }>();
-const LIMIT = 20;
-const WINDOW = 60 * 1000;
-
-function allow(ip: string): boolean {
-  const now = Date.now();
-  const b = buckets.get(ip);
-  if (!b || now - b.at > WINDOW) {
-    buckets.set(ip, { tokens: LIMIT - 1, at: now });
-    if (buckets.size > 5000) buckets.clear(); // crude ceiling; never unbounded
-    return true;
-  }
-  if (b.tokens <= 0) return false;
-  b.tokens -= 1;
-  return true;
-}
-
-const clientIp = (request: Request) =>
-  request.headers.get("cf-connecting-ip") ??
-  request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-  "local";
-
 /* -------------------------------------------------------------------- route */
 
 type InMessage = { role: "user" | "model"; text: string };
@@ -296,9 +362,8 @@ export const Route = createFileRoute("/api/chat")({
       // Health check for deploys — reports whether the key is present WITHOUT
       // revealing any part of it. `?check=env` adds enough to tell the two
       // failure modes apart when a host says the variable is set but the
-      // function disagrees: no variables reaching the function at all, versus
-      // variables arriving under a different name. Values are never returned,
-      // and only Gemini/Google-shaped names are ever listed.
+      // function disagrees. Values are never returned, and only
+      // Gemini/Google-shaped names are ever listed.
       GET: async ({ request }) => {
         const base = { ok: true, configured: Boolean(apiKey()), models: MODELS };
         if (new URL(request.url).searchParams.get("check") !== "env") return json(base);
@@ -313,8 +378,6 @@ export const Route = createFileRoute("/api/chat")({
           vercelEnv: env.VERCEL_ENV ?? null,
           geminiKeySet: Boolean(env.GEMINI_API_KEY),
           geminiKeyLength: (env.GEMINI_API_KEY ?? "").length,
-          // Catches the usual slips: a VITE_ prefix (which would also mean the
-          // key shipped to the browser), a typo, or a trailing space in the name.
           lookalikeNames: keys.filter((k) => /GEMINI|GOOGLE|GENAI/i.test(k)),
         });
       },
@@ -348,24 +411,34 @@ export const Route = createFileRoute("/api/chat")({
 
         if (contents.length === 0) return json({ error: "Nothing to answer." }, 400);
 
-        let catalog = "";
+        let cat: Catalog | null = null;
         try {
-          catalog = await catalogText();
+          cat = await catalog();
         } catch {
-          // A catalog read failure must not take the assistant down; it simply
-          // answers without product grounding and steers to the sales team.
-          catalog = "PRODUCTS: (catalog unavailable right now — do not name specific products)";
+          // A catalog read failure must not take the assistant down; it answers
+          // without product grounding and steers to the sales team instead.
+          cat = null;
         }
 
         const result = await generate({
           contents,
-          systemInstruction: { parts: [{ text: systemPrompt(catalog) }] },
+          systemInstruction: {
+            parts: [
+              {
+                text: systemPrompt(
+                  cat?.text ??
+                    "PRODUCTS: (catalog unavailable right now — do not name specific products)",
+                ),
+              },
+            ],
+          },
           generationConfig: {
             temperature: 0.6,
             topP: 0.9,
-            // Headroom for models that spend part of the budget thinking —
-            // at 800 a normal answer could finish as MAX_TOKENS with no text.
+            // Headroom for models that spend part of the budget thinking.
             maxOutputTokens: 1600,
+            responseMimeType: "application/json",
+            responseSchema: RESPONSE_SCHEMA,
           },
           safetySettings: [
             "HARM_CATEGORY_HARASSMENT",
@@ -376,19 +449,25 @@ export const Route = createFileRoute("/api/chat")({
         });
 
         switch (result.kind) {
-          case "ok":
-            return json({ reply: result.reply });
+          case "ok": {
+            // Resolve slugs to real cards, silently dropping anything invented —
+            // a card can only ever point at a product that exists.
+            const products = result.answer.productSlugs
+              .map((s) => cat?.cards.get(s))
+              .filter((p): p is ProductCard => Boolean(p));
+            return json({
+              reply: result.answer.reply,
+              suggestions: result.answer.suggestions,
+              products,
+            });
+          }
           case "blocked":
             return json({
-              reply:
-                "I can't help with that one. Ask me about water treatment and I'm all yours — or tap Contact Sales and the team will pick it up.",
-            });
-          case "truncated":
-            return json({
-              reply: "That answer ran long — could you narrow the question a little?",
+              reply: "I can't help with that one. Ask me about water treatment and I'm all yours.",
+              suggestions: ["Talk to sales"],
+              products: [],
             });
           case "busy":
-            // Honest and actionable: this clears on its own, unlike a fault.
             return json(
               {
                 error:

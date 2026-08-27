@@ -12,6 +12,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Headset, Mail, Phone, PhoneCall, X } from "lucide-react";
 import { useSiteSettings, useWaLink } from "@/lib/content";
 import { mailHref, telHref } from "@/lib/contact";
+import { EmailChooser, mailtoIsReliable } from "./EmailChooser";
 import { RequestCallDialog } from "./RequestCall";
 import { WhatsAppIcon } from "./WhatsApp";
 
@@ -73,6 +74,7 @@ export function WaCluster() {
 
   const [open, setOpen] = useState(false);
   const [callOpen, setCallOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
   const reduced = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -126,8 +128,11 @@ export function WaCluster() {
       hint: "Email LK Chemicals",
       icon: <Mail className="h-[18px] w-[18px]" />,
       tone: "glass" as Tone,
-      href: mailHref(settings.email, "Enquiry — LK Chemicals"),
-      onClick: close,
+      href: mailtoIsReliable() ? mailHref(settings.email, "Enquiry — LK Chemicals") : undefined,
+      onClick: () => {
+        setOpen(false);
+        if (!mailtoIsReliable()) setEmailOpen(true);
+      },
     },
     {
       key: "request",
@@ -229,6 +234,8 @@ export function WaCluster() {
           </motion.span>
         </button>
       </div>
+
+      <EmailChooser address={settings.email} open={emailOpen} onClose={() => setEmailOpen(false)} />
 
       <RequestCallDialog
         open={callOpen}

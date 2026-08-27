@@ -150,18 +150,22 @@ export const staticTestimonials: Testimonial[] = [
 ];
 
 export const staticSettings: SiteSettings = {
-  phone: "+91 90304 08041",
-  phone2: "+91 73311 65231",
-  phone3: "+91 73311 34031",
+  // One number for everything — call, WhatsApp, forms, footer, floating
+  // actions. The previous 9030408041 and 7331165231 lines are retired.
+  phone: "+91 73311 34031",
   whatsapp: "917331134031",
-  email: "lk.waterchemicals@gmail.com",
-  email2: "sales.lkchemicals@gmail.com",
+  email: "sales.lkchemicals@gmail.com",
+  email2: "lk.waterchemicals@gmail.com",
   address: "Plot No. 157, Officers Colony, Cherlapally, Hyderabad – 500 051",
   address2: "Plot No. 58, Phase-II, EC Nagar, Cherlapally, Hyderabad – 500051",
   contactPerson: "Shiva Krishna Kangadekar",
   contactRole: "Founder & Director",
   hours: "Monday – Saturday · 9:30 AM – 6:00 PM",
-  mapsLink: "https://share.google/E9AjkE6Z3syp6SEWt",
+  // Google's own place id for LK CHEMICALS PRIVATE LIMITED, taken straight
+  // out of the embed the client supplied (…!1s0x64eb06a0bcfb0a29:0x275f39d2bc582ad4).
+  // A cid link cannot drift onto a similarly-named business the way a text
+  // search can, and it opens the real listing in the Maps app on a phone.
+  mapsLink: "https://maps.google.com/?cid=2837049867532511956",
   mapZoom: "17",
   facebook: "https://www.facebook.com/lk.chemicals.2025",
   instagram: "https://www.instagram.com/lk_chemicals/",

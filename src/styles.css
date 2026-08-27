@@ -2992,3 +2992,151 @@ body[data-chat="1"] .wa-cluster {
     transform: none;
   }
 }
+
+/* ---- Email chooser -----------------------------------------------------
+   Shown on desktop, where `mailto:` may silently do nothing. Same glass
+   language as the rest of the site, in both themes. */
+
+.lke-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: oklch(0.1 0.04 250 / 0.55);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.lke-panel {
+  width: 100%;
+  max-width: 23rem;
+  padding: 1.1rem;
+  border-radius: 1.25rem;
+  color: #fff;
+  background:
+    linear-gradient(160deg, color-mix(in oklab, var(--royal) 24%, transparent), transparent 45%),
+    color-mix(in oklab, var(--ink-2) 94%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid color-mix(in oklab, var(--cyan-hi) 28%, transparent);
+  box-shadow: 0 30px 80px -26px oklch(0.08 0.04 250 / 0.85);
+}
+.light .lke-panel {
+  color: var(--ink);
+  background:
+    linear-gradient(160deg, color-mix(in oklab, var(--cyan-hi) 12%, transparent), transparent 42%),
+    #ffffff;
+  border-color: color-mix(in oklab, var(--cyan-hi) 30%, transparent);
+  box-shadow: 0 30px 80px -30px oklch(0.3 0.1 258 / 0.45);
+}
+
+.lke-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.lke-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+.lke-x {
+  display: grid;
+  place-items: center;
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: 9999px;
+  color: inherit;
+  opacity: 0.6;
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
+}
+.lke-x:hover {
+  opacity: 1;
+  background: color-mix(in oklab, currentColor 10%, transparent);
+}
+
+/* The address is on screen at all times, so even if every option fails the
+   visitor can still read it off and type it themselves. */
+.lke-address {
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+  color: var(--cyan-hi);
+  user-select: all;
+}
+.light .lke-address {
+  color: var(--cyan-deep);
+}
+
+.lke-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+}
+.lke-option {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0 0.75rem;
+  width: 100%;
+  min-height: 3.1rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.9rem;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  background: color-mix(in oklab, white 8%, transparent);
+  border: 1px solid color-mix(in oklab, white 10%, transparent);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+.light .lke-option {
+  background: color-mix(in oklab, var(--cyan-hi) 7%, transparent);
+  border-color: var(--hairline);
+}
+.lke-option:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklab, var(--cyan-hi) 55%, transparent);
+  background: color-mix(in oklab, var(--cyan-hi) 14%, transparent);
+}
+.lke-option-label {
+  grid-column: 1;
+  font-size: 0.87rem;
+  font-weight: 600;
+}
+.lke-option-hint {
+  grid-column: 1;
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+.lke-option-icon {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  opacity: 0.7;
+  color: var(--cyan-hi);
+}
+.light .lke-option-icon {
+  color: var(--cyan-deep);
+}
+.lke-option-copy {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lke-option,
+  .lke-option:hover {
+    transform: none;
+  }
+}

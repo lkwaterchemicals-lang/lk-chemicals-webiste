@@ -399,9 +399,14 @@ export const galleryContent: GalleryContent = {
   heroHeading: "Inside LK.",
 };
 
+/** The client's own "Embed a map" URL for LK CHEMICALS PRIVATE LIMITED.
+ * Overridable from the dashboard (Content -> Contact page). */
+const MAP_EMBED =
+  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d21529.05502676479!2d78.58826863784525!3d17.467600131164417!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x64eb06a0bcfb0a29%3A0x275f39d2bc582ad4!2sLK%20CHEMICALS%20PRIVATE%20LIMITED!5e0!3m2!1sen!2sin!4v1787807121412!5m2!1sen!2sin";
+
 export const contactContent: ContactContent = {
   heroHeading: "Let's talk.",
   heroBody:
     "Speak to our technical team about chemistry, dosing or a site survey. Every enquiry is answered within one business day.",
-  mapEmbed: "",
+  mapEmbed: MAP_EMBED,
 };

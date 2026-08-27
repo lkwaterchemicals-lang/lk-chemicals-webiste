@@ -17,7 +17,8 @@
 // dashboard is recommendable without a deploy.
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { listDocsRest } from "@/lib/firestore-rest";
+import { fetchDocRest, listDocsRest } from "@/lib/firestore-rest";
+import { chatbotContent, type ChatbotContent, type ChatbotTerm } from "@/data/chatbot";
 
 // A CHAIN, not one model. Measured against this key: gemini-flash-latest
 // answered 0/6 (all 503 "high demand", ~15s just to fail) while the lite models
@@ -145,9 +146,63 @@ async function catalog(): Promise<Catalog> {
   return catalogCache;
 }
 
+/* ------------------------------------------------------------------- voice */
+
+// What the assistant is allowed to say, edited in Admin → Website content →
+// AI assistant and stored at pages/chatbot. Cached briefly: an edit should
+// reach live conversations within minutes, not require a deploy, but every
+// message must not pay for a Firestore read.
+let voiceCache: { value: ChatbotContent; at: number; ttl: number } | null = null;
+const VOICE_TTL = 5 * 60 * 1000;
+// fetchDocRest returns null for a timeout and for "never saved" alike, so a
+// blip is not allowed to pin the built-in wording in place for five minutes.
+const VOICE_RETRY_TTL = 45 * 1000;
+
+async function voice(): Promise<ChatbotContent> {
+  if (voiceCache && Date.now() - voiceCache.at < voiceCache.ttl) return voiceCache.value;
+  const doc = await fetchDocRest("pages", "chatbot");
+  voiceCache = {
+    value: { ...chatbotContent, ...((doc ?? {}) as Partial<ChatbotContent>) },
+    at: Date.now(),
+    ttl: doc ? VOICE_TTL : VOICE_RETRY_TTL,
+  };
+  return voiceCache.value;
+}
+
+/** The house vocabulary, as prompt text.
+ *
+ * This is the reason the dashboard page exists. The assistant writes its own
+ * sentences and its own quick replies, so no amount of editing a button list
+ * would stop it saying "oxygen removal" — the wording has to be a rule it
+ * carries into every turn. The client owns the chemistry, so the client owns
+ * this list. */
+function glossary(terms: ChatbotTerm[] | undefined): string {
+  const rows = (terms ?? [])
+    .map((t) => {
+      const preferred = str(t?.preferred);
+      if (!preferred) return "";
+      const avoid = str(t?.avoid)
+        .split(",")
+        .map((a) => a.trim())
+        .filter(Boolean)
+        .map((a) => `"${a}"`)
+        .join(" or ");
+      const note = str(t?.note);
+      return [`- Say "${preferred}"`, avoid && `never ${avoid}`, note && `(${note})`]
+        .filter(Boolean)
+        .join(" — ");
+    })
+    .filter(Boolean);
+
+  if (!rows.length) return "";
+  return `HOUSE TERMINOLOGY — LK Chemicals' own wording. Spell these exactly as written, both in
+"reply" and in "suggestions", in place of any synonym you would otherwise reach for.
+${rows.join("\n")}`;
+}
+
 /* ------------------------------------------------------------ instructions */
 
-function systemPrompt(catalogText: string): string {
+function systemPrompt(catalogText: string, v: ChatbotContent): string {
   return `You are "LK Assist", the sales engineer on the website of LK Chemicals Pvt. Ltd. —
 an ISO 9001:2015 manufacturer of industrial water-treatment chemicals in Cherlapally,
 Hyderabad, serving Telangana, Andhra Pradesh, Karnataka, Tamil Nadu and Maharashtra since 2013.
@@ -202,6 +257,16 @@ HARD RULES
   team confirms against a water analysis.
 - Never quote a price, promise delivery, or offer discounts — those belong to the sales team.
 - Plain text only in "reply": no markdown, asterisks, backticks or bullet characters.
+
+${[
+  glossary(v.terms),
+  str(v.guidance) &&
+    `INSTRUCTIONS FROM LK CHEMICALS — these come from the company itself and outrank the style
+guidance above, though never the HARD RULES.
+${str(v.guidance)}`,
+]
+  .filter(Boolean)
+  .join("\n\n")}
 
 ${catalogText}`;
 }
@@ -411,14 +476,13 @@ export const Route = createFileRoute("/api/chat")({
 
         if (contents.length === 0) return json({ error: "Nothing to answer." }, 400);
 
-        let cat: Catalog | null = null;
-        try {
-          cat = await catalog();
-        } catch {
-          // A catalog read failure must not take the assistant down; it answers
-          // without product grounding and steers to the sales team instead.
-          cat = null;
-        }
+        // Both reads are cached and neither is allowed to take the assistant
+        // down: without the catalog it answers ungrounded and steers to the
+        // team, without the document it falls back to the built-in wording.
+        const [cat, v] = await Promise.all([
+          catalog().catch(() => null),
+          voice().catch(() => chatbotContent),
+        ]);
 
         const result = await generate({
           contents,
@@ -428,6 +492,7 @@ export const Route = createFileRoute("/api/chat")({
                 text: systemPrompt(
                   cat?.text ??
                     "PRODUCTS: (catalog unavailable right now — do not name specific products)",
+                  v,
                 ),
               },
             ],
@@ -462,21 +527,14 @@ export const Route = createFileRoute("/api/chat")({
             });
           }
           case "blocked":
-            return json({
-              reply: "I can't help with that one. Ask me about water treatment and I'm all yours.",
-              suggestions: ["Talk to sales"],
-              products: [],
-            });
+            // No chips here: a chip sends its text to the model, and there is
+            // nothing useful to ask it. The WhatsApp button below the composer
+            // is already the way out.
+            return json({ reply: v.offTopicMessage, suggestions: [], products: [] });
           case "busy":
-            return json(
-              {
-                error:
-                  "Our assistant is busy right now. Try again in a few seconds — or tap Contact Sales to reach the team directly.",
-              },
-              503,
-            );
+            return json({ error: v.busyMessage }, 503);
           default:
-            return json({ error: "The assistant is unavailable right now." }, 502);
+            return json({ error: v.errorMessage }, 502);
         }
       },
     },

@@ -27,6 +27,7 @@ import {
   type GalleryContent,
   type ContactContent,
 } from "@/data/site";
+import { chatbotContent, type ChatbotContent } from "@/data/chatbot";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -72,3 +73,4 @@ export const useServicesContent = () => usePageDoc<ServicesContent>("services", 
 export const useProductsContent = () => usePageDoc<ProductsContent>("products", productsContent);
 export const useGalleryContent = () => usePageDoc<GalleryContent>("gallery", galleryContent);
 export const useContactContent = () => usePageDoc<ContactContent>("contact", contactContent);
+export const useChatbotContent = () => usePageDoc<ChatbotContent>("chatbot", chatbotContent);

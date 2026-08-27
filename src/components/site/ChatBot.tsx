@@ -15,6 +15,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, MessageSquareText, RefreshCw, Send, Sparkles, X } from "lucide-react";
 import logoUrl from "@/assets/lk-logo.png";
 import { useWaLink } from "@/lib/content";
+import { useChatbotContent } from "@/lib/pages";
 import { WhatsAppIcon } from "./WhatsApp";
 
 type ProductCard = {
@@ -36,23 +37,10 @@ type Msg = {
 const STORAGE_KEY = "lk-assist-thread";
 const MAX_STORED = 30;
 
-const GREETING = "Hi! I'm LK Assist. Tell me what you're treating and I'll find the right product.";
-
-/** First tap. Phrased the way a customer would say it, not the way a chemist
- * would — "water is hard" beats "elevated feed-water hardness". */
-const STARTERS = [
-  "RO plant water problem",
-  "Boiler scale",
-  "Cooling tower",
-  "Hard water in my hotel",
-];
-
-/** An explicit way in for people who would not guess they can just type Telugu. */
-const LANGUAGES = [
-  { label: "English", seed: "Hello, I need help choosing a product." },
-  { label: "తెలుగు", seed: "Namaskaram, naaku oka product kavali." },
-  { label: "हिंदी", seed: "Namaste, mujhe ek product chahiye." },
-];
+// Every word the panel says — greeting, buttons, languages, CTAs — comes from
+// Admin → Website content → AI assistant. The built-ins in src/data/chatbot.ts
+// render first so it is never blank, then the saved document replaces them.
+// Chemical terminology belongs to the client, not to this file.
 
 /* ------------------------------------------------------------- rendering */
 
@@ -74,6 +62,8 @@ function plain(text: string): string {
   );
 }
 
+const LANG_CHIP = (on: boolean) => `lkc-chip lkc-chip-quiet${on ? " is-on" : ""}`;
+
 /* ------------------------------------------------------------------ panel */
 
 export function ChatBot() {
@@ -87,6 +77,16 @@ export function ChatBot() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const reduced = useReducedMotion();
   const waHref = useWaLink();
+  const { data: content } = useChatbotContent();
+  // Which language button is active, or null for the default opening screen.
+  const [lang, setLang] = useState<number | null>(null);
+
+  // Memoised because pickLanguage closes over it; a fresh [] every render would
+  // give that callback a new identity on every keystroke in the composer.
+  const languages = useMemo(() => content.languages ?? [], [content.languages]);
+  const active = lang === null ? null : languages[lang];
+  const greeting = active?.greeting?.trim() || content.greeting;
+  const starters = (active?.starters?.length ? active.starters : content.starters) ?? [];
 
   useEffect(() => setMounted(true), []);
 
@@ -152,7 +152,7 @@ export function ChatBot() {
           error?: string;
         };
         if (!res.ok || data.error) {
-          setError(data.error ?? "The assistant is unavailable right now.");
+          setError(data.error ?? content.errorMessage);
         } else if (data.reply) {
           setMessages((m) => [
             ...m,
@@ -170,7 +170,21 @@ export function ChatBot() {
         setBusy(false);
       }
     },
-    [busy, messages],
+    [busy, messages, content.errorMessage],
+  );
+
+  /** Tapping a language switches the opening screen into it when the client has
+   * translated one — buttons in your own language beat a canned opening line.
+   * With nothing translated, send the seed instead, which is what tells the
+   * assistant which language to answer in. */
+  const pickLanguage = useCallback(
+    (i: number) => {
+      const l = languages[i];
+      if (!l) return;
+      setLang(i);
+      if (!l.starters?.length) void send(l.seed);
+    },
+    [languages, send],
   );
 
   /** Hands the qualified conversation to sales, so nobody repeats themselves. */
@@ -189,6 +203,7 @@ export function ChatBot() {
   const reset = () => {
     setMessages([]);
     setError(null);
+    setLang(null);
     try {
       sessionStorage.removeItem(STORAGE_KEY);
     } catch {
@@ -218,7 +233,7 @@ export function ChatBot() {
           />
           <motion.div
             role="dialog"
-            aria-label="LK Assist — chat with our sales engineer"
+            aria-label={`${content.title} — chat with our sales engineer`}
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.98 }}
@@ -230,9 +245,9 @@ export function ChatBot() {
                 <img src={logoUrl} alt="" width={320} height={279} />
               </span>
               <span className="lkc-head-text">
-                <span className="lkc-head-title">LK Assist</span>
+                <span className="lkc-head-title">{content.title}</span>
                 <span className="lkc-head-sub">
-                  <i className="lkc-dot" aria-hidden /> Usually replies instantly
+                  <i className="lkc-dot" aria-hidden /> {content.subtitle}
                 </span>
               </span>
               <div className="lkc-head-actions">
@@ -259,37 +274,42 @@ export function ChatBot() {
             </header>
 
             <div className="lkc-log" ref={logRef}>
-              <div className="lkc-msg lkc-msg-bot">{GREETING}</div>
+              <div className="lkc-msg lkc-msg-bot">{greeting}</div>
 
               {messages.length === 0 && (
                 <>
-                  <div className="lkc-chips" role="group" aria-label="Common topics">
-                    {STARTERS.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => void send(s)}
-                        className="lkc-chip lkc-chip-lg"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="lkc-lang">
-                    <span className="lkc-lang-label">Prefer another language?</span>
-                    <span className="lkc-chips">
-                      {LANGUAGES.map((l) => (
+                  {starters.length > 0 && (
+                    <div className="lkc-chips" role="group" aria-label="Common topics">
+                      {starters.map((s) => (
                         <button
-                          key={l.label}
+                          key={s}
                           type="button"
-                          onClick={() => void send(l.seed)}
-                          className="lkc-chip lkc-chip-quiet"
+                          onClick={() => void send(s)}
+                          className="lkc-chip lkc-chip-lg"
                         >
-                          {l.label}
+                          {s}
                         </button>
                       ))}
-                    </span>
-                  </div>
+                    </div>
+                  )}
+                  {languages.length > 1 && (
+                    <div className="lkc-lang">
+                      <span className="lkc-lang-label">{content.languagePrompt}</span>
+                      <span className="lkc-chips">
+                        {languages.map((l, i) => (
+                          <button
+                            key={l.label}
+                            type="button"
+                            onClick={() => pickLanguage(i)}
+                            aria-pressed={i === lang}
+                            className={LANG_CHIP(i === lang)}
+                          >
+                            {l.label}
+                          </button>
+                        ))}
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -317,7 +337,7 @@ export function ChatBot() {
                         <span className="lkc-card-name">{p.name}</span>
                         {p.blurb && <span className="lkc-card-blurb">{p.blurb}</span>}
                         <span className="lkc-card-cta">
-                          View product <ArrowRight className="h-3.5 w-3.5" />
+                          {content.productCta} <ArrowRight className="h-3.5 w-3.5" />
                         </span>
                       </span>
                     </Link>
@@ -374,8 +394,8 @@ export function ChatBot() {
                     }
                   }}
                   rows={1}
-                  placeholder="Type your question…"
-                  aria-label="Message LK Assist"
+                  placeholder={content.placeholder}
+                  aria-label={`Message ${content.title}`}
                   className="lkc-input"
                 />
                 <button
@@ -398,7 +418,7 @@ export function ChatBot() {
                 style={{ color: "#fff" }}
               >
                 <WhatsAppIcon className="h-4 w-4" />
-                Talk to a person on WhatsApp
+                {content.salesCta}
               </a>
             </div>
           </motion.div>
@@ -413,7 +433,7 @@ export function ChatBot() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label={open ? "Close LK Assist" : "Chat with LK Assist"}
+        aria-label={open ? `Close ${content.title}` : `Chat with ${content.title}`}
         className={`lkc-launcher ${open ? "is-open" : ""}`}
       >
         {open ? (

@@ -2848,6 +2848,14 @@ body[data-chat="1"] .wa-cluster {
   opacity: 1;
   background: color-mix(in oklab, currentColor 8%, transparent);
 }
+/* The chosen language stays lit, so it is obvious which one the panel is in. */
+.lkc-chip-quiet.is-on {
+  opacity: 1;
+  color: var(--royal);
+  background: color-mix(in oklab, var(--royal) 12%, transparent);
+  border-color: color-mix(in oklab, var(--royal) 42%, transparent);
+  font-weight: 600;
+}
 
 .lkc-lang {
   display: flex;

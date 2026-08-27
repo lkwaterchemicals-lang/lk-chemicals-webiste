@@ -345,7 +345,7 @@ export function PageContentEditor({ schema }: { schema: PageSchema }) {
     // Image fields inside read this to tailor their AI prompt to the page and
     // the section they sit in — see src/lib/image-prompts.ts.
     <RecordContext.Provider value={{ module: `page:${schema.id}`, record: values ?? {} }}>
-      <div className="space-y-4 max-w-4xl">
+      <div className={`space-y-4 ${schema.preview ? "max-w-6xl" : "max-w-4xl"}`}>
         <PageHeader
           title={schema.label}
           sub={schema.description}
@@ -371,40 +371,59 @@ export function PageContentEditor({ schema }: { schema: PageSchema }) {
             <SkeletonRows n={6} />
           </div>
         ) : (
-          <div className="space-y-4">
-            {schema.sections.map((sec, si) => (
-              <Card key={sec.title} className="a-rise" title={sec.title}>
-                <div
-                  className="grid gap-4 sm:grid-cols-2"
-                  style={{ animationDelay: `${si * 40}ms` }}
+          <div
+            className={
+              schema.preview ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] items-start" : ""
+            }
+          >
+            {schema.preview && (
+              // Above the form on a phone (you look before you edit), pinned
+              // beside it on a laptop so it tracks what you are typing.
+              <div className="lg:order-2 lg:sticky lg:top-4 space-y-2">
+                <span
+                  className="block text-[11px] font-semibold uppercase tracking-wide"
+                  style={{ color: "var(--a-text3)" }}
                 >
-                  {sec.fields.map((f) => (
-                    <div
-                      key={f.key}
-                      className={
-                        f.full ||
-                        f.type === "group" ||
-                        f.type === "imagelist" ||
-                        f.type === "list" ||
-                        f.type === "textarea" ||
-                        f.type === "image" ||
-                        f.type === "file"
-                          ? "sm:col-span-2"
-                          : ""
-                      }
-                    >
-                      <Field label={f.label} hint={f.hint}>
-                        <FieldRenderer
-                          field={f}
-                          value={values[f.key]}
-                          onChange={(v) => setField(f.key, v)}
-                        />
-                      </Field>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            ))}
+                  Live preview
+                </span>
+                {schema.preview(values)}
+              </div>
+            )}
+            <div className="space-y-4 lg:order-1 min-w-0">
+              {schema.sections.map((sec, si) => (
+                <Card key={sec.title} className="a-rise" title={sec.title}>
+                  <div
+                    className="grid gap-4 sm:grid-cols-2"
+                    style={{ animationDelay: `${si * 40}ms` }}
+                  >
+                    {sec.fields.map((f) => (
+                      <div
+                        key={f.key}
+                        className={
+                          f.full ||
+                          f.type === "group" ||
+                          f.type === "imagelist" ||
+                          f.type === "list" ||
+                          f.type === "textarea" ||
+                          f.type === "image" ||
+                          f.type === "file"
+                            ? "sm:col-span-2"
+                            : ""
+                        }
+                      >
+                        <Field label={f.label} hint={f.hint}>
+                          <FieldRenderer
+                            field={f}
+                            value={values[f.key]}
+                            onChange={(v) => setField(f.key, v)}
+                          />
+                        </Field>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 

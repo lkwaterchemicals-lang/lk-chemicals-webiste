@@ -2,8 +2,9 @@
 // every public page, grouped into sections. The page-editor renders forms from
 // this and saves each page as a `pages/<id>` Firestore document. Field keys map
 // 1:1 to the shapes in src/data/site.ts (which provide the built-in defaults).
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Globe, Home, Info, Wrench, Package, Phone } from "lucide-react";
+import { Bot, Globe, Home, Info, Wrench, Package, Phone } from "lucide-react";
 import { ICON_NAMES } from "@/lib/icons";
 import {
   globalContent,
@@ -13,6 +14,8 @@ import {
   productsContent,
   contactContent,
 } from "@/data/site";
+import { chatbotContent } from "@/data/chatbot";
+import { ChatbotPreview } from "./chatbot-preview";
 
 export type ContentFieldType =
   "text" | "textarea" | "image" | "imagelist" | "list" | "group" | "select" | "boolean" | "file"; // single uploaded document (PDF certificate, datasheet…)
@@ -38,6 +41,10 @@ export type ContentSection = { title: string; fields: ContentField[] };
 
 export type PageSchema = {
   id: string; // pages/<id> doc + route param
+  /** Optional live rendering of the unsaved values, shown beside the form. Worth
+   * it where the fields are wording rather than layout and the result is hard
+   * to picture from the inputs alone. */
+  preview?: (values: Record<string, unknown>) => ReactNode;
   label: string;
   description: string;
   icon: LucideIcon;
@@ -492,6 +499,169 @@ export const PAGE_SCHEMAS: PageSchema[] = [
           },
           // The heading above the map is the registered address from Settings —
           // one source of truth, and never a stale coordinate pair.
+        ],
+      },
+    ],
+  },
+  // Everything LK Assist says. The terminology section is the point of the whole
+  // page: the assistant writes its own quick replies, so the only way to hold it
+  // to house vocabulary ("Oxygen Scavenger", never "oxygen removal") is to give
+  // the domain expert a list it must follow. See src/data/chatbot.ts.
+  {
+    id: "chatbot",
+    label: "AI assistant",
+    description: "Everything LK Assist says — greeting, buttons, terminology and languages.",
+    icon: Bot,
+    fallback: chatbotContent as unknown as Record<string, unknown>,
+    preview: (values) => <ChatbotPreview value={values} />,
+    sections: [
+      {
+        title: "Terminology the assistant must use",
+        fields: [
+          {
+            key: "terms",
+            label: "House terms",
+            type: "group",
+            itemNoun: "term",
+            itemTitleKey: "preferred",
+            full: true,
+            hint: "The assistant writes its own wording — this is what holds it to yours.",
+            itemFields: [
+              {
+                key: "preferred",
+                label: "Correct term",
+                type: "text",
+                placeholder: "Oxygen Scavenger",
+                hint: "Spelled exactly as you want customers to read it",
+              },
+              {
+                key: "avoid",
+                label: "Never say instead",
+                type: "text",
+                placeholder: "oxygen removal, deoxygenator",
+                hint: "Comma separated",
+              },
+              {
+                key: "note",
+                label: "When it applies (optional)",
+                type: "textarea",
+                placeholder: "Boiler feed water chemistry that removes dissolved oxygen.",
+              },
+            ],
+          },
+          {
+            key: "guidance",
+            label: "Extra instructions",
+            type: "textarea",
+            full: true,
+            hint: "Anything else the assistant should always or never do. Plain sentences.",
+            placeholder:
+              "Always mention that dosage is confirmed against a water analysis. Never suggest a competitor product.",
+          },
+        ],
+      },
+      {
+        title: "Opening screen",
+        fields: [
+          { key: "title", label: "Assistant name", type: "text", placeholder: "LK Assist" },
+          {
+            key: "subtitle",
+            label: "Status line",
+            type: "text",
+            placeholder: "Usually replies instantly",
+          },
+          {
+            key: "greeting",
+            label: "Welcome message",
+            type: "textarea",
+            full: true,
+          },
+          {
+            key: "starters",
+            label: "Opening buttons",
+            type: "list",
+            full: true,
+            hint: "One per line. What customers tap first, in their words, not chemistry terms.",
+          },
+          {
+            key: "placeholder",
+            label: "Type-box hint",
+            type: "text",
+            placeholder: "Type your question…",
+          },
+        ],
+      },
+      {
+        title: "Languages",
+        fields: [
+          {
+            key: "languagePrompt",
+            label: "Language row label",
+            type: "text",
+            full: true,
+            placeholder: "Prefer another language?",
+          },
+          {
+            key: "languages",
+            label: "Languages offered",
+            type: "group",
+            itemNoun: "language",
+            itemTitleKey: "label",
+            full: true,
+            hint: "Tapping one sends its opening line, which is what sets the reply language.",
+            itemFields: [
+              {
+                key: "label",
+                label: "Button text",
+                type: "text",
+                placeholder: "తెలుగు",
+                hint: "Write it in that language",
+              },
+              {
+                key: "seed",
+                label: "Opening line sent",
+                type: "text",
+                placeholder: "Namaskaram, naaku oka product kavali.",
+              },
+              { key: "greeting", label: "Welcome message (optional)", type: "textarea" },
+              {
+                key: "starters",
+                label: "Opening buttons (optional)",
+                type: "list",
+                hint: "One per line",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Buttons & system messages",
+        fields: [
+          {
+            key: "salesCta",
+            label: "WhatsApp button",
+            type: "text",
+            placeholder: "Talk to a person on WhatsApp",
+          },
+          {
+            key: "productCta",
+            label: "Product card button",
+            type: "text",
+            placeholder: "View product",
+          },
+          {
+            key: "busyMessage",
+            label: "When the assistant is busy",
+            type: "textarea",
+            full: true,
+          },
+          { key: "errorMessage", label: "When something breaks", type: "textarea", full: true },
+          {
+            key: "offTopicMessage",
+            label: "When asked something unrelated",
+            type: "textarea",
+            full: true,
+          },
         ],
       },
     ],

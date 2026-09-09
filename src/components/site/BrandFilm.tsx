@@ -317,10 +317,12 @@ export function BrandFilm({
   // drop-shadow, not a filled pill: over a strong scrim a bare white glyph
   // reads on any frame the film happens to be showing, and stays out of the
   // way of the picture in a way a row of solid chips would not.
+  // The focus ring comes from the .lk-on-film rules in styles.css rather than
+  // a utility here: the global :focus-visible is unlayered, so outline-none
+  // loses to it and a Tailwind ring would just double up on the outline.
   const iconBtn =
     "grid place-items-center rounded-full text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] " +
-    "transition duration-200 hover:bg-white/20 focus-visible:outline-none " +
-    "focus-visible:ring-2 focus-visible:ring-white/80";
+    "transition duration-200 hover:bg-white/20";
 
   return (
     // The host owns the 16:9 box, so the page keeps its shape even while the
@@ -480,9 +482,9 @@ export function BrandFilm({
                 if (e.key === "Home") seekTo(0);
                 if (e.key === "End") seekTo(0.999);
               }}
-              className="group/bar relative flex h-4 w-full cursor-pointer touch-none items-center focus-visible:outline-none"
+              className="group/bar relative flex h-4 w-full cursor-pointer touch-none items-center"
             >
-              <div className="relative h-[3px] w-full rounded-full bg-white/25 group-focus-visible/bar:ring-2 group-focus-visible/bar:ring-white/70">
+              <div className="relative h-[3px] w-full rounded-full bg-white/25">
                 <div
                   className="absolute inset-y-0 left-0 rounded-full bg-white/35"
                   style={{ width: `${duration ? (buffered / duration) * 100 : 0}%` }}

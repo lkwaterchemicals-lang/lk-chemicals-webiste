@@ -1505,6 +1505,22 @@ a:hover .brand-plate {
   border-radius: 4px;
 }
 
+/* The rule above is unlayered, so it beats any Tailwind utility: it squares
+   every focused element off at 4px and paints the ring cyan. That is right
+   for the page and wrong on top of a film, where the controls are circular
+   and the only colour that survives arbitrary footage is white. Same escape
+   the nav orbs take a few hundred lines up, for the same reason. */
+.lk-on-film :focus-visible {
+  outline-color: #fff;
+  outline-offset: 2px;
+}
+.lk-on-film button:focus-visible {
+  border-radius: 9999px;
+}
+.lk-on-film [role="slider"]:focus-visible {
+  border-radius: 6px;
+}
+
 /* =========================================================   GLOBAL LAYER + THEME HARDENING
    Single source of truth for stacking, nav clearance, ghost-word
    safety, form legibility, and light-mode scrim inversion.

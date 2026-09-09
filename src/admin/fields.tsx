@@ -684,10 +684,13 @@ export function FileField({
   value,
   onChange,
   accept = "application/pdf",
+  noun = "PDF",
 }: {
   value: string;
   onChange: (url: string) => void;
   accept?: string;
+  /** What the upload button offers — the same slot takes a film too. */
+  noun?: string;
 }) {
   const [progress, setProgress] = useState<number | null>(null);
   const [editUrl, setEditUrl] = useState(false);
@@ -748,11 +751,11 @@ export function FileField({
       ) : (
         <div className="flex flex-wrap items-center gap-2">
           <Btn size="sm" icon={UploadCloud} onClick={() => fileRef.current?.click()}>
-            {progress !== null ? `Uploading ${progress}%` : "Upload PDF"}
+            {progress !== null ? `Uploading ${progress}%` : `Upload ${noun}`}
           </Btn>
           <input
             className="a-input !py-1.5 !text-xs flex-1 min-w-[10rem]"
-            placeholder="…or paste a document URL"
+            placeholder={`…or paste a ${noun} URL`}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onBlur={() => setEditUrl(false)}

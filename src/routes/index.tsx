@@ -5,9 +5,10 @@ import { ArrowDown, ArrowLeft, ArrowRight, Droplets, Quote, Star } from "lucide-
 import { useCategories, useSiteSettings, useTestimonials, useWaLink } from "@/lib/content";
 import { useHomeContent } from "@/lib/pages";
 import { iconByName } from "@/lib/icons";
-import { homeContent, type WhyItem } from "@/data/site";
+import { homeContent, type Stat, type WhyItem } from "@/data/site";
 import { fetchDocRest } from "@/lib/firestore-rest";
 import { optimizedImageUrl } from "@/lib/media";
+import { cn } from "@/lib/utils";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { Waterline } from "@/components/site/Waterline";
 import { GhostWord, MicroLabel } from "@/components/site/GhostWord";
@@ -16,6 +17,7 @@ import { RequestCallButton } from "@/components/site/RequestCall";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { WaterCore } from "@/components/site/WaterCore";
+import { BrandFilm } from "@/components/site/BrandFilm";
 
 import { InfiniteReviewCarousel } from "@/components/site/InfiniteReviewCarousel";
 import { telHref } from "@/lib/contact";
@@ -369,10 +371,35 @@ function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
   );
 }
 
+function WhoStats({ stats, className }: { stats: Stat[]; className?: string }) {
+  return (
+    <div className={cn("grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8", className)}>
+      {stats.map((s) => (
+        <div key={s.label}>
+          <div className="display-xl text-3xl sm:text-4xl md:text-5xl">
+            <span className="grad-leaf-text">
+              <Counter
+                to={parseInt(String(s.value).replace(/\D/g, ""), 10) || 0}
+                suffix={s.suffix}
+              />
+            </span>
+          </div>
+          <div className="mt-2 micro-label opacity-60 text-[10px] sm:text-[11px] leading-tight">
+            {s.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function WhoWeAre() {
   const { data: c } = useHomeContent();
   const imgs = c.whoImages;
   const img = (k: number) => imgs[k] ?? imgs[0] ?? "";
+  // The film is the section's right-hand column whenever there is one; the
+  // photo collage below is what an admin sees if they clear the field.
+  const film = (c.whoVideo ?? "").trim();
   return (
     <section className="relative section-light overflow-hidden py-32">
       <GhostWord className="absolute top-2 left-1/2 -translate-x-1/2 text-[22vw] opacity-100">
@@ -382,8 +409,20 @@ function WhoWeAre() {
         <MicroLabel n="02" className="!text-royal">
           {c.whoLabel}
         </MicroLabel>
-        <div className="mt-8 grid gap-12 lg:gap-16 lg:grid-cols-12 items-start">
-          <div className="lg:col-span-7">
+        <div
+          className={cn(
+            "mt-8 grid gap-12 lg:gap-16 lg:grid-cols-12",
+            // Top-aligning a 16:9 film against a column of display type left
+            // 473px of dead air beneath it at 1440px; centring reads as a
+            // deliberate pairing. The collage fallback keeps the top alignment
+            // its staggered rotations were composed around.
+            film ? "items-center" : "items-start",
+          )}
+        >
+          {/* Film above the copy on phones and tablets, beside it from lg up.
+              Source order stays copy-first, so a screen reader reaches the
+              heading before the film that illustrates it. */}
+          <div className={film ? "order-2 lg:order-1 lg:col-span-6" : "lg:col-span-7"}>
             <h2
               className="display-xl leading-[0.95]"
               style={{ fontSize: "clamp(2.25rem, 8vw, 5.5rem)" }}
@@ -391,98 +430,104 @@ function WhoWeAre() {
               {c.whoHeadingLead} <span className="grad-leaf-text">{c.whoHeadingAccent}</span>
             </h2>
             <p className="mt-8 max-w-xl text-lg text-ink/70 dark:text-white/70">{c.whoBody}</p>
-            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-              {c.stats.map((s) => (
-                <div key={s.label}>
-                  <div className="display-xl text-3xl sm:text-4xl md:text-5xl">
-                    <span className="grad-leaf-text">
-                      <Counter
-                        to={parseInt(String(s.value).replace(/\D/g, ""), 10) || 0}
-                        suffix={s.suffix}
-                      />
-                    </span>
-                  </div>
-                  <div className="mt-2 micro-label opacity-60 text-[10px] sm:text-[11px] leading-tight">
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Beside the collage the stats stay in the column, as they always
+                have. Beside the film they move below both columns — half a
+                grid is too narrow and "13+ yrs" broke onto two lines in a
+                120px box. */}
+            {!film && <WhoStats stats={c.stats} className="mt-12" />}
           </div>
-          {/* Mobile: clean 3-image grid; Desktop: overlapping collage */}
-          <div className="lg:col-span-5">
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:hidden">
-              <motion.img
-                loading="lazy"
-                decoding="async"
-                src={img(0)}
-                alt="Manufacturing plant"
-                className="h-48 sm:h-56 w-full rounded-2xl object-cover shadow-xl"
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+          {film ? (
+            <motion.div
+              className="order-1 lg:order-2 lg:col-span-6"
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              // Vertical-only margin, for the reason spelled out on Counter.
+              viewport={{ once: true, margin: "-10% 0px" }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <BrandFilm
+                src={film}
+                // Describes this film, so it has to be revised with the film.
+                label="LK Chemicals brand film — founder and CEO K. Shiva Krishna on the Cherlapally plant, the laboratory and the field service team"
               />
-              <motion.img
-                loading="lazy"
-                decoding="async"
-                src={img(1)}
-                alt="Laboratory"
-                className="h-48 sm:h-56 w-full rounded-2xl object-cover shadow-xl"
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-              />
-              <motion.img
-                loading="lazy"
-                decoding="async"
-                src={img(2)}
-                alt="Water droplet"
-                className="col-span-2 h-40 sm:h-48 w-full rounded-2xl object-cover shadow-xl"
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-              />
+            </motion.div>
+          ) : (
+            /* Mobile: clean 3-image grid; Desktop: overlapping collage */
+            <div className="lg:col-span-5">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:hidden">
+                <motion.img
+                  loading="lazy"
+                  decoding="async"
+                  src={img(0)}
+                  alt="Manufacturing plant"
+                  className="h-48 sm:h-56 w-full rounded-2xl object-cover shadow-xl"
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                />
+                <motion.img
+                  loading="lazy"
+                  decoding="async"
+                  src={img(1)}
+                  alt="Laboratory"
+                  className="h-48 sm:h-56 w-full rounded-2xl object-cover shadow-xl"
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.1 }}
+                />
+                <motion.img
+                  loading="lazy"
+                  decoding="async"
+                  src={img(2)}
+                  alt="Water droplet"
+                  className="col-span-2 h-40 sm:h-48 w-full rounded-2xl object-cover shadow-xl"
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 }}
+                />
+              </div>
+              <div className="hidden lg:block relative h-[clamp(340px,34vw,460px)]">
+                <motion.img
+                  loading="lazy"
+                  decoding="async"
+                  src={img(0)}
+                  alt="Manufacturing plant"
+                  className="absolute top-0 left-0 h-72 w-72 rounded-3xl object-cover shadow-2xl hover-lift"
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  style={{ transform: "rotate(-4deg)" }}
+                />
+                <motion.img
+                  loading="lazy"
+                  decoding="async"
+                  src={img(1)}
+                  alt="Laboratory"
+                  className="absolute top-20 right-0 h-60 w-48 rounded-3xl object-cover shadow-2xl hover-lift"
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.15 }}
+                  style={{ transform: "rotate(6deg)" }}
+                />
+                <motion.img
+                  loading="lazy"
+                  decoding="async"
+                  src={img(2)}
+                  alt="Water droplet"
+                  className="absolute bottom-0 left-16 h-40 w-56 rounded-3xl object-cover shadow-2xl hover-lift"
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 }}
+                />
+              </div>
             </div>
-            <div className="hidden lg:block relative h-[clamp(340px,34vw,460px)]">
-              <motion.img
-                loading="lazy"
-                decoding="async"
-                src={img(0)}
-                alt="Manufacturing plant"
-                className="absolute top-0 left-0 h-72 w-72 rounded-3xl object-cover shadow-2xl hover-lift"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                style={{ transform: "rotate(-4deg)" }}
-              />
-              <motion.img
-                loading="lazy"
-                decoding="async"
-                src={img(1)}
-                alt="Laboratory"
-                className="absolute top-20 right-0 h-60 w-48 rounded-3xl object-cover shadow-2xl hover-lift"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.15 }}
-                style={{ transform: "rotate(6deg)" }}
-              />
-              <motion.img
-                loading="lazy"
-                decoding="async"
-                src={img(2)}
-                alt="Water droplet"
-                className="absolute bottom-0 left-16 h-40 w-56 rounded-3xl object-cover shadow-2xl hover-lift"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-              />
-            </div>
-          </div>
+          )}
         </div>
+        {film && <WhoStats stats={c.stats} className="mt-14 lg:mt-20" />}
       </div>
     </section>
   );

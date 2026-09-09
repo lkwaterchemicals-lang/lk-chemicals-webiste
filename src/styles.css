@@ -253,9 +253,9 @@
    `.light` sits on <html>. Without the fence, a light public theme repainted
    the dark admin's inputs with navy text on a near-black field — the console
    looked like it was refusing typed text. The admin owns its own colours. */
-.light .text-white:not(.adm *),
-.light [class*="text-white/"]:not(.adm *),
-.light [class*=":text-white"]:not(.adm *) {
+.light .text-white:not(.adm *):not(.lk-on-film *),
+.light [class*="text-white/"]:not(.adm *):not(.lk-on-film *),
+.light [class*=":text-white"]:not(.adm *):not(.lk-on-film *) {
   color: var(--ink);
 }
 
@@ -270,9 +270,16 @@
   border-color: var(--hairline);
 }
 
-.light [class*="bg-white/"]:not(.adm *) {
+.light [class*="bg-white/"]:not(.adm *):not(.lk-on-film *) {
   background-color: color-mix(in oklab, white 92%, var(--ink) 4%);
 }
+
+/* …and the second fence, `.lk-on-film`, for the same reason as the first.
+   Video chrome is painted onto the film itself, which is a dark surface in
+   either theme, so a play icon there must stay white even while the page
+   around it is glacial. Without the fence the light theme repainted the
+   brand film's controls navy-on-white and the timecode vanished into the
+   burnt-in lower third. */
 
 /* Flip full-bleed ink backgrounds to glacial section bands */
 .light .bg-ink:not(.adm *),

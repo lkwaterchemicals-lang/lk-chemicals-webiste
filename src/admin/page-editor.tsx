@@ -68,7 +68,14 @@ function LeafInput({
     case "image":
       return <ImageField value={String(value ?? "")} onChange={onChange} fieldKey={field.key} />;
     case "file":
-      return <FileField value={String(value ?? "")} onChange={onChange} />;
+      return (
+        <FileField
+          value={String(value ?? "")}
+          onChange={onChange}
+          accept={field.accept}
+          noun={field.uploadNoun}
+        />
+      );
     case "select":
       return (
         <SelectWrap>

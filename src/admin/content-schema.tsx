@@ -27,6 +27,9 @@ export type ContentField = {
   hint?: string;
   placeholder?: string;
   options?: string[]; // select
+  /** file: what the picker accepts, and what the button calls it. */
+  accept?: string;
+  uploadNoun?: string;
   /** group: sub-fields for each item */
   itemFields?: ContentField[];
   /** group: singular noun for the add button / item header */
@@ -112,10 +115,19 @@ export const PAGE_SCHEMAS: PageSchema[] = [
           { key: "whoHeadingAccent", label: "Heading — accent part", type: "text" },
           { key: "whoBody", label: "Body", type: "textarea", full: true },
           {
+            key: "whoVideo",
+            label: "Brand film",
+            type: "file",
+            accept: "video/*",
+            uploadNoun: "film",
+            hint: "Plays muted on a loop beside the copy. Empty falls back to the collage.",
+            full: true,
+          },
+          {
             key: "whoImages",
             label: "Collage images",
             type: "imagelist",
-            hint: "Shown as a 3-image collage",
+            hint: "Fallback only — shown when there is no brand film",
             full: true,
           },
           {

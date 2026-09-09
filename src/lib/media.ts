@@ -43,6 +43,49 @@ export function cloudinaryPoster(videoUrl: string): string | null {
   return videoUrl.replace(/\.[a-z0-9]+(\?.*)?$/i, ".jpg");
 }
 
+/* ----------------------------------------------- cloudinary video delivery */
+
+const CLOUDINARY_VIDEO = /^(https?:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(.+)$/i;
+
+export type FilmSources = {
+  /** Adaptive HLS master listing a 1080p→270p ladder. Null off Cloudinary. */
+  hls: string | null;
+  /** One progressive file — what plays wherever HLS isn't native. */
+  file: string;
+  /** A frame of the film, delivered as an image. "" off Cloudinary. */
+  poster: string;
+};
+
+/**
+ * The three delivery URLs a brand film needs, derived from the single
+ * secure_url the database stores.
+ *
+ * `sp_auto` is Cloudinary's streaming profile: one .m3u8 master listing
+ * renditions from 1080p down to 270p that the player moves between as
+ * bandwidth changes. Safari and iOS play that natively; every other browser
+ * skips a source it cannot decode and lands on `file`, an f_auto:video,q_auto
+ * rendition capped at `width` — 23 MB against the 60 MB original.
+ *
+ * Callers must NOT put a `type` on the progressive <source>: f_auto:video can
+ * answer with WebM even though the URL ends .mp4, and a declared type that
+ * disagrees with the response is exactly how a source gets skipped.
+ *
+ * A non-Cloudinary URL (an admin pasting a link to a file hosted elsewhere)
+ * comes back as `file` alone, so the caller can fall back to its own still.
+ */
+export function filmSources(url: string, width = 1280, posterAt = 2): FilmSources {
+  const raw = (url ?? "").trim();
+  const m = raw.match(CLOUDINARY_VIDEO);
+  if (!m) return { hls: null, file: raw, poster: "" };
+  const [, prefix, rest] = m;
+  const stem = rest.replace(/\.[a-z0-9]+(\?.*)?$/i, "");
+  return {
+    hls: `${prefix}sp_auto/${stem}.m3u8`,
+    file: `${prefix}f_auto:video,q_auto,w_${width},c_limit/${stem}.mp4`,
+    poster: `${prefix}so_${posterAt},f_auto,q_auto,w_${width},c_limit/${stem}.jpg`,
+  };
+}
+
 /* ---------------------------------------------- cloudinary image delivery */
 
 // Admin uploads land on Cloudinary as full-size originals — often multi-MB

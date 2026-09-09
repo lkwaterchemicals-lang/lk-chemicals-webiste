@@ -45,7 +45,10 @@ export type HomeContent = {
   whoHeadingLead: string;
   whoHeadingAccent: string;
   whoBody: string;
+  /** Cloudinary secure_url of the brand film shown beside the copy. */
+  whoVideo: string;
   stats: Stat[];
+  /** Fallback collage — rendered only when whoVideo is empty. */
   whoImages: string[];
   makeHeading: string;
   serviceHeadingLead: string;
@@ -172,6 +175,7 @@ export const homeContent: HomeContent = {
     { value: 12, suffix: "", label: "Industries served" },
     { value: 70, suffix: "+", label: "Products & formulations" },
   ],
+  whoVideo: "https://res.cloudinary.com/zywyczxl/video/upload/v1788948922/lk-brand-film.mp4",
   whoImages: [plant, lab, droplet],
   makeHeading: "Every category. One formulary.",
   serviceHeadingLead: "We don't just supply.",

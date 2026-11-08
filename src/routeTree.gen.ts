@@ -25,6 +25,7 @@ import { Route as ShippingPolicyRouteImport } from './routes/shipping-policy'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as WarrantyPolicyRouteImport } from './routes/warranty-policy'
+import { Route as WaterTreatmentChemicalsHyderabadRouteImport } from './routes/water-treatment-chemicals-hyderabad'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
@@ -127,6 +128,12 @@ const WarrantyPolicyRoute = WarrantyPolicyRouteImport.update({
   path: '/warranty-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WaterTreatmentChemicalsHyderabadRoute =
+  WaterTreatmentChemicalsHyderabadRouteImport.update({
+    id: '/water-treatment-chemicals-hyderabad',
+    path: '/water-treatment-chemicals-hyderabad',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -250,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/warranty-policy': typeof WarrantyPolicyRoute
+  '/water-treatment-chemicals-hyderabad': typeof WaterTreatmentChemicalsHyderabadRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/careers': typeof AdminCareersRoute
@@ -288,6 +296,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/warranty-policy': typeof WarrantyPolicyRoute
+  '/water-treatment-chemicals-hyderabad': typeof WaterTreatmentChemicalsHyderabadRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/careers': typeof AdminCareersRoute
@@ -328,6 +337,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/warranty-policy': typeof WarrantyPolicyRoute
+  '/water-treatment-chemicals-hyderabad': typeof WaterTreatmentChemicalsHyderabadRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/careers': typeof AdminCareersRoute
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms-and-conditions'
     | '/warranty-policy'
+    | '/water-treatment-chemicals-hyderabad'
     | '/admin/activity'
     | '/admin/analytics'
     | '/admin/careers'
@@ -407,6 +418,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms-and-conditions'
     | '/warranty-policy'
+    | '/water-treatment-chemicals-hyderabad'
     | '/admin/activity'
     | '/admin/analytics'
     | '/admin/careers'
@@ -446,6 +458,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms-and-conditions'
     | '/warranty-policy'
+    | '/water-treatment-chemicals-hyderabad'
     | '/admin/activity'
     | '/admin/analytics'
     | '/admin/careers'
@@ -486,6 +499,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   WarrantyPolicyRoute: typeof WarrantyPolicyRoute
+  WaterTreatmentChemicalsHyderabadRoute: typeof WaterTreatmentChemicalsHyderabadRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiPdfImportRoute: typeof ApiPdfImportRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
@@ -605,6 +619,13 @@ declare module '@tanstack/react-router' {
       path: '/warranty-policy'
       fullPath: '/warranty-policy'
       preLoaderRoute: typeof WarrantyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/water-treatment-chemicals-hyderabad': {
+      id: '/water-treatment-chemicals-hyderabad'
+      path: '/water-treatment-chemicals-hyderabad'
+      fullPath: '/water-treatment-chemicals-hyderabad'
+      preLoaderRoute: typeof WaterTreatmentChemicalsHyderabadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -814,6 +835,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   WarrantyPolicyRoute: WarrantyPolicyRoute,
+  WaterTreatmentChemicalsHyderabadRoute: WaterTreatmentChemicalsHyderabadRoute,
   ApiChatRoute: ApiChatRoute,
   ApiPdfImportRoute: ApiPdfImportRoute,
   ProductsSlugRoute: ProductsSlugRoute,

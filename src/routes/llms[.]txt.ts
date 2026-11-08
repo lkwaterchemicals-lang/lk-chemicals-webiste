@@ -70,6 +70,11 @@ export const Route = createFileRoute("/llms.txt")({
           line("Gallery", "/gallery", "Manufacturing plant, laboratory and site work."),
           line("Careers", "/careers", "Open roles in Hyderabad."),
           line("Contact", "/contact", "Address, phone, email, map and enquiry form."),
+          line(
+            "Water treatment chemicals in Hyderabad",
+            "/water-treatment-chemicals-hyderabad",
+            "Buying from the Cherlapally plant: products, services, industries, hours and FAQ.",
+          ),
           "",
           ...(productLines.length ? ["## Products", ...productLines, ""] : []),
           ...(serviceLines.length ? ["## Services", ...serviceLines, ""] : []),

@@ -1183,6 +1183,12 @@ function HomeFaq() {
           <p className="mt-4 max-w-md text-foreground/70">
             What buyers ask us most, answered by the people who make the chemicals.
           </p>
+          <Link
+            to="/water-treatment-chemicals-hyderabad"
+            className="mt-6 inline-block font-medium text-royal hover:underline underline-offset-4"
+          >
+            Buying water treatment chemicals in Hyderabad →
+          </Link>
         </div>
         <div className="divide-y divide-foreground/10 border-y border-foreground/10">
           {faqs.map((f) => (

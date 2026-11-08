@@ -156,6 +156,7 @@ export function Footer() {
                 ["/gallery", "Gallery"],
                 ["/careers", "Careers"],
                 ["/contact", "Contact"],
+                ["/water-treatment-chemicals-hyderabad", "Water chemicals in Hyderabad"],
               ].map(([to, label]) => (
                 <li key={to}>
                   <Link

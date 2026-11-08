@@ -21,6 +21,7 @@ import { BrandFilm } from "@/components/site/BrandFilm";
 
 import { InfiniteReviewCarousel } from "@/components/site/InfiniteReviewCarousel";
 import { telHref } from "@/lib/contact";
+import { ldJson } from "@/lib/seo";
 
 /** Responsive preload for the hero (matches the 767px CSS breakpoint). */
 function heroPreloadSet(url: string) {
@@ -52,7 +53,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "LK Chemicals Pvt. Ltd. manufactures industrial water treatment chemicals in Hyderabad since 2013: RO antiscalants, boiler, cooling tower, chiller, descaling, ETP & STP chemicals, plus RO/DM/STP/ETP plants and service.",
+          "LK Chemicals Pvt. Ltd. is a water treatment chemicals manufacturer and supplier in Hyderabad since 2013: RO antiscalants, boiler, cooling tower, chiller, descaling, ETP & STP water chemicals. ISO 9001:2015, own plant in Cherlapally.",
       },
       {
         property: "og:title",
@@ -96,6 +97,7 @@ function HomePage() {
       <WhyLK />
       <Proof />
       <SeeThePlant />
+      <HomeFaq />
       <TalkToUs />
       <WaterCore />
     </>
@@ -1072,28 +1074,28 @@ function SeeThePlant() {
         <div className="mt-14 grid grid-cols-6 gap-4 md:gap-6">
           <img
             src={img(0)}
-            alt="Plant"
+            alt="LK Chemicals water treatment chemicals plant in Cherlapally, Hyderabad"
             loading="lazy"
             decoding="async"
             className="col-span-6 md:col-span-3 h-64 md:h-96 w-full object-cover rounded-3xl hover-lift"
           />
           <img
             src={img(1)}
-            alt="Lab"
+            alt="Quality control lab testing water chemicals"
             loading="lazy"
             decoding="async"
             className="col-span-3 md:col-span-2 h-40 md:h-64 w-full object-cover rounded-3xl hover-lift"
           />
           <img
             src={img(2)}
-            alt="Water"
+            alt="Treated industrial water"
             loading="lazy"
             decoding="async"
             className="col-span-3 md:col-span-1 h-40 md:h-64 w-full object-cover rounded-3xl hover-lift"
           />
           <img
             src={img(3)}
-            alt="RO"
+            alt="RO water treatment plant"
             loading="lazy"
             decoding="async"
             className="col-span-6 md:col-span-4 h-56 md:h-72 w-full object-cover rounded-3xl hover-lift"
@@ -1106,6 +1108,92 @@ function SeeThePlant() {
             </div>
             <div className="text-white/40 text-xs">{c.plantLocation}</div>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* =============== 10 FAQ =============== */
+
+// Every answer states only facts already published elsewhere on the site
+// (About timeline, plant section, LocalBusiness schema). Written in the words
+// people type into Google ("water chemicals supplier in Hyderabad").
+// Native <details> keeps every answer in the server HTML, so crawlers read
+// them even while collapsed.
+function homeFaqs(phone: string) {
+  return [
+    {
+      q: "Where can I buy water treatment chemicals in Hyderabad?",
+      a: `Directly from the manufacturer: LK Chemicals Pvt. Ltd. makes and supplies water treatment chemicals from its own plant at Plot No. 157, Officers Colony, Cherlapally, Hyderabad, Telangana. Call or WhatsApp ${phone}, Monday to Saturday, 9:30 am to 6:00 pm.`,
+    },
+    {
+      q: "Which water chemicals does LK Chemicals manufacture?",
+      a: "More than 70 products: RO antiscalants and RO membrane cleaning chemicals, boiler water treatment chemicals, cooling tower and chiller chemicals, descaling chemicals, resin cleaning chemicals, AHU coil cleaners, and ETP and STP chemicals.",
+    },
+    {
+      q: "Is LK Chemicals a manufacturer or a trader?",
+      a: "A manufacturer. LK Chemicals has produced water treatment chemicals in Hyderabad since 2013, runs its own plant in Cherlapally making about 10 tons a month, and works under an ISO 9001:2015 quality system with a batch record for every batch.",
+    },
+    {
+      q: "Do you supply water treatment chemicals outside Hyderabad?",
+      a: "Yes. LK Chemicals supports more than a hundred plants across five states in India, from power, pharma and steel to paper and sugar mills.",
+    },
+    {
+      q: "How do I choose the right chemical for my RO, boiler or cooling tower?",
+      a: "Share your water analysis or a short brief by WhatsApp, email or the enquiry form. The technical team replies within one business day with the product and dosage that suits your water.",
+    },
+    {
+      q: "Do you also build and service water treatment plants?",
+      a: "Yes. Besides chemicals, LK Chemicals supplies RO, DM, STP and ETP plants and provides on-site services such as membrane cleaning and plant maintenance.",
+    },
+  ];
+}
+
+function HomeFaq() {
+  const { data: s } = useSiteSettings();
+  const faqs = homeFaqs(s.phone);
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+  return (
+    <section
+      className="section-light py-24 md:py-28 relative overflow-hidden"
+      aria-labelledby="home-faq"
+    >
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(faqLd) }} />
+      <div className="mx-auto max-w-7xl px-6 md:px-8 grid lg:grid-cols-[2fr_3fr] gap-10 lg:gap-16">
+        <div>
+          <MicroLabel n="10" className="!text-royal">
+            Questions
+          </MicroLabel>
+          <h2
+            id="home-faq"
+            className="display-xl mt-6 text-balance"
+            style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
+          >
+            Water treatment chemicals in Hyderabad
+          </h2>
+          <p className="mt-4 max-w-md text-foreground/70">
+            What buyers ask us most, answered by the people who make the chemicals.
+          </p>
+        </div>
+        <div className="divide-y divide-foreground/10 border-y border-foreground/10">
+          {faqs.map((f) => (
+            <details key={f.q} className="group py-5">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-left font-medium text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-royal [&::-webkit-details-marker]:hidden">
+                <span className="text-base md:text-lg">{f.q}</span>
+                <ArrowDown className="mt-1 h-4 w-4 shrink-0 text-royal transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+              </summary>
+              <p className="mt-3 max-w-2xl text-foreground/75 leading-relaxed">{f.a}</p>
+            </details>
+          ))}
         </div>
       </div>
     </section>
@@ -1125,7 +1213,7 @@ function TalkToUs() {
       <Waterline className="absolute top-6 left-0" />
       <div className="relative mx-auto max-w-7xl px-6 md:px-8 grid lg:grid-cols-2 gap-12 items-center">
         <div>
-          <MicroLabel n="10">Talk to us</MicroLabel>
+          <MicroLabel n="11">Talk to us</MicroLabel>
           <h2
             className="display-xl mt-4 grad-text leading-[0.9]"
             style={{ fontSize: "clamp(2.5rem, 10vw, 6rem)" }}

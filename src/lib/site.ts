@@ -7,7 +7,9 @@ import { useEffect } from "react";
 
 export const SITE_URL =
   (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/+$/, "") ||
-  "https://lk-chemicals.vercel.app";
+  // The production domain (lkchemicals.com 308-redirects to www). Google had
+  // already picked it as canonical over the *.vercel.app address.
+  "https://www.lkchemicals.com";
 
 export function absUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path;

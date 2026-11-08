@@ -141,7 +141,7 @@ function Login() {
           </h1>
           <p className="mt-4 max-w-sm text-sm text-white/60">
             Catalog, services, media, enquiries and site settings — every change goes live on
-            lkchemicals.in the moment you save.
+            lkchemicals.com the moment you save.
           </p>
           <div className="mt-8 grid max-w-sm grid-cols-3 gap-3">
             {[

@@ -89,7 +89,7 @@ export function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "#fff" }}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-medium shadow-[0_10px_30px_-12px_rgba(37,211,102,0.8)] transition-all hover:brightness-110"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#15803D] px-5 py-2.5 text-sm font-medium shadow-[0_10px_30px_-12px_rgba(37,211,102,0.8)] transition-all hover:brightness-110"
             >
               <WhatsAppIcon className="h-4 w-4" /> WhatsApp
             </a>

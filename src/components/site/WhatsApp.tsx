@@ -1,7 +1,7 @@
 // Official WhatsApp brand glyph + branded button. One source of truth so the
 // floating cluster, contact page, product dock and home CTA all present the
 // same professional, instantly recognisable WhatsApp identity (brand green
-// #25D366, official logo path) in both themes.
+// #15803D, deepened from #25D366 so white text meets WCAG AA 4.5:1; official logo path) in both themes.
 
 export function WhatsAppIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -32,7 +32,7 @@ export function WhatsAppButton({
       style={{ color: "#fff" }}
       className={
         "group inline-flex items-center gap-2.5 rounded-full font-medium transition-all duration-500 " +
-        "bg-[#25D366] hover:bg-[#1eb958] shadow-[0_10px_36px_-10px_rgba(37,211,102,0.7)] hover:shadow-[0_16px_48px_-10px_rgba(37,211,102,0.8)] " +
+        "bg-[#15803D] hover:bg-[#166534] shadow-[0_10px_36px_-10px_rgba(37,211,102,0.7)] hover:shadow-[0_16px_48px_-10px_rgba(37,211,102,0.8)] " +
         (size === "lg" ? "px-8 py-4 text-base " : "px-6 py-3 text-sm ") +
         className
       }

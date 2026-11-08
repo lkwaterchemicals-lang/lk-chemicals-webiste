@@ -8,7 +8,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import logoUrl from "@/assets/lk-logo.webp";
@@ -19,11 +19,38 @@ import { Footer } from "../components/site/Footer";
 import { WaCluster } from "../components/site/WaCluster";
 import { ScrollProgress } from "../components/site/ScrollProgress";
 import { SmoothScroll } from "../components/site/SmoothScroll";
-import { WaterCanvas } from "../components/site/WaterCanvas";
 import { BackToTop } from "../components/site/BackToTop";
 import { BootVeil } from "../components/site/BootVeil";
-import { ChatBot } from "../components/site/ChatBot";
 import { PageFx } from "../components/site/PageFx";
+
+// Below-the-fold extras load after the page is interactive: the chat
+// assistant (UI + its Firestore content) and the decorative WebGL water layer
+// were ~20% of the entry bundle and competed with the LCP image on phones.
+// Both render nothing on the server and on the first client render, so
+// hydration stays consistent; they mount on the first idle slot.
+const ChatBot = lazy(() =>
+  import("../components/site/ChatBot").then((m) => ({ default: m.ChatBot })),
+);
+const WaterCanvas = lazy(() =>
+  import("../components/site/WaterCanvas").then((m) => ({ default: m.WaterCanvas })),
+);
+
+function AfterIdle({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(() => setReady(true), { timeout: 2500 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = window.setTimeout(() => setReady(true), 1200);
+    return () => window.clearTimeout(t);
+  }, []);
+  return ready ? <Suspense fallback={null}>{children}</Suspense> : null;
+}
 
 function NotFoundComponent() {
   return (
@@ -331,7 +358,9 @@ function RootComponent() {
           <BootVeil />
           <PageFx />
           <SmoothScroll />
-          <WaterCanvas />
+          <AfterIdle>
+            <WaterCanvas />
+          </AfterIdle>
           <div className="site-shell">
             <ScrollProgress />
             <Nav />
@@ -343,7 +372,9 @@ function RootComponent() {
             <BackToTop />
             {/* Mounted once here so the assistant is on every public page —
                 the framework's equivalent of a script before </body>. */}
-            <ChatBot />
+            <AfterIdle>
+              <ChatBot />
+            </AfterIdle>
           </div>
         </>
       )}

@@ -12,6 +12,8 @@ import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import logoUrl from "@/assets/lk-logo.webp";
+import interLatin400 from "@fontsource/inter/files/inter-latin-400-normal.woff2?url";
+import groteskLatin700 from "@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2?url";
 import { absUrl } from "../lib/site";
 import { canonicalUrl, ldJson, siteJsonLd } from "../lib/seo";
 import { Nav } from "../components/site/Nav";
@@ -169,14 +171,9 @@ function InitialScrollRestore() {
 const GA_ID = (import.meta.env.VITE_GA_ID as string | undefined) || "";
 const GSC_TOKEN = (import.meta.env.VITE_GSC_VERIFICATION as string | undefined) || "";
 
-// Webfonts load WITHOUT blocking first paint: a plain <link rel="stylesheet">
-// to fonts.googleapis.com held up rendering for a third-party round trip on
-// every cold cache — part of the first-visit freeze. A script-injected
-// stylesheet loads async instead (display=swap upgrades text in place; the
-// boot veil covers the swap on first loads). <noscript> keeps the blocking
-// link for the JS-less. Preconnects below still warm both font origins.
-const FONTS_URL =
-  "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap";
+// Webfonts are self-hosted (Fontsource, imported in styles.css) with the two
+// above-the-fold faces preloaded below — no third-party font round trip, and
+// font-display: swap keeps text visible while they load.
 
 declare global {
   interface Window {
@@ -242,6 +239,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       ],
       links: [
         { rel: "canonical", href: canonical },
+        // The two faces above the fold on every page: body text and headlines.
+        {
+          rel: "preload",
+          as: "font",
+          type: "font/woff2",
+          href: interLatin400,
+          crossOrigin: "anonymous",
+        },
+        {
+          rel: "preload",
+          as: "font",
+          type: "font/woff2",
+          href: groteskLatin700,
+          crossOrigin: "anonymous",
+        },
         {
           rel: "stylesheet",
           href: appCss,
@@ -251,8 +263,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         // Boot-veil logo — fetch it alongside the CSS so it's decoded by first paint.
         { rel: "preload", as: "image", href: logoUrl },
         { rel: "apple-touch-icon", href: "/logo-192.png" },
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       ],
       scripts: [
         // Business identity for Google / Bing / AI search (Organization,
@@ -260,11 +270,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         {
           type: "application/ld+json",
           children: ldJson(siteJsonLd()),
-        },
-        // Async font CSS (see FONTS_URL note) — script-injected stylesheets
-        // never block the parser or first paint.
-        {
-          children: `(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS_URL}';document.head.appendChild(l);})();`,
         },
         ...(GA_ID
           ? [
@@ -288,9 +293,6 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <noscript>
-          <link rel="stylesheet" href={FONTS_URL} />
-        </noscript>
         <script
           dangerouslySetInnerHTML={{
             // Light is the site's default presentation — the OS preference no

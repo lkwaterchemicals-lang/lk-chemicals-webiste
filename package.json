@@ -4,6 +4,9 @@
   "author": "Dream Team Services",
   "sideEffects": false,
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",

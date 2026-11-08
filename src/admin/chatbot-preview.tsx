@@ -10,7 +10,7 @@
 // inside an admin form. Only the parts the client can edit are drawn.
 import { useState } from "react";
 import { Send } from "lucide-react";
-import logoUrl from "@/assets/lk-logo.png";
+import logoUrl from "@/assets/lk-logo.webp";
 import type { ChatbotContent } from "@/data/chatbot";
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");

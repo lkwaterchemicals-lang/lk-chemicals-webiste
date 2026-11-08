@@ -17,7 +17,7 @@
 //     for those users before hydration).
 //   · A CSS failsafe dissolves the veil on its own if JS never runs.
 import { useEffect, useRef, useState } from "react";
-import logoUrl from "@/assets/lk-logo.png";
+import logoUrl from "@/assets/lk-logo.webp";
 
 // Client-only; must never be set during SSR or one visitor's boot would
 // suppress every later visitor's (module state persists on the server).

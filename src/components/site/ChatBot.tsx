@@ -13,7 +13,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, MessageSquareText, RefreshCw, Send, Sparkles, X } from "lucide-react";
-import logoUrl from "@/assets/lk-logo.png";
+import logoUrl from "@/assets/lk-logo.webp";
 import { useWaLink } from "@/lib/content";
 import { useChatbotContent } from "@/lib/pages";
 import { WhatsAppIcon } from "./WhatsApp";

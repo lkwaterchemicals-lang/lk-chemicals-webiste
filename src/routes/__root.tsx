@@ -11,7 +11,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import logoUrl from "@/assets/lk-logo.png";
+import logoUrl from "@/assets/lk-logo.webp";
 import { absUrl } from "../lib/site";
 import { canonicalUrl, ldJson, siteJsonLd } from "../lib/seo";
 import { Nav } from "../components/site/Nav";
@@ -204,6 +204,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         },
         // Crawlers require absolute og/twitter image URLs.
         { property: "og:image", content: absUrl("/og-image.png") },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
+        {
+          property: "og:image:alt",
+          content:
+            "LK Chemicals — industrial water treatment chemicals, plants and services, Hyderabad",
+        },
         { name: "twitter:image", content: absUrl("/og-image.png") },
       ],
       links: [

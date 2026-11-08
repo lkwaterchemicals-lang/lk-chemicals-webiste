@@ -6,7 +6,7 @@
 // sits on its own porcelain plate (see `.brand-plate` in styles.css): full
 // contrast in both themes, plus a lit ring and a hover sheen so it reads as
 // the most deliberate object on the page rather than a pasted-on sticker.
-import logoUrl from "@/assets/lk-logo.png";
+import logoUrl from "@/assets/lk-logo.webp";
 
 type Size = "sm" | "md" | "lg";
 

@@ -185,3 +185,13 @@ export function pdfThumbUrl(url: string, width = 640): string {
   const tail = raw.slice(at + marker.length).replace(/\.pdf($|\?)/i, ".jpg$1");
   return `${head}pg_1,f_auto,q_auto,w_${width},c_limit/${tail}`;
 }
+
+/** Same Cloudinary image at another width (rewrites an existing `w_N`
+ * transformation). Non-Cloudinary URLs come back unchanged, so callers can
+ * use it unconditionally for responsive variants. */
+export function cloudinaryAtWidth(url: string, width: number): string {
+  if (!CLOUDINARY_DELIVERY.test(url)) return url;
+  return /([/,])w_\d+([,/])/.test(url)
+    ? url.replace(/([/,])w_\d+([,/])/, `$1w_${width}$2`)
+    : optimizedImageUrl(url, width);
+}

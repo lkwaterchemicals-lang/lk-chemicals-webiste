@@ -19,7 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { auth } from "@/integrations/firebase/auth";
-import logoUrl from "@/assets/lk-logo.png";
+import logoUrl from "@/assets/lk-logo.webp";
 import { AdminShell } from "@/admin/shell";
 import { useAdminTheme } from "@/admin/theme";
 import "@/admin/admin.css";

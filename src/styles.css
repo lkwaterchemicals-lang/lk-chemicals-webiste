@@ -1284,12 +1284,15 @@ a:hover .brand-plate {
    scroll frame — the exact jank we removed elsewhere. There the photo is
    simply static, which is what "don't make it move" asks for anyway. */
 .hero-photo {
+  /* --hero-sm / --hero-lg are set inline (800px / 1600px renditions). */
+  background-image: var(--hero-sm, var(--hero-lg));
   background-size: cover;
   background-position: 68% center;
   background-repeat: no-repeat;
 }
 @media (min-width: 768px) {
   .hero-photo {
+    background-image: var(--hero-lg, var(--hero-sm));
     background-position: center;
   }
 }
@@ -1723,8 +1726,7 @@ header nav.bg-transparent {
   --lkb-sub: rgba(222, 240, 250, 0.5);
   --lkb-tile-edge: rgba(160, 224, 248, 0.26);
   --lkb-tile-shadow:
-    0 24px 70px -22px rgba(23, 158, 202, 0.45),
-    0 6px 22px -10px rgba(0, 0, 0, 0.55);
+    0 24px 70px -22px rgba(23, 158, 202, 0.45), 0 6px 22px -10px rgba(0, 0, 0, 0.55);
 
   position: fixed;
   inset: 0;

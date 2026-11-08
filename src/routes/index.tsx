@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { motion, useScroll, useTransform, useInView } from "motion/react";
 import { ArrowDown, ArrowLeft, ArrowRight, Droplets, Quote, Star } from "lucide-react";
 import { useCategories, useSiteSettings, useTestimonials, useWaLink } from "@/lib/content";
@@ -7,7 +7,7 @@ import { useHomeContent } from "@/lib/pages";
 import { iconByName } from "@/lib/icons";
 import { homeContent, type Stat, type WhyItem } from "@/data/site";
 import { fetchDocRest } from "@/lib/firestore-rest";
-import { optimizedImageUrl } from "@/lib/media";
+import { cloudinaryAtWidth, optimizedImageUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { LiquidButton } from "@/components/site/LiquidButton";
 import { Waterline } from "@/components/site/Waterline";
@@ -21,6 +21,16 @@ import { BrandFilm } from "@/components/site/BrandFilm";
 
 import { InfiniteReviewCarousel } from "@/components/site/InfiniteReviewCarousel";
 import { telHref } from "@/lib/contact";
+
+/** Responsive preload for the hero (matches the 767px CSS breakpoint). */
+function heroPreloadSet(url: string) {
+  const sm = cloudinaryAtWidth(url, 800);
+  if (sm === url && !/w_\d+/.test(url)) return {};
+  return {
+    imageSrcSet: `${sm} 800w, ${cloudinaryAtWidth(url, 1600)} 1600w`,
+    imageSizes: "100vw",
+  };
+}
 
 export const Route = createFileRoute("/")({
   // The hero photo is admin-managed (pages/home.heroImage) but the content
@@ -63,6 +73,9 @@ export const Route = createFileRoute("/")({
         rel: "preload",
         as: "image",
         href: loaderData?.heroImage || homeContent.heroImage,
+        // Phones fetch the 800px rendition; the hero is a CSS background, so
+        // the same breakpoint is mirrored by --hero-sm / --hero-lg below.
+        ...heroPreloadSet(loaderData?.heroImage || homeContent.heroImage),
         fetchPriority: "high",
       },
     ],
@@ -134,7 +147,12 @@ function Hero() {
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           aria-hidden
-          style={{ backgroundImage: `url("${src}")` }}
+          style={
+            {
+              "--hero-sm": `url("${cloudinaryAtWidth(src, 800)}")`,
+              "--hero-lg": `url("${cloudinaryAtWidth(src, 1600)}")`,
+            } as CSSProperties
+          }
           className="hero-photo hero-lighten absolute inset-0 opacity-70"
         />
         {/* Vignette + caustics */}

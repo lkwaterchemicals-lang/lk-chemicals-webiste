@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { auth } from "@/integrations/firebase/auth";
-import logoUrl from "@/assets/lk-logo.png";
+import logoUrl from "@/assets/lk-logo.webp";
 import { PAGE_SCHEMAS } from "./content-schema";
 import { MODULES, moduleById, type Row } from "./registry";
 import { useApplications, useCol, useEnquiries } from "./api";

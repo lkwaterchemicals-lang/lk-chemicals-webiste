@@ -3,34 +3,32 @@
 Last updated: 2026-11-08
 
 ## State
-- Live site: https://lk-chemicals.vercel.app (NOT lkchemicals.in — that is the client's IndiaMART storefront).
-- SEO pass committed and pushed to `main` (GitHub lkwaterchemicals-lang/lk-chemicals-webiste):
-  - bbe8df7 canonical + og:url on every page (root head, from route pathname), /admin noindex,
-    site-wide Organization/LocalBusiness/WebSite JSON-LD (`src/lib/seo.ts`), Product brand/url,
-    Service schema, absolute breadcrumbs, generated `/robots.txt` + `/llms.txt` routes,
-    sitemap lastmod + image entries, keyword titles (home/about/products/services/gallery).
-  - e9e4293 proper JSON-LD escaping (`ldJson`).
-  - 821fc5d `engines.node: 22.x` (attempt to fix Vercel; did NOT fix it).
-- Google Search Console: URL-prefix property https://lk-chemicals.vercel.app/ added in the
-  lk.waterchemicals@gmail.com account, auto-verified via the GA4 tag (G-GF53GRYMW2 — don't remove it).
-  Sitemap submitted: Success, 33 pages.
-- Bing Webmaster: site imported from GSC (same Google login). First sitemap read errored
-  ("Bingbot was not able to access"), resubmitted 2026-11-08.
-
-## Blocker
-- EVERY Vercel deploy fails since the last success on 2026-09-09 (56af5ea) — including the
-  user's own bcd091f (eslint-only). Same commits build fine locally (`npm ci` + `VERCEL=1 npm run build`).
-  Both Vercel projects (`lk-chemicals`, `lk-chemicals-webiste`, team lk-chemicals-webiste) fail.
-  Logs need a Vercel login (`npx vercel inspect <dpl> --logs`). Not logged in on this PC or in the LK Chrome.
+- Production domain: **https://www.lkchemicals.com** (apex 308 → www), served by Vercel from `main`
+  of GitHub lkwaterchemicals-lang/lk-chemicals-webiste. Also reachable at lk-chemicals.vercel.app.
+  lkchemicals.in is the client's IndiaMART storefront, not this site.
+- `SITE_URL` (src/lib/site.ts) defaults to www.lkchemicals.com; canonical, og:url, JSON-LD, robots.txt,
+  sitemap.xml and llms.txt all derive from it.
+- SEO pass live (2026-11-08): canonical + og:url on every page, /admin noindex, site-wide
+  Organization/LocalBusiness/WebSite JSON-LD (`src/lib/seo.ts`), Product brand/url, Service schema,
+  absolute breadcrumbs, generated `/robots.txt` + `/llms.txt`, sitemap lastmod + images (33 URLs),
+  keyword titles on home/about/products/services/gallery, safe JSON-LD escaping (`ldJson`).
+- Vercel deploys were blocked since 2026-09-09: Vercel refuses @tanstack/react-start < 1.168.60
+  (CVE-2026-102989). Fixed by pinning react-start 1.168.61 / react-router 1.170.42 /
+  router-plugin 1.168.43 (exact). 1.169.5 caused hydration mismatches — don't bump blindly.
+- Google Search Console (lk.waterchemicals@gmail.com): properties https://www.lkchemicals.com/ and
+  https://lk-chemicals.vercel.app/, both auto-verified via the GA4 tag (G-GF53GRYMW2 — keep it).
+  Sitemaps submitted; home page indexing requested on www.
+- Bing Webmaster (same Google login): both sites imported from GSC; www sitemap processing.
 
 ## Next steps
-1. Get the Vercel build log (log in to Vercel in the "Lk Chemicals" Chrome), fix the cause, redeploy.
-2. When live: verify https://lk-chemicals.vercel.app/robots.txt shows the vercel.app sitemap,
-   /llms.txt is 200, home has `<link rel="canonical">`; then in GSC URL Inspection → Request indexing for home.
-3. Check Bing sitemap status (should show 33 URLs).
-4. If engines pin is not the fix, consider reverting 821fc5d.
-5. Optional: connect a real domain later → set VITE_SITE_URL and add it as a new GSC property.
+1. In ~2–3 days: GSC → www property → Sitemaps should show Success (the old Nov 6 read had 33 errors
+   from vercel.app URLs); Pages report for indexing; Enhancements for Breadcrumbs/Products.
+2. Bing → www.lkchemicals.com → Sitemaps should show 33 URLs.
+3. Optional: add a Domain property (DNS TXT) for lkchemicals.com in GSC; set up Google Business Profile
+   website link to www.lkchemicals.com; real reviews only.
 
 ## Gotchas
+- Vercel installs with npm (package-lock.json) on Node 24; bun.lock is unused by Vercel.
 - Root `head()` builds canonical from `matches[matches.length-1].pathname`.
-- The Bash tool collapses `\\` in heredocs — write backslashes via python `chr(92)` when exact escapes matter.
+- Running two `vite dev` servers in this folder makes them fight over src/routeTree.gen.ts (endless reloads).
+- The Bash tool collapses `\\` in heredocs — write exact backslashes via python `chr(92)`.

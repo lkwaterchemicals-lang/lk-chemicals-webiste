@@ -50,6 +50,14 @@ Last updated: 2026-11-08
   last three pending Google review. Main listing is owned by sa…@gmail.com; access-request form
   (Management / Employee) was filled but NOT submitted (blocked by the session's safety check).
 
+- 2026-11-08 evening: new local landing page https://www.lkchemicals.com/water-treatment-chemicals-hyderabad
+  (commit db6396e, live): ~770 words, real facts only (15 product links, 6 services, 12 industries,
+  address/hours, 4 FAQs), Service + FAQPage + BreadcrumbList JSON-LD, title "Water Treatment Chemicals
+  in Hyderabad | LK Chemicals". Linked from home FAQ + footer, in sitemap (34 URLs) and llms.txt.
+  Tested live at 1440 and 390 px, light and dark; 24/24 links 200. GSC indexing requested (priority
+  queue); Bing URL submitted. Known nit (site-wide, left as designed): small "!text-royal" section
+  labels are faint in dark mode.
+
 ## Next steps
 0. Ranking: get Manager access to the main GBP listing -> primary category "Water treatment supplier"
    (+ "Chemical manufacturer"), services list, weekly posts; client collects real Google reviews
@@ -66,5 +74,7 @@ Last updated: 2026-11-08
 ## Gotchas
 - Vercel installs with npm (package-lock.json) on Node 24; bun.lock is unused by Vercel.
 - Root `head()` builds canonical from `matches[matches.length-1].pathname`.
+- Four leftover `vite dev` servers (from 2026-11-08 11:51-12:20) were still running in D:/all/LK and
+  rewriting routeTree.gen.ts every 2 s; stop them before local testing (Claude was not allowed to).
 - Running two `vite dev` servers in this folder makes them fight over src/routeTree.gen.ts (endless reloads).
 - The Bash tool collapses `\\` in heredocs — write exact backslashes via python `chr(92)`.

@@ -27,13 +27,18 @@ Last updated: 2026-11-08
   framer opacity:0 until hydration), responsive hero/product images, server reads run
   optimizeImagesDeep (React 19 preloads every SSR <img>), right-sized nav/card thumbnails,
   10 KB WebP logo, 1200x630 og-image.
+- Second pass (2026-11-08): WhatsApp text buttons #25D366 -> #15803D (contrast 2:1 -> 5:1);
+  ChatBot + WaterCanvas lazy-mounted after idle (AfterIdle in __root); fonts self-hosted via
+  @fontsource (Inter, Space Grotesk, JetBrains Mono) with Inter 400 + Grotesk 700 preloaded.
+  PageSpeed mobile now: home 94/100/100/100, product 89/100/100/100, service 73/100/100/100
+  (perf/a11y/best-practices/SEO). Service LCP 4.7 s is JS-bound (framer-motion in the entry chunk).
 
 ## Next steps
 1. In ~2–3 days: GSC → www property → Sitemaps should show Success (the old Nov 6 read had 33 errors
    from vercel.app URLs); Pages report for indexing; Enhancements for Breadcrumbs/Products.
 2. Bing → www.lkchemicals.com → Sitemaps should show 33 URLs.
-3. Further speed (optional, bigger change): service/product LCP is held back by JS (framer-motion,
-   main bundle ~130 KB) — code-split motion-heavy sections. Accessibility 96: one contrast warning.
+3. Further speed (optional, bigger change): service page LCP is held back by JS (framer-motion,
+   entry chunk ~119 KB gz) — moving motion-heavy sections to CSS / code-splitting them is the next lever.
 4. Optional: add a Domain property (DNS TXT) for lkchemicals.com in GSC; set up Google Business Profile
    website link to www.lkchemicals.com; real reviews only.
 

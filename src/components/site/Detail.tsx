@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "motion/react";
 import { ArrowUpRight, Share2 } from "lucide-react";
 import { MicroLabel } from "@/components/site/GhostWord";
+import { cloudinaryAtWidth } from "@/lib/media";
 
 /* ------------------------------------------------------------------ panel */
 
@@ -245,9 +246,10 @@ export function MediaGallery({
               className={"absolute inset-0 " + (many ? "cursor-grab active:cursor-grabbing" : "")}
             >
               <motion.img
-                src={src}
+                src={cloudinaryAtWidth(src, 1000)}
                 alt={name}
                 draggable={false}
+                fetchPriority={active === 0 ? "high" : undefined}
                 animate={reduced ? undefined : { scale: [1, 1.07] }}
                 transition={
                   reduced
@@ -305,7 +307,13 @@ export function MediaGallery({
                 (i === active ? "border-cyan-hi" : "border-white/10 opacity-70 hover:opacity-100")
               }
             >
-              <img src={s} alt="" className="h-full w-full object-cover" />
+              <img
+                src={cloudinaryAtWidth(s, 160)}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
             </motion.button>
           ))}
         </div>

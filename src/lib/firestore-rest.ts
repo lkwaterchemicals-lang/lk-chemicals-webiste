@@ -6,6 +6,7 @@
 // built for the browser, so on the server we read documents over Firestore's
 // public REST API instead (same public project config, same security rules).
 import { firebaseConfig } from "@/integrations/firebase/config";
+import { optimizeImagesDeep } from "@/lib/media";
 
 const BASE = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
 
@@ -50,7 +51,10 @@ export async function fetchDocRest(
     );
     if (!res.ok) return null;
     const json = (await res.json()) as { fields?: Record<string, FsValue> };
-    const doc = decodeFields(json.fields);
+    // Same read-path rule as the client hooks: never hand a render site a
+    // raw multi-MB Cloudinary original. React 19 SSR preloads every <img> it
+    // renders, so raw URLs here cost phones ~6 MB per product page.
+    const doc = optimizeImagesDeep(decodeFields(json.fields));
     return isLive(doc) ? doc : null;
   } catch {
     return null;
@@ -78,7 +82,7 @@ export async function listDocsRest(
       .map((d) => ({
         __id: d.name.split("/").pop() ?? "",
         __updated: d.updateTime,
-        ...decodeFields(d.fields),
+        ...optimizeImagesDeep(decodeFields(d.fields)),
       }))
       .filter(isLive);
   } catch {

@@ -18,7 +18,9 @@ Last updated: 2026-11-08
 - Google Search Console (lk.waterchemicals@gmail.com): properties https://www.lkchemicals.com/ and
   https://lk-chemicals.vercel.app/, both auto-verified via the GA4 tag (G-GF53GRYMW2 — keep it).
   Sitemaps submitted; home page indexing requested on www.
-- Bing Webmaster (same Google login): both sites imported from GSC; www sitemap processing.
+- Bing Webmaster (same Google login): both sites imported from GSC; www sitemap Success, 33 URLs.
+- Job marked FINAL 2026-11-08. Decided NOT to do: animation rebuild for service-page speed (risk to
+  approved design); GSC Domain property (DNS at TradeIndia, no access).
 - GSC www sitemap read again 2026-11-08: Success, 33 pages. Indexing requested for /, /products,
   /services, /about, /contact. Google Business Profile already links lkchemicals.com (18 reviews).
 - Speed pass (2026-11-08, PageSpeed mobile): home 70 -> 93 (LCP 6.5 s -> 1.1 s); product page

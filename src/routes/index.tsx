@@ -210,11 +210,11 @@ function Hero() {
       {/* Content — top padding always clears the fixed nav (~5.5rem) */}
       <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-6 md:px-8 flex-1 flex flex-col justify-center pt-28 sm:pt-32 pb-20 sm:pb-20">
         <MicroLabel n="00">{c.heroLabel}</MicroLabel>
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: [0.2, 0.7, 0.2, 1] }}
-          className="display-xl mt-4 sm:mt-6 leading-[0.85] tracking-tighter"
+        {/* Entrance runs in CSS (hero-rise), not framer-motion: a JS-driven
+            opacity:0 start kept the headline invisible until hydration, which
+            on a mid-range phone was ~6 s of "no main content" (mobile LCP). */}
+        <h1
+          className="hero-rise display-xl mt-4 sm:mt-6 leading-[0.85] tracking-tighter"
           // Capped by viewport HEIGHT too, so a wide-but-short laptop window
           // never inflates the headline until it crowds the nav.
           style={{ fontSize: "clamp(2.75rem, min(13vw, 18svh), 12rem)" }}
@@ -222,22 +222,14 @@ function Hero() {
           <span className="grad-text">{c.heroTitleTop}</span>
           <br />
           <span className="grad-leaf-text">{c.heroTitleBottom}</span>
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="mt-4 sm:mt-6 max-w-xl text-white/70"
-          style={{ fontSize: "clamp(0.95rem, 1.6vw, 1.125rem)" }}
+        </h1>
+        <p
+          className="hero-rise hero-rise-sm mt-4 sm:mt-6 max-w-xl text-white/70"
+          style={{ fontSize: "clamp(0.95rem, 1.6vw, 1.125rem)", animationDelay: "0.4s" }}
         >
           {c.heroSubtitle}
-        </motion.p>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4"
-        >
+        </p>
+        <div className="hero-rise hero-rise-sm mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
           <LiquidButton to="/products" size="md">
             Explore Products
           </LiquidButton>
@@ -248,7 +240,7 @@ function Hero() {
             <span>Request a formulation</span>
             <span className="icon-orb h-9 w-9">→</span>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Mobile / tablet chip rail — a living marquee: drifts on its own,
             obeys the thumb instantly, resumes when released */}

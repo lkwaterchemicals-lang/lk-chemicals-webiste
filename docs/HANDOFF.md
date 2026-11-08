@@ -35,7 +35,20 @@ Last updated: 2026-11-08
   PageSpeed mobile now: home 94/100/100/100, product 89/100/100/100, service 73/100/100/100
   (perf/a11y/best-practices/SEO). Service LCP 4.7 s is JS-bound (framer-motion in the entry chunk).
 
+- Ranking push (2026-11-08, commit dcaa376, live): "water treatment chemicals Hyderabad" = map #3,
+  web #2 (after IndiaMART); "best water chemical Hyderabad" = not shown. Added home FAQ (6 Qs, native
+  <details>, FAQPage JSON-LD, facts already on the site only), new meta description with "water
+  chemicals" + "supplier", descriptive plant image alts. H1 "WE ENGINEER WATER." left as designed.
+- Google Business Profile: the LK Chrome profile only manages "Lk Chemicals Pvt Ltd Warehouse"
+  (2-9-330 B N Reddy Nagar, category Warehouse, description says "since 2014"). The 18-review map
+  listing "LK CHEMICALS PRIVATE LIMITED" (Plot No 157, category "Water treatment plant") is owned by
+  another Google account — client must give access (Manager role to lk.waterchemicals@gmail.com).
+
 ## Next steps
+0. Ranking: get Manager access to the main GBP listing -> primary category "Water treatment supplier"
+   (+ "Chemical manufacturer"), services list, weekly posts; client collects real Google reviews
+   (top two have 622 and 136); list LK on Justdial with the website link. Re-check the
+   "best water chemical hyderabad" search in ~3-4 weeks.
 1. In ~2–3 days: GSC → www property → Sitemaps should show Success (the old Nov 6 read had 33 errors
    from vercel.app URLs); Pages report for indexing; Enhancements for Breadcrumbs/Products.
 2. Bing → www.lkchemicals.com → Sitemaps should show 33 URLs.

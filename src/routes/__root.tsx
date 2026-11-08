@@ -13,7 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import logoUrl from "@/assets/lk-logo.png";
 import { absUrl } from "../lib/site";
-import { canonicalUrl, siteJsonLd } from "../lib/seo";
+import { canonicalUrl, ldJson, siteJsonLd } from "../lib/seo";
 import { Nav } from "../components/site/Nav";
 import { Footer } from "../components/site/Footer";
 import { WaCluster } from "../components/site/WaCluster";
@@ -225,7 +225,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         // LocalBusiness, WebSite). "<" is escaped so the JSON can't close the tag.
         {
           type: "application/ld+json",
-          children: JSON.stringify(siteJsonLd()).replace(/</g, "\\u003c"),
+          children: ldJson(siteJsonLd()),
         },
         // Async font CSS (see FONTS_URL note) — script-injected stylesheets
         // never block the parser or first paint.

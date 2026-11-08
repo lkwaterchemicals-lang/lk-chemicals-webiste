@@ -119,6 +119,14 @@ export function siteJsonLd() {
   };
 }
 
-/** Serialise JSON-LD for a <script> tag. "<" is escaped so admin-entered text
- * containing "</script>" can never close the tag early. */
-export const ldJson = (data: unknown): string => JSON.stringify(data).replace(/</g, "\u003c");
+/** Serialise JSON-LD for a <script> tag. "<", ">" and "&" become JSON unicode
+ * escapes (still valid JSON, same parsed value) so admin-entered text
+ * containing "</script>" can never close the tag early. U+2028/2029 are
+ * escaped for older JS parsers. */
+export const ldJson = (data: unknown): string =>
+  JSON.stringify(data)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");

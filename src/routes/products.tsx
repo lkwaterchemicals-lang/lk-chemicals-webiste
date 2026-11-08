@@ -17,13 +17,16 @@ export const Route = createFileRoute("/products")({
   }),
   head: () => ({
     meta: [
-      { title: "Products — LK Chemicals Formulary" },
+      { title: "Water Treatment Chemicals — RO, Boiler, Cooling Tower, ETP & STP | LK Chemicals" },
       {
         name: "description",
         content:
           "Full catalog of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, resin & AHU cleaners, plus RO, DM, softener, STP and ETP plants from LK Chemicals.",
       },
-      { property: "og:title", content: "The Formulary — LK Chemicals" },
+      {
+        property: "og:title",
+        content: "Water Treatment Chemicals — RO, Boiler, Cooling Tower, ETP & STP | LK Chemicals",
+      },
       { property: "og:description", content: "Every product in the LK water treatment catalog." },
     ],
   }),

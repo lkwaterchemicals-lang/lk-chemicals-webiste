@@ -4,6 +4,7 @@ import { findProduct, type Product, type Service } from "@/data/products";
 import { useCategories, useProducts, useServiceCategories, useServices } from "@/lib/content";
 import { fetchDocRest } from "@/lib/firestore-rest";
 import { absUrl, useLiveMeta } from "@/lib/site";
+import { ORG_ID, breadcrumbLd as makeBreadcrumbLd, canonicalUrl, ldJson } from "@/lib/seo";
 import { MicroLabel } from "@/components/site/GhostWord";
 import {
   ClampedText,
@@ -171,7 +172,11 @@ function ProductDetail() {
   const productLd = {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": `${canonicalUrl(`/products/${product.slug}`)}#product`,
+    url: canonicalUrl(`/products/${product.slug}`),
     name: product.name,
+    brand: { "@type": "Brand", name: "LK Chemicals" },
+    manufacturer: { "@id": ORG_ID },
     description: product.metaDescription || product.description,
     ...(images.length ? { image: images } : {}),
     category: cat.name,
@@ -185,26 +190,18 @@ function ProductDetail() {
         }
       : {}),
   };
-  const breadcrumbLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-      { "@type": "ListItem", position: 2, name: "Products", item: "/products" },
-      { "@type": "ListItem", position: 3, name: cat.name, item: `/products?cat=${cat.slug}` },
-      { "@type": "ListItem", position: 4, name: product.name, item: `/products/${product.slug}` },
-    ],
-  };
+  const breadcrumbLd = makeBreadcrumbLd([
+    { name: "Home", path: "/" },
+    { name: "Products", path: "/products" },
+    { name: product.name, path: `/products/${product.slug}` },
+  ]);
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(productLd) }} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: ldJson(breadcrumbLd) }}
       />
       <section className="section-dark relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 caustics opacity-30" />

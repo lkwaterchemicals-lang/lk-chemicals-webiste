@@ -6,6 +6,7 @@ import { type ServiceCategory } from "@/data/products";
 import { fetchDocRest } from "@/lib/firestore-rest";
 import { absUrl, useLiveMeta } from "@/lib/site";
 import { iconByName } from "@/lib/icons";
+import { breadcrumbLd as makeBreadcrumbLd, displayName, ldJson } from "@/lib/seo";
 import { MicroLabel } from "@/components/site/GhostWord";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { WhatsAppButton } from "@/components/site/WhatsApp";
@@ -82,21 +83,17 @@ function ServiceCategoryPage() {
   const cover = cat.banner || cat.image;
   const msg = `Hi LK Chemicals, I'd like to know more about your ${cat.name}.`;
 
-  const breadcrumbLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-      { "@type": "ListItem", position: 2, name: "Services", item: "/services" },
-      { "@type": "ListItem", position: 3, name: cat.name, item: `/services/${cat.slug}` },
-    ],
-  };
+  const breadcrumbLd = makeBreadcrumbLd([
+    { name: "Home", path: "/" },
+    { name: "Services", path: "/services" },
+    { name: displayName(cat.name, cat.slug), path: `/services/${cat.slug}` },
+  ]);
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: ldJson(breadcrumbLd) }}
       />
 
       {/* Hero — the photo is a FRAMED banner card and the copy lives on clean

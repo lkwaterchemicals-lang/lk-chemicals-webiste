@@ -38,17 +38,20 @@ export const Route = createFileRoute("/")({
   },
   head: ({ loaderData }) => ({
     meta: [
-      { title: "LK Chemicals — We Engineer Water" },
+      { title: "Water Treatment Chemicals Manufacturer in Hyderabad | LK Chemicals" },
       {
         name: "description",
         content:
-          "Industrial water treatment chemicals, plants and services from Hyderabad since 2013. RO, boiler, cooling tower, chiller, descaling, ETP & STP chemicals, plus RO/DM/softener/STP/ETP plants.",
+          "LK Chemicals Pvt. Ltd. manufactures industrial water treatment chemicals in Hyderabad since 2013: RO antiscalants, boiler, cooling tower, chiller, descaling, ETP & STP chemicals, plus RO/DM/STP/ETP plants and service.",
       },
-      { property: "og:title", content: "LK Chemicals — We Engineer Water" },
+      {
+        property: "og:title",
+        content: "Water Treatment Chemicals Manufacturer in Hyderabad | LK Chemicals",
+      },
       {
         property: "og:description",
         content:
-          "Industrial water treatment chemicals, plants and services from Hyderabad since 2013.",
+          "Manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP chemicals in Hyderabad since 2013.",
       },
     ],
     // The hero photo is the LCP element (painted as a CSS background, which

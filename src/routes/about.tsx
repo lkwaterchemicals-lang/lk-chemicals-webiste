@@ -34,13 +34,16 @@ import { mailHref, telHref } from "@/lib/contact";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — LK Chemicals Pvt. Ltd." },
+      { title: "About LK Chemicals — Water Treatment Chemical Manufacturer, Hyderabad" },
       {
         name: "description",
         content:
           "The story of LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of water treatment chemicals and plants since 2013, serving Telangana, AP, Karnataka, Tamil Nadu and Maharashtra.",
       },
-      { property: "og:title", content: "About LK Chemicals" },
+      {
+        property: "og:title",
+        content: "About LK Chemicals — Water Treatment Chemical Manufacturer, Hyderabad",
+      },
       {
         property: "og:description",
         content: "Manufacturing water treatment chemistry in Hyderabad since 2013.",

@@ -15,6 +15,13 @@ import {
   SuggestRail,
   type SuggestItem,
 } from "@/components/site/Detail";
+import {
+  ORG_ID,
+  breadcrumbLd as makeBreadcrumbLd,
+  canonicalUrl,
+  displayName,
+  ldJson,
+} from "@/lib/seo";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { EnquiryForm } from "@/components/site/EnquiryForm";
 import { ContactDock } from "@/components/site/ContactDock";
@@ -151,20 +158,25 @@ function ServiceDetail() {
 
   const msg = `Hi LK Chemicals, I'd like a service quote for ${service.name}.`;
 
-  const breadcrumbLd = {
+  const servicePath = `/services/${catSlug}/${service.slug}`;
+  const breadcrumbLd = makeBreadcrumbLd([
+    { name: "Home", path: "/" },
+    { name: "Services", path: "/services" },
+    { name: displayName(catName, catSlug), path: `/services/${catSlug}` },
+    { name: service.name, path: servicePath },
+  ]);
+  const serviceLd = {
     "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-      { "@type": "ListItem", position: 2, name: "Services", item: "/services" },
-      { "@type": "ListItem", position: 3, name: catName, item: `/services/${catSlug}` },
-      {
-        "@type": "ListItem",
-        position: 4,
-        name: service.name,
-        item: `/services/${catSlug}/${service.slug}`,
-      },
-    ],
+    "@type": "Service",
+    "@id": `${canonicalUrl(servicePath)}#service`,
+    url: canonicalUrl(servicePath),
+    name: service.name,
+    serviceType: displayName(catName, catSlug),
+    ...(service.metaDescription || service.description
+      ? { description: service.metaDescription || service.description }
+      : {}),
+    provider: { "@id": ORG_ID },
+    areaServed: { "@type": "City", name: "Hyderabad" },
   };
   const faqLd = faqs.length
     ? {
@@ -182,13 +194,11 @@ function ServiceDetail() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: ldJson(breadcrumbLd) }}
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(serviceLd) }} />
       {faqLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(faqLd) }} />
       )}
 
       <section className="section-dark relative pt-32 pb-20 overflow-hidden">

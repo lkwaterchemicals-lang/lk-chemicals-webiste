@@ -9,13 +9,16 @@ import { useServicesContent } from "@/lib/pages";
 export const Route = createFileRoute("/services")({
   head: () => ({
     meta: [
-      { title: "Services — LK Chemicals" },
+      { title: "Water Treatment Services in Hyderabad — RO, Boiler, Descaling | LK Chemicals" },
       {
         name: "description",
         content:
           "Industrial water treatment services — RO plant servicing, boiler, chiller, condenser, heat exchanger, moulds, AHU and pipeline descaling, softener and DM plant service, resin cleaning, ETP & STP services, HVAC AMCs and consultation.",
       },
-      { property: "og:title", content: "Field Operations — LK Chemicals" },
+      {
+        property: "og:title",
+        content: "Water Treatment Services in Hyderabad — RO, Boiler, Descaling | LK Chemicals",
+      },
       { property: "og:description", content: "We don't just supply. We service." },
     ],
   }),

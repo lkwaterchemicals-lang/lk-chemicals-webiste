@@ -17,13 +17,16 @@ const captionOf = (it: { alt?: string; cat?: string }) =>
 export const Route = createFileRoute("/gallery")({
   head: () => ({
     meta: [
-      { title: "Gallery — Inside LK Chemicals" },
+      { title: "Gallery — LK Chemicals Plant & Lab, Cherlapally, Hyderabad" },
       {
         name: "description",
         content:
           "Inside our Cherlapally manufacturing plant, laboratory, product range and field service operations.",
       },
-      { property: "og:title", content: "Inside LK Chemicals" },
+      {
+        property: "og:title",
+        content: "Gallery — LK Chemicals Plant & Lab, Cherlapally, Hyderabad",
+      },
       {
         property: "og:description",
         content: "A look at the plant, lab, products and field services.",

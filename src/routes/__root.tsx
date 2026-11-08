@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import logoUrl from "@/assets/lk-logo.png";
 import { absUrl } from "../lib/site";
+import { canonicalUrl, siteJsonLd } from "../lib/seo";
 import { Nav } from "../components/site/Nav";
 import { Footer } from "../components/site/Footer";
 import { WaCluster } from "../components/site/WaCluster";
@@ -157,73 +158,91 @@ declare global {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      ...(GSC_TOKEN ? [{ name: "google-site-verification", content: GSC_TOKEN }] : []),
-      { title: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad" },
-      {
-        name: "description",
-        content:
-          "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013.",
-      },
-      { name: "author", content: "LK Chemicals Pvt. Ltd." },
-      {
-        property: "og:title",
-        content: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad",
-      },
-      {
-        property: "og:description",
-        content:
-          "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      // Matches --ice, the light theme's page background (the site's default).
-      { name: "theme-color", content: "#f4f9fc" },
-      {
-        name: "twitter:title",
-        content: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad",
-      },
-      {
-        name: "twitter:description",
-        content:
-          "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013.",
-      },
-      // Crawlers require absolute og/twitter image URLs.
-      { property: "og:image", content: absUrl("/og-image.png") },
-      { name: "twitter:image", content: absUrl("/og-image.png") },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "icon", href: "/logo-192.png", type: "image/png", sizes: "192x192" },
-      // Boot-veil logo — fetch it alongside the CSS so it's decoded by first paint.
-      { rel: "preload", as: "image", href: logoUrl },
-      { rel: "apple-touch-icon", href: "/logo-192.png" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-    ],
-    scripts: [
-      // Async font CSS (see FONTS_URL note) — script-injected stylesheets
-      // never block the parser or first paint.
-      {
-        children: `(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS_URL}';document.head.appendChild(l);})();`,
-      },
-      ...(GA_ID
-        ? [
-            { src: `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`, async: true },
-            {
-              children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:true});`,
-            },
-          ]
-        : []),
-    ],
-  }),
+  head: ({ matches }) => {
+    // Canonical + og:url for every page from the deepest matched route's
+    // pathname. Child routes that set their own og:url win (later meta
+    // with the same key replaces this one).
+    const leaf = matches[matches.length - 1];
+    const canonical = canonicalUrl(leaf?.pathname ?? "/");
+    const isAdminPath = (leaf?.pathname ?? "").startsWith("/admin");
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        ...(GSC_TOKEN ? [{ name: "google-site-verification", content: GSC_TOKEN }] : []),
+        { title: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad" },
+        {
+          name: "description",
+          content:
+            "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013.",
+        },
+        { name: "author", content: "LK Chemicals Pvt. Ltd." },
+        {
+          property: "og:title",
+          content: "LK Chemicals — Industrial Water Treatment Chemicals, Hyderabad",
+        },
+        {
+          property: "og:description",
+          content:
+            "LK Chemicals Pvt. Ltd. — Hyderabad-based manufacturer of RO, boiler, cooling tower, chiller, descaling, ETP & STP and water treatment chemicals, plants and services since 2013.",
+        },
+        { property: "og:type", content: "website" },
+        { property: "og:site_name", content: "LK Chemicals" },
+        { property: "og:locale", content: "en_IN" },
+        { property: "og:url", content: canonical },
+        { name: "twitter:card", content: "summary_large_image" },
+        // twitter:title / twitter:description are deliberately absent: X falls
+        // back to each page's own og:title / og:description, whereas a root
+        // default here was repeated verbatim on every page.
+        // Matches --ice, the light theme's page background (the site's default).
+        { name: "theme-color", content: "#f4f9fc" },
+        {
+          name: "robots",
+          content: isAdminPath
+            ? "noindex, nofollow"
+            : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+        },
+        // Crawlers require absolute og/twitter image URLs.
+        { property: "og:image", content: absUrl("/og-image.png") },
+        { name: "twitter:image", content: absUrl("/og-image.png") },
+      ],
+      links: [
+        { rel: "canonical", href: canonical },
+        {
+          rel: "stylesheet",
+          href: appCss,
+        },
+        { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+        { rel: "icon", href: "/logo-192.png", type: "image/png", sizes: "192x192" },
+        // Boot-veil logo — fetch it alongside the CSS so it's decoded by first paint.
+        { rel: "preload", as: "image", href: logoUrl },
+        { rel: "apple-touch-icon", href: "/logo-192.png" },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      ],
+      scripts: [
+        // Business identity for Google / Bing / AI search (Organization,
+        // LocalBusiness, WebSite). "<" is escaped so the JSON can't close the tag.
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(siteJsonLd()).replace(/</g, "\\u003c"),
+        },
+        // Async font CSS (see FONTS_URL note) — script-injected stylesheets
+        // never block the parser or first paint.
+        {
+          children: `(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS_URL}';document.head.appendChild(l);})();`,
+        },
+        ...(GA_ID
+          ? [
+              { src: `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`, async: true },
+              {
+                children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:true});`,
+              },
+            ]
+          : []),
+      ],
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

@@ -7,7 +7,19 @@ interface SitemapEntry {
   path: string;
   changefreq?: "weekly" | "monthly" | "yearly";
   priority?: string;
+  lastmod?: string;
+  image?: string;
 }
+
+const xmlEscape = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/** Firestore's document updateTime → W3C date (YYYY-MM-DD) for <lastmod>. */
+const day = (v: unknown) =>
+  typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : undefined;
+
+/** Only absolute http(s) image URLs are valid in an image sitemap. */
+const img = (v: unknown) => (typeof v === "string" && /^https?:\/\//.test(v) ? v : undefined);
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
@@ -40,7 +52,9 @@ export const Route = createFileRoute("/sitemap.xml")({
             .map((p) => ({
               path: `/products/${String(p.slug ?? p.__id)}`,
               changefreq: "monthly" as const,
-              priority: "0.7",
+              priority: "0.8",
+              lastmod: day(p.__updated),
+              image: img(p.image),
             })),
           ...serviceCategories
             .filter((c) => c.slug ?? c.__id)
@@ -48,6 +62,8 @@ export const Route = createFileRoute("/sitemap.xml")({
               path: `/services/${String(c.slug ?? c.__id)}`,
               changefreq: "monthly" as const,
               priority: "0.7",
+              lastmod: day(c.__updated),
+              image: img(c.banner) ?? img(c.image),
             })),
           ...services
             .filter((s) => (s.slug ?? s.__id) && s.serviceCategory)
@@ -55,18 +71,31 @@ export const Route = createFileRoute("/sitemap.xml")({
               path: `/services/${String(s.serviceCategory)}/${String(s.slug ?? s.__id)}`,
               changefreq: "monthly" as const,
               priority: "0.7",
+              lastmod: day(s.__updated),
+              image: img(s.image),
             })),
         ];
         const urls = entries
-          .map(
-            (e) =>
-              `  <url>\n    <loc>${SITE_URL}${e.path}</loc>\n    <changefreq>${e.changefreq}</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`,
+          .map((e) =>
+            [
+              "  <url>",
+              `    <loc>${xmlEscape(`${SITE_URL}${e.path}`)}</loc>`,
+              e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>` : "",
+              `    <changefreq>${e.changefreq}</changefreq>`,
+              `    <priority>${e.priority}</priority>`,
+              e.image
+                ? `    <image:image><image:loc>${xmlEscape(e.image)}</image:loc></image:image>`
+                : "",
+              "  </url>",
+            ]
+              .filter(Boolean)
+              .join("\n"),
           )
           .join("\n");
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls}\n</urlset>`;
         return new Response(xml, {
           headers: {
-            "Content-Type": "application/xml",
+            "Content-Type": "application/xml; charset=utf-8",
             "Cache-Control": "public, max-age=3600",
           },
         });

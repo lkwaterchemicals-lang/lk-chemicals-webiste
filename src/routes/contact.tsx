@@ -21,7 +21,7 @@ export const Route = createFileRoute("/contact")({
         content:
           "Reach LK Chemicals Pvt. Ltd. — Plot No. 157, Officers Colony, Cherlapally, Hyderabad. Phone +91 98666 00699.",
       },
-      { property: "og:title", content: "Contact LK Chemicals" },
+      { property: "og:title", content: "Contact — LK Chemicals, Hyderabad" },
       {
         property: "og:description",
         content: "Phone, WhatsApp, email and our Cherlapally address.",

@@ -72,10 +72,14 @@ export async function listDocsRest(
     );
     if (!res.ok) return [];
     const json = (await res.json()) as {
-      documents?: { name: string; fields?: Record<string, FsValue> }[];
+      documents?: { name: string; updateTime?: string; fields?: Record<string, FsValue> }[];
     };
     return (json.documents ?? [])
-      .map((d) => ({ __id: d.name.split("/").pop() ?? "", ...decodeFields(d.fields) }))
+      .map((d) => ({
+        __id: d.name.split("/").pop() ?? "",
+        __updated: d.updateTime,
+        ...decodeFields(d.fields),
+      }))
       .filter(isLive);
   } catch {
     return [];

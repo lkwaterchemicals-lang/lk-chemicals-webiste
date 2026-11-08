@@ -555,7 +555,7 @@ function CategoryCard({ c }: { c: import("@/data/products").Category }) {
           short laptop screens — the fixed heights used to clip the buttons. */}
       <div className="relative wwm-media overflow-hidden shrink-0">
         <img
-          src={c.image}
+          src={cloudinaryAtWidth(c.image, 800)}
           alt=""
           loading="lazy"
           decoding="async"

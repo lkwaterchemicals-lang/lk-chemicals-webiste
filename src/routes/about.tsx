@@ -20,7 +20,7 @@ import { Coverflow3D } from "@/components/site/Coverflow3D";
 import { useAboutContent } from "@/lib/pages";
 import { useTeam } from "@/lib/content";
 import { imgFallback } from "@/lib/assets";
-import { downloadUrl, pdfThumbUrl } from "@/lib/media";
+import { downloadUrl, pdfThumbUrl, cloudinaryAtWidth } from "@/lib/media";
 import {
   aboutContent,
   type Achievement,
@@ -560,7 +560,7 @@ function ContactRow({ member, className = "" }: { member: TeamMember; className?
 function Portrait({ member, big = false }: { member: TeamMember; big?: boolean }) {
   return member.image ? (
     <img
-      src={member.image}
+      src={cloudinaryAtWidth(member.image, 640)}
       alt={member.name}
       loading="lazy"
       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"

@@ -5,6 +5,7 @@ import { MicroLabel, GhostWord } from "@/components/site/GhostWord";
 import { RequestCallButton } from "@/components/site/RequestCall";
 import { useServiceCategories, useServices } from "@/lib/content";
 import { useServicesContent } from "@/lib/pages";
+import { cloudinaryAtWidth } from "@/lib/media";
 
 export const Route = createFileRoute("/services")({
   head: () => ({
@@ -93,7 +94,7 @@ function ServicesPage() {
                   >
                     {cat.image ? (
                       <img
-                        src={cat.image}
+                        src={cloudinaryAtWidth(cat.image, 800)}
                         alt=""
                         className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />

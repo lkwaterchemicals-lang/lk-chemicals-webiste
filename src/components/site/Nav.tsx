@@ -16,6 +16,7 @@ import { BrandMark } from "./BrandMark";
 import { SocialRow } from "./Social";
 import { LiquidButton } from "./LiquidButton";
 import { ThemeToggle } from "./ThemeToggle";
+import { cloudinaryAtWidth } from "@/lib/media";
 
 type MegaItem = {
   key: string;
@@ -35,7 +36,7 @@ function MegaThumb({ item, size = "md" }: { item: MegaItem; size?: "md" | "lg" }
     return (
       <span className={`relative ${dims} shrink-0 overflow-hidden rounded-lg`}>
         <img
-          src={item.image}
+          src={cloudinaryAtWidth(item.image, 160)}
           alt=""
           loading="lazy"
           decoding="async"

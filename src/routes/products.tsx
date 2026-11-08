@@ -8,6 +8,7 @@ import { imgFallback } from "@/lib/assets";
 import { scrollToElement } from "@/lib/scroll";
 import { MicroLabel } from "@/components/site/GhostWord";
 import resinImg from "@/assets/resin.jpg";
+import { cloudinaryAtWidth } from "@/lib/media";
 
 type ProductsSearch = { cat?: string };
 
@@ -166,7 +167,7 @@ function ProductsPage() {
                     className="group relative text-left rounded-3xl overflow-hidden hover-lift min-h-[230px] flex flex-col justify-end p-6"
                   >
                     <img
-                      src={c.image}
+                      src={cloudinaryAtWidth(c.image, 800)}
                       alt=""
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />

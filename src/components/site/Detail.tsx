@@ -360,7 +360,7 @@ function SuggestCard({ item, index }: { item: SuggestItem; index: number }) {
         <div className="relative h-40 sm:h-44 overflow-hidden shrink-0">
           {item.image ? (
             <img
-              src={item.image}
+              src={cloudinaryAtWidth(item.image, 640)}
               alt=""
               loading="lazy"
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"

@@ -19,6 +19,7 @@ import { iconByName } from "@/lib/icons";
 import type { ServiceCategory } from "@/data/products";
 import { GhostWord, MicroLabel } from "./GhostWord";
 import { LiquidButton } from "./LiquidButton";
+import { cloudinaryAtWidth } from "@/lib/media";
 
 export function ServiceIndex() {
   const { data: categories } = useServiceCategories();
@@ -95,7 +96,7 @@ export function ServiceIndex() {
               >
                 {cat.image ? (
                   <img
-                    src={cat.image}
+                    src={cloudinaryAtWidth(cat.image, 800)}
                     alt=""
                     loading="lazy"
                     decoding="async"
@@ -135,7 +136,7 @@ export function ServiceIndex() {
                   </span>
                   {cat.image ? (
                     <img
-                      src={cat.image}
+                      src={cloudinaryAtWidth(cat.image, 800)}
                       alt=""
                       loading="lazy"
                       decoding="async"
@@ -307,7 +308,12 @@ function DeckCard({
         >
           {cat.image && (
             <div className="relative h-40 overflow-hidden">
-              <img src={cat.image} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img
+                src={cloudinaryAtWidth(cat.image, 800)}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
               <span className="display-xl absolute bottom-2.5 right-4 text-4xl text-on-media opacity-85">
                 {cat.number}
@@ -318,7 +324,7 @@ function DeckCard({
             {cat.image ? (
               <div className="flex items-center gap-3">
                 <img
-                  src={cat.image}
+                  src={cloudinaryAtWidth(cat.image, 800)}
                   alt=""
                   loading="lazy"
                   decoding="async"

@@ -17,6 +17,7 @@ import logoUrl from "@/assets/lk-logo.webp";
 import { useWaLink } from "@/lib/content";
 import { useChatbotContent } from "@/lib/pages";
 import { WhatsAppIcon } from "./WhatsApp";
+import { cloudinaryAtWidth } from "@/lib/media";
 
 type ProductCard = {
   slug: string;
@@ -328,7 +329,12 @@ export function ChatBot() {
                   {m.products?.map((p) => (
                     <Link key={p.slug} to={p.url} className="lkc-card">
                       {p.image ? (
-                        <img src={p.image} alt="" loading="lazy" className="lkc-card-img" />
+                        <img
+                          src={cloudinaryAtWidth(p.image, 320)}
+                          alt=""
+                          loading="lazy"
+                          className="lkc-card-img"
+                        />
                       ) : (
                         <span className="lkc-card-img lkc-card-img-empty" aria-hidden />
                       )}

@@ -247,6 +247,8 @@ export function MediaGallery({
             >
               <motion.img
                 src={cloudinaryAtWidth(src, 1000)}
+                srcSet={`${cloudinaryAtWidth(src, 600)} 600w, ${cloudinaryAtWidth(src, 1000)} 1000w`}
+                sizes="(min-width: 1024px) 560px, 100vw"
                 alt={name}
                 draggable={false}
                 fetchPriority={active === 0 ? "high" : undefined}

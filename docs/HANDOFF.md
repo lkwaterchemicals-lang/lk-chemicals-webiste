@@ -44,6 +44,12 @@ Last updated: 2026-11-08
   listing "LK CHEMICALS PRIVATE LIMITED" (Plot No 157, category "Water treatment plant") is owned by
   another Google account — client must give access (Manager role to lk.waterchemicals@gmail.com).
 
+- 2026-11-08 later: GSC indexing re-requested for / (priority queue); Bing URL Submission: 28 page URLs.
+  Warehouse GBP (LK Gmail): website lkchemicals.in -> https://www.lkchemicals.com/ (approved), phone
+  09030408041 added, extra category "Water treatment supplier", factual description (no emoji/year) —
+  last three pending Google review. Main listing is owned by sa…@gmail.com; access-request form
+  (Management / Employee) was filled but NOT submitted (blocked by the session's safety check).
+
 ## Next steps
 0. Ranking: get Manager access to the main GBP listing -> primary category "Water treatment supplier"
    (+ "Chemical manufacturer"), services list, weekly posts; client collects real Google reviews
